@@ -544,11 +544,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           Partagez ce lien. Les invités pourront indiquer leur prénom, nom, présence (✅ ❌ 🤷‍♂️), ajouter leur groupe, et consulter le programme en français ou en anglais.
         </p>
         <div class="link-box">
-          <code id="guest-link">guest.html</code>
+          <code id="guest-link">index.html</code>
           <button class="btn btn-outline" style="border-color:rgba(255,255,255,0.2);color:var(--rose2)" onclick="copyLink()">Copier</button>
         </div>
         <p style="font-size:0.73rem;color:var(--muted);line-height:1.6;">
-          Hébergement gratuit : déposez <strong>admin.html</strong> + <strong>guest.html</strong> sur <strong style="color:var(--sage)">Netlify Drop</strong>, <strong style="color:var(--sage)">GitHub Pages</strong> ou <strong style="color:var(--sage)">Vercel</strong>.
+          Hébergement gratuit : déposez <strong>admin.html</strong> + <strong>index.html</strong> sur <strong style="color:var(--sage)">Netlify Drop</strong>, <strong style="color:var(--sage)">GitHub Pages</strong> ou <strong style="color:var(--sage)">Vercel</strong>.
         </p>
       </div>
       <div class="form-card">
@@ -939,7 +939,7 @@ function renderTimeline(){
 
 /* ═══ LINK / EXPORT ═══ */
 function copyLink(){
-  const link=window.location.href.replace('admin.html','guest.html');
+  const link=window.location.href.replace('admin.html','index.html');
   navigator.clipboard.writeText(link).then(()=>toast('Lien copié'));
   document.getElementById('guest-link').textContent=link;
 }
@@ -961,7 +961,7 @@ function importData(e){
 
 /* ═══ INIT ═══ */
 document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
-document.getElementById('guest-link').textContent=window.location.href.replace('admin.html','guest.html');
+document.getElementById('guest-link').textContent=window.location.href.replace('admin.html','index.html');
 // Init chip
 document.getElementById('chip-all').classList.add('on');
 renderDash();
