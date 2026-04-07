@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Wedding</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#FAF8F5;--bg2:#FFFFFF;--bg3:#F5F0EB;
+  --rose:#E8637A;--rose2:#F28FA0;--rose3:#FADADF;--rose-bg:#FEF0F2;
+  --sage:#5A8A6A;--sage2:#7DAF8D;--sage-bg:#EEF5F0;
+  --gold:#C4922A;--gold2:#E5B84A;--gold-bg:#FDF6E8;
+  --text:#2A2420;--text2:#5A504A;--muted:#9A8E85;--muted2:#C8BDB5;
+  --border:#E8E0D8;--border2:#D5C8BE;
+  --shadow:0 2px 16px rgba(60,40,20,0.08);
+  --shadow2:0 8px 40px rgba(60,40,20,0.12);
+  --danger:#D95050;--radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* HEADER */
+.site-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:1.2rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.8rem;position:sticky;top:0;z-index:50;box-shadow:var(--shadow);}
+.header-left .logo{font-family:'Playfair Display',serif;font-size:1.5rem;font-style:italic;color:var(--rose);}
+.header-left .tagline{font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-top:0.25rem;}
+.header-right{display:flex;align-items:center;gap:0.6rem;}
+
+/* Language toggle */
+.lang-toggle{display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:50px;padding:3px;gap:2px;}
+.lang-btn{font-family:'DM Sans',sans-serif;font-size:0.68rem;font-weight:700;letter-spacing:0.1em;padding:0.32rem 0.85rem;border-radius:50px;border:none;cursor:pointer;background:transparent;color:var(--muted);transition:all 0.2s;}
+.lang-btn.active{background:var(--bg2);color:var(--rose);box-shadow:var(--shadow);}
+
+/* CONTENT SECTIONS */
+.content-section{max-width:620px;margin:0 auto;padding:3rem 1.5rem;}
+.section-sep{height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent);margin:0;}
+
+/* FORM TOP */
+.form-top{margin-bottom:2.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);}
+.eyebrow{font-size:0.63rem;letter-spacing:0.28em;text-transform:uppercase;color:var(--rose);font-weight:600;margin-bottom:0.5rem;}
+.form-top h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:400;font-style:italic;color:var(--text);margin-bottom:0.4rem;}
+.form-top p{font-size:0.88rem;color:var(--muted);line-height:1.7;}
+
+/* PERSON BLOCKS */
+.person-block{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.4rem 1.4rem 1.2rem;margin-bottom:1rem;position:relative;box-shadow:var(--shadow);transition:border-color 0.2s,box-shadow 0.2s;}
+.person-block:focus-within{border-color:var(--rose2);box-shadow:0 4px 20px rgba(232,99,122,0.1);}
+.person-num{font-size:0.6rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--rose);font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;}
+.person-num::after{content:'';flex:1;height:1px;background:var(--rose3);}
+.prow{display:grid;grid-template-columns:1fr 1fr;gap:0.9rem;}
+@media(max-width:480px){.prow{grid-template-columns:1fr;}}
+.fgroup label{display:block;font-size:0.63rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:0.45rem;font-weight:600;}
+.fgroup input{width:100%;padding:0.78rem 1rem;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.92rem;outline:none;transition:all 0.2s;}
+.fgroup input::placeholder{color:var(--muted2);}
+.fgroup input:focus{border-color:var(--rose2);box-shadow:0 0 0 3px rgba(232,99,122,0.1);background:var(--bg2);}
+
+.btn-rm{position:absolute;top:1rem;right:1rem;background:var(--bg3);border:1px solid var(--border);border-radius:8px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:0.85rem;transition:all 0.2s;}
+.btn-rm:hover{background:var(--rose-bg);color:var(--danger);border-color:var(--rose2);}
+
+.btn-add-person{width:100%;padding:0.78rem;background:var(--bg2);border:1.5px dashed var(--border2);border-radius:var(--radius);color:var(--sage);font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;font-weight:600;cursor:pointer;transition:all 0.2s;margin-bottom:2rem;box-shadow:var(--shadow);}
+.btn-add-person:hover{border-color:var(--sage2);color:var(--sage2);background:var(--sage-bg);}
+
+/* PRESENCE */
+.pres-section{margin-bottom:2rem;}
+.pres-lbl{font-size:0.63rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:0.9rem;}
+.pres-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.8rem;}
+@media(max-width:420px){.pres-grid{grid-template-columns:1fr;}}
+.popt{border:1.5px solid var(--border);border-radius:var(--radius);padding:1.2rem 0.8rem;cursor:pointer;text-align:center;transition:all 0.25s;background:var(--bg2);box-shadow:var(--shadow);}
+.popt:hover{border-color:var(--rose2);background:var(--rose-bg);}
+.popt.sel-yes{border-color:var(--sage);background:var(--sage-bg);box-shadow:0 4px 20px rgba(90,138,106,0.15);}
+.popt.sel-maybe{border-color:var(--gold);background:var(--gold-bg);box-shadow:0 4px 20px rgba(196,146,42,0.15);}
+.popt.sel-no{border-color:var(--rose);background:var(--rose-bg);box-shadow:0 4px 20px rgba(232,99,122,0.15);}
+.popt-icon{font-size:1.6rem;margin-bottom:0.4rem;}
+.popt-lbl{font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:var(--muted);}
+.popt.sel-yes .popt-lbl{color:var(--sage);}
+.popt.sel-maybe .popt-lbl{color:var(--gold);}
+.popt.sel-no .popt-lbl{color:var(--rose);}
+
+.btn-submit{width:100%;padding:1rem;background:var(--rose);border:none;border-radius:50px;color:#fff;font-family:'DM Sans',sans-serif;font-size:0.78rem;letter-spacing:0.2em;text-transform:uppercase;font-weight:700;cursor:pointer;transition:all 0.25s;box-shadow:0 6px 24px rgba(232,99,122,0.35);}
+.btn-submit:hover{background:var(--rose2);box-shadow:0 8px 32px rgba(232,99,122,0.45);transform:translateY(-1px);}
+
+/* SUCCESS */
+.success-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:3rem 2rem;text-align:center;box-shadow:var(--shadow2);}
+.success-icon{font-size:3rem;margin-bottom:1.2rem;}
+.success-title{font-family:'Playfair Display',serif;font-size:1.9rem;font-style:italic;color:var(--text);margin-bottom:0.6rem;}
+.success-text{font-size:0.88rem;color:var(--muted);line-height:1.7;}
+.success-names{display:inline-block;margin-top:1.2rem;padding:0.5rem 1.2rem;background:var(--rose-bg);border:1px solid var(--rose3);border-radius:50px;font-family:'Playfair Display',serif;font-style:italic;font-size:1.1rem;color:var(--rose);}
+
+/* PROGRAMME SECTION — always visible */
+.prog-section{background:var(--bg3);}
+.prog-inner{max-width:620px;margin:0 auto;padding:3rem 1.5rem;}
+.prog-top{margin-bottom:1.8rem;padding-bottom:1.2rem;border-bottom:1px solid var(--border);}
+.prog-top .eyebrow{color:var(--gold);}
+.prog-top h2{font-family:'Playfair Display',serif;font-size:1.9rem;font-style:italic;color:var(--text);}
+
+.prog-tl{position:relative;padding-left:2rem;}
+.prog-tl::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:2px;background:linear-gradient(180deg,var(--rose2),var(--gold2),var(--sage2));border-radius:2px;opacity:0.4;}
+.prog-item{position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.2rem 1.4rem;margin-bottom:1.2rem;box-shadow:var(--shadow);transition:box-shadow 0.2s,border-color 0.2s;}
+.prog-item:hover{box-shadow:var(--shadow2);border-color:var(--rose2);}
+.prog-item::before{content:'';position:absolute;left:-1.57rem;top:1.2rem;width:10px;height:10px;border-radius:50%;background:var(--rose);border:2px solid var(--bg3);box-shadow:0 0 0 3px rgba(232,99,122,0.2);}
+.prog-time{font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--rose);font-weight:700;margin-bottom:0.3rem;}
+.prog-title{font-family:'Playfair Display',serif;font-size:1.15rem;color:var(--text);margin-bottom:0.25rem;}
+.prog-desc{font-size:0.82rem;color:var(--muted);line-height:1.6;}
+.prog-empty{text-align:center;padding:2.5rem;background:var(--bg2);border:1px dashed var(--border2);border-radius:var(--radius);font-size:0.88rem;color:var(--muted);}
+
+/* FOOTER */
+footer{text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border);font-size:0.65rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted2);}
+footer .ornament{font-size:1rem;color:var(--rose2);display:block;margin-bottom:0.4rem;}
+
+/* TOAST */
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(10px);background:var(--text);color:#fff;padding:0.8rem 1.6rem;border-radius:50px;font-size:0.78rem;letter-spacing:0.06em;opacity:0;transition:all 0.3s;pointer-events:none;z-index:999;box-shadow:var(--shadow2);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-left">
+    <div class="logo">Our Wedding ✦</div>
+    <div class="tagline" id="h-tagline">You are invited</div>
+  </div>
+  <div class="header-right">
+    <div class="lang-toggle">
+      <button class="lang-btn" onclick="setLang('fr',this)">FR</button>
+      <button class="lang-btn active" onclick="setLang('en',this)">EN</button>
+    </div>
+  </div>
+</header>
+
+<!-- RSVP FORM SECTION -->
+<div class="content-section">
+  <div class="form-top">
+    <div class="eyebrow" id="ft-eyebrow">RSVP</div>
+    <h1 id="ft-title">Your attendance</h1>
+    <p id="ft-lead">Enter your first and last name. If you are coming with others, add each person in your group.</p>
+  </div>
+  <div id="form-content">
+    <div id="person-list"></div>
+    <button class="btn-add-person" id="btn-add-person" onclick="addPerson()">+ Add a person</button>
+    <div class="pres-section">
+      <div class="pres-lbl" id="pres-lbl">Attendance for your group</div>
+      <div class="pres-grid">
+        <div class="popt" id="pyes" onclick="selPres('present')">
+          <div class="popt-icon">✅</div>
+          <div class="popt-lbl" id="lbl-yes">Attending</div>
+        </div>
+        <div class="popt" id="pmaybe" onclick="selPres('maybe')">
+          <div class="popt-icon">🤷‍♂️</div>
+          <div class="popt-lbl" id="lbl-maybe">Maybe</div>
+        </div>
+        <div class="popt" id="pno" onclick="selPres('absent')">
+          <div class="popt-icon">❌</div>
+          <div class="popt-lbl" id="lbl-no">Not attending</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-submit" id="btn-submit" onclick="submit()">Confirm my reply</button>
+  </div>
+</div>
+
+<div class="section-sep"></div>
+
+<!-- PROGRAMME — ALWAYS VISIBLE -->
+<section class="prog-section">
+  <div class="prog-inner">
+    <div class="prog-top">
+      <div class="eyebrow" id="prog-eyebrow">The day</div>
+      <h2 id="prog-title">Schedule</h2>
+    </div>
+    <div class="prog-tl" id="prog-tl">
+      <div class="prog-empty" id="prog-empty">The schedule will be available soon.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span class="ornament">✦</span>
+  <span id="footer-text">With all our love</span>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── SUPABASE — clés intégrées ── */
+const SUPABASE_URL='https://xysemfyhtuvqrzffbnql.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5c2VtZnlodHV2cXJ6ZmZibnFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NjQ1NjAsImV4cCI6MjA5MTE0MDU2MH0.S5iBLIeEr4ULByAjMMdnkFsA7IwP0A4XbOfnOHT-dkU';
+
+async function sbFetch(path,opts={}){
+  const res=await fetch(SUPABASE_URL+'/rest/v1/'+path,{
+    headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':opts.prefer||'return=representation',...(opts.headers||{})},
+    ...opts
+  });
+  if(!res.ok){const t=await res.text();throw new Error(t);}
+  const txt=await res.text();return txt?JSON.parse(txt):null;
+}
+
+async function loadEvents(){
+  try{ return await sbFetch('events?order=heure.asc')||[]; }
+  catch(e){ console.warn('Supabase events error:',e); return []; }
+}
+async function insertGuest(guest){
+  return await sbFetch('guests',{method:'POST',body:JSON.stringify(guest)});
+}
+
+let presVal=null, pCount=0, lang='en';
+
+/* ── TRANSLATIONS ── */
+const T={
+  fr:{
+    tagline:'Vous êtes invité(e)',
+    eyebrow:'Réponse',formTitle:'Votre participation',
+    formLead:'Indiquez votre prénom et nom. Si vous venez accompagné(e), ajoutez les personnes de votre groupe.',
+    addPerson:'+ Ajouter une personne',presLbl:'Présence de votre groupe',
+    lblYes:'Présent(e)s',lblMaybe:'Peut-être',lblNo:'Absent(e)s',
+    btnSubmit:'Confirmer ma réponse',
+    personYou:'Vous',personN:n=>`Personne ${n}`,
+    firstName:'Prénom',lastName:'Nom',phFirst:'Votre prénom',phLast:'Votre nom',
+    progEyebrow:'Journée',progTitle:'Programme',
+    progEmpty:'Le programme sera bientôt disponible.',
+    footerText:'Avec tout notre amour',
+    toastOne:'Ajoutez au moins une personne.',toastPres:'Indiquez votre présence.',toastName:'Indiquez au moins un prénom ou nom.',
+    succTitleY:'À très bientôt !',succTitleM:'Merci pour votre réponse',succTitleN:'Merci pour votre réponse',
+    succTextY:'Nous sommes heureux de vous compter parmi nous ce jour si particulier.',
+    succTextM:'Votre réponse a bien été enregistrée. Nous espérons vous voir ce jour-là !',
+    succTextN:'Votre réponse a bien été enregistrée. Merci de nous avoir prévenus.',
+  },
+  en:{
+    tagline:'You are invited',
+    eyebrow:'RSVP',formTitle:'Your attendance',
+    formLead:'Enter your first and last name. If you are coming with others, add each person in your group.',
+    addPerson:'+ Add a person',presLbl:'Attendance for your group',
+    lblYes:'Attending',lblMaybe:'Maybe',lblNo:'Not attending',
+    btnSubmit:'Confirm my reply',
+    personYou:'You',personN:n=>`Person ${n}`,
+    firstName:'First name',lastName:'Last name',phFirst:'Your first name',phLast:'Your last name',
+    progEyebrow:'The day',progTitle:'Schedule',
+    progEmpty:'The schedule will be available soon.',
+    footerText:'With all our love',
+    toastOne:'Please add at least one person.',toastPres:'Please indicate your attendance.',toastName:'Please enter at least a name.',
+    succTitleY:'See you soon!',succTitleM:'Thank you for your reply',succTitleN:'Thank you for your reply',
+    succTextY:'We are delighted to have you with us on this very special day.',
+    succTextM:'Your reply has been recorded. We hope to see you on that day!',
+    succTextN:'Your reply has been recorded. Thank you for letting us know.',
+  }
+};
+
+function setLang(l,btn){
+  lang=l;
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.documentElement.lang=l;
+  applyT();reindexPersons();renderProg();
+}
+
+function applyT(){
+  const t=T[lang];
+  document.getElementById('h-tagline').textContent=t.tagline;
+  document.getElementById('ft-eyebrow').textContent=t.eyebrow;
+  document.getElementById('ft-title').textContent=t.formTitle;
+  document.getElementById('ft-lead').textContent=t.formLead;
+  const bap=document.getElementById('btn-add-person');if(bap)bap.textContent=t.addPerson;
+  const pl=document.getElementById('pres-lbl');if(pl)pl.textContent=t.presLbl;
+  ['yes','maybe','no'].forEach(k=>{const el=document.getElementById('lbl-'+k);if(el)el.textContent=k==='yes'?t.lblYes:k==='maybe'?t.lblMaybe:t.lblNo;});
+  const bs=document.getElementById('btn-submit');if(bs)bs.textContent=t.btnSubmit;
+  document.getElementById('prog-eyebrow').textContent=t.progEyebrow;
+  document.getElementById('prog-title').textContent=t.progTitle;
+  document.getElementById('footer-text').textContent=t.footerText;
+  document.querySelectorAll('#person-list .person-block').forEach(b=>{
+    const ls=b.querySelectorAll('.fgroup label');
+    const is=b.querySelectorAll('input');
+    if(ls[0])ls[0].textContent=t.firstName;
+    if(ls[1])ls[1].textContent=t.lastName;
+    if(is[0])is[0].placeholder=t.phFirst;
+    if(is[1])is[1].placeholder=t.phLast;
+  });
+}
+
+function selPres(v){
+  presVal=v;
+  document.getElementById('pyes').className='popt'+(v==='present'?' sel-yes':'');
+  document.getElementById('pmaybe').className='popt'+(v==='maybe'?' sel-maybe':'');
+  document.getElementById('pno').className='popt'+(v==='absent'?' sel-no':'');
+}
+
+function addPerson(){
+  const t=T[lang];
+  pCount++;const id='pb-'+pCount;
+  const c=document.getElementById('person-list');
+  const idx=c.children.length;
+  const d=document.createElement('div');d.className='person-block';d.id=id;
+  d.innerHTML=`
+    <div class="person-num">${idx===0?t.personYou:t.personN(idx+1)}</div>
+    ${idx>0?`<button class="btn-rm" onclick="removePerson('${id}')">✕</button>`:''}
+    <div class="prow">
+      <div class="fgroup"><label>${t.firstName}</label><input type="text" class="ip" placeholder="${t.phFirst}"></div>
+      <div class="fgroup"><label>${t.lastName}</label><input type="text" class="in_" placeholder="${t.phLast}"></div>
+    </div>`;
+  c.appendChild(d);
+}
+
+function removePerson(id){document.getElementById(id)?.remove();reindexPersons();}
+function reindexPersons(){
+  const t=T[lang];
+  document.querySelectorAll('#person-list .person-block').forEach((b,i)=>{
+    b.querySelector('.person-num').textContent=i===0?t.personYou:t.personN(i+1);
+    const rb=b.querySelector('.btn-rm');
+    if(i===0&&rb)rb.remove();
+    if(i>0&&!rb){const btn=document.createElement('button');btn.className='btn-rm';btn.innerHTML='✕';btn.onclick=()=>removePerson(b.id);b.appendChild(btn);}
+  });
+}
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+
+async function submit(){
+  const t=T[lang];
+  const blocks=document.querySelectorAll('#person-list .person-block');
+  if(!blocks.length){toast(t.toastOne);return;}
+  if(!presVal){toast(t.toastPres);return;}
+  const people=[];let hasName=false;
+  blocks.forEach(b=>{
+    const p=b.querySelector('.ip').value.trim();
+    const n=b.querySelector('.in_').value.trim();
+    if(p||n)hasName=true;people.push({prenom:p,nom:n});
+  });
+  if(!hasName){toast(t.toastName);return;}
+
+  const btn=document.getElementById('btn-submit');
+  if(btn){btn.disabled=true;btn.textContent='...';}
+  try{
+    for(const p of people){
+      await insertGuest({prenom:p.prenom,nom:p.nom,genre:'',type:'',presence:presVal==='maybe'?'pending':presVal,cote:'',via_lien:true});
+    }
+  }catch(e){
+    toast('Erreur: '+e.message);
+    if(btn){btn.disabled=false;btn.textContent=T[lang].btnSubmit;}
+    return;
+  }
+
+  const names=people.filter(p=>p.prenom||p.nom).map(p=>[p.prenom,p.nom].filter(Boolean).join(' ')).join(' & ');
+  const icon=presVal==='present'?'✅':presVal==='maybe'?'🤷‍♂️':'❌';
+  const title=presVal==='present'?t.succTitleY:presVal==='maybe'?t.succTitleM:t.succTitleN;
+  const text=presVal==='present'?t.succTextY:presVal==='maybe'?t.succTextM:t.succTextN;
+  document.getElementById('form-content').innerHTML=`
+    <div class="success-card">
+      <div class="success-icon">${icon}</div>
+      <div class="success-title">${title}</div>
+      <p class="success-text">${text}</p>
+      ${names?`<div class="success-names">${names}</div>`:''}
+    </div>`;
+}
+
+async function renderProg(){
+  const t=T[lang];
+  const tl=document.getElementById('prog-tl');if(!tl)return;
+  const ev=await loadEvents();
+  if(!ev.length){
+    tl.innerHTML=`<div class="prog-empty" id="prog-empty">${t.progEmpty}</div>`;return;
+  }
+  tl.innerHTML=ev.map(e=>`
+    <div class="prog-item">
+      <div class="prog-time">${e.heure||''}</div>
+      <div class="prog-title">${e.titre}</div>
+      ${e.description?`<div class="prog-desc">${e.description}</div>`:''}
+    </div>`).join('');
+}
+
+// Init
+addPerson();
+renderProg();
+</script>
+</body>
+</html>
