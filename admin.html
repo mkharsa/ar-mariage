@@ -213,6 +213,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .btn-add-row{width:100%;padding:0.62rem;background:var(--bg);border:1.5px dashed var(--border2);border-radius:10px;color:var(--sage);font-family:'DM Sans',sans-serif;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;cursor:pointer;transition:all 0.2s;margin-bottom:1.1rem;}
 .btn-add-row:hover{border-color:var(--sage);background:var(--sage-bg);}
 
+/* DASHBOARD GUEST LIST */
+.dash-guests-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;box-shadow:var(--shadow);margin-top:0;}
+.dash-guests-header{display:flex;align-items:center;justify-content:space-between;gap:0.8rem;margin-bottom:1.2rem;flex-wrap:wrap;}
+.dash-guests-title{font-family:'Playfair Display',serif;font-size:1rem;font-style:italic;color:var(--text);white-space:nowrap;}
+
 /* TOAST */
 .toast{position:fixed;bottom:2rem;right:2rem;background:var(--text);color:#fff;padding:0.8rem 1.4rem;border-radius:12px;font-size:0.78rem;letter-spacing:0.05em;opacity:0;transform:translateY(10px) scale(0.95);transition:all 0.3s;pointer-events:none;z-index:999;box-shadow:var(--shadow3);display:flex;align-items:center;gap:0.6rem;}
 .toast::before{content:'✦';color:var(--rose2);}
@@ -281,6 +286,29 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <h3>Activité récente <small>· derniers inscrits</small></h3>
         <div class="feed" id="activity-feed"></div>
       </div>
+    </div>
+
+    <!-- GUEST LIST ON DASHBOARD -->
+    <div class="dash-guests-card">
+      <div class="dash-guests-header">
+        <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;flex:1;">
+          <h3 class="dash-guests-title">Tous les invités</h3>
+          <div class="filter-chips" id="dash-chips">
+            <div class="chip on" id="dchip-all"    onclick="dashFilter('all',this)">Tous</div>
+            <div class="chip"    id="dchip-present" onclick="dashFilter('present',this)">✅ Présents</div>
+            <div class="chip"    id="dchip-absent"  onclick="dashFilter('absent',this)">❌ Absents</div>
+            <div class="chip"    id="dchip-pending" onclick="dashFilter('pending',this)">⏳ En attente</div>
+            <div class="chip"    id="dchip-mariee"  onclick="dashFilter('mariee',this)">👰 Mariée</div>
+            <div class="chip"    id="dchip-marie"   onclick="dashFilter('marie',this)">🤵 Marié</div>
+          </div>
+        </div>
+        <div class="search-bar" style="max-width:220px;flex-shrink:0;">
+          <span style="color:var(--muted2)">⌕</span>
+          <input type="text" id="dsearch" placeholder="Rechercher…" oninput="renderDashGuests()">
+        </div>
+        <button class="btn btn-rose" onclick="openModal()" style="flex-shrink:0">+ Ajouter</button>
+      </div>
+      <div class="guest-grid" id="dash-guest-grid"></div>
     </div>
   </div>
 
@@ -473,6 +501,47 @@ function submitModal(){
   showToast(added===1?'Invité ajouté':`${added} invités ajoutés`);
 }
 
+let dashActiveFilter='all';
+
+function dashFilter(v, el){
+  dashActiveFilter=v;
+  document.querySelectorAll('#dash-chips .chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  renderDashGuests();
+}
+
+function renderDashGuests(){
+  const g=getG();
+  const s=(document.getElementById('dsearch')?.value||'').toLowerCase();
+  const list=g.filter(x=>{
+    const nm=(x.prenom+' '+x.nom).toLowerCase();
+    const matchS=nm.includes(s);
+    let matchF=true;
+    if(dashActiveFilter==='present') matchF=x.presence==='present';
+    else if(dashActiveFilter==='absent') matchF=x.presence==='absent';
+    else if(dashActiveFilter==='pending') matchF=x.presence==='pending';
+    else if(dashActiveFilter==='mariee') matchF=x.cote==='Mariée';
+    else if(dashActiveFilter==='marie') matchF=x.cote==='Marié';
+    return matchS&&matchF;
+  });
+  const grid=document.getElementById('dash-guest-grid');if(!grid)return;
+  if(!list.length){
+    grid.innerHTML='<div class="guest-empty"><p style="font-size:0.88rem;color:var(--muted)">Aucun invité dans cette catégorie.</p></div>';return;
+  }
+  grid.innerHTML=list.map(g=>gcCard(g)).join('');
+}
+
+function setDashFilter(filterKey){
+  dashActiveFilter=filterKey;
+  document.querySelectorAll('#dash-chips .chip').forEach(c=>c.classList.remove('on'));
+  const chipMap={all:'dchip-all',present:'dchip-present',absent:'dchip-absent',pending:'dchip-pending',mariee:'dchip-mariee',marie:'dchip-marie'};
+  const target=document.getElementById(chipMap[filterKey]);
+  if(target) target.classList.add('on');
+  // Scroll to guest list
+  document.querySelector('.dash-guests-card')?.scrollIntoView({behavior:'smooth',block:'start'});
+  renderDashGuests();
+}
+
 function setChip(v,el){
   activeChip=v;
   document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
@@ -557,21 +626,22 @@ function renderDash(){
   updateSbCount();
 
   const mData=[
-    {icon:'💌',val:tot,lbl:'Total invités',accent:'linear-gradient(90deg,var(--rose),var(--rose2))'},
-    {icon:'✅',val:pres,lbl:'Présents',accent:'linear-gradient(90deg,var(--sage),var(--sage2))'},
-    {icon:'❌',val:abs,lbl:'Absents',accent:'linear-gradient(90deg,var(--danger),#E07070)'},
-    {icon:'⏳',val:pen,lbl:'En attente',accent:'linear-gradient(90deg,var(--gold),var(--gold2))'},
-    {icon:'👰',val:mariee,lbl:'Côté mariée',accent:'linear-gradient(90deg,var(--rose),#E8A0B0)'},
-    {icon:'🤵',val:marie,lbl:'Côté marié',accent:'linear-gradient(90deg,var(--sky),#7AAAD4)'},
-    {icon:'🎂',val:avg||'—',lbl:'Âge moyen',accent:'linear-gradient(90deg,var(--lavender),#B090D0)'},
+    {icon:'💌',val:tot,lbl:'Total invités',accent:'linear-gradient(90deg,var(--rose),var(--rose2))',filter:'all'},
+    {icon:'✅',val:pres,lbl:'Présents',accent:'linear-gradient(90deg,var(--sage),var(--sage2))',filter:'present'},
+    {icon:'❌',val:abs,lbl:'Absents',accent:'linear-gradient(90deg,var(--danger),#E07070)',filter:'absent'},
+    {icon:'⏳',val:pen,lbl:'En attente',accent:'linear-gradient(90deg,var(--gold),var(--gold2))',filter:'pending'},
+    {icon:'👰',val:mariee,lbl:'Côté mariée',accent:'linear-gradient(90deg,var(--rose),#E8A0B0)',filter:'mariee'},
+    {icon:'🤵',val:marie,lbl:'Côté marié',accent:'linear-gradient(90deg,var(--sky),#7AAAD4)',filter:'marie'},
+    {icon:'🎂',val:avg||'—',lbl:'Âge moyen',accent:'linear-gradient(90deg,var(--lavender),#B090D0)',filter:'all'},
   ];
   const mWrap=document.getElementById('metrics');
   mWrap.innerHTML=mData.map((m,i)=>`
-    <div class="metric" style="animation-delay:${i*0.06}s">
+    <div class="metric" style="animation-delay:${i*0.06}s;cursor:${m.filter?'pointer':'default'}" onclick="setDashFilter('${m.filter}')" title="Voir les ${m.lbl.toLowerCase()}">
       <div class="metric-accent" style="background:${m.accent}"></div>
       <span class="metric-icon">${m.icon}</span>
       <div class="metric-val" id="mv-${i}">${m.val}</div>
       <div class="metric-lbl">${m.lbl}</div>
+      ${m.filter&&m.filter!=='all'?`<div style="position:absolute;bottom:0.7rem;right:0.8rem;font-size:0.55rem;letter-spacing:0.1em;color:var(--muted2);text-transform:uppercase">Filtrer →</div>`:''}
     </div>`).join('');
   mData.forEach((m,i)=>{if(typeof m.val==='number'){animCount(document.getElementById('mv-'+i),m.val);}});
 
@@ -586,14 +656,14 @@ function renderDash(){
     <div class="ring-stat"><div class="ring-stat-val">${marie}</div><div class="ring-stat-lbl">Côté marié</div></div>`;
 
   const bData=[
-    {lbl:'✅ Présents',count:pres,total:tot,color:'var(--sage)'},
-    {lbl:'❌ Absents',count:abs,total:tot,color:'var(--danger)'},
-    {lbl:'⏳ En attente',count:pen,total:tot,color:'var(--gold)'},
-    {lbl:'👰 Mariée',count:mariee,total:tot,color:'var(--rose)'},
-    {lbl:'🤵 Marié',count:marie,total:tot,color:'var(--sky)'},
+    {lbl:'✅ Présents',count:pres,total:tot,color:'var(--sage)',filter:'present'},
+    {lbl:'❌ Absents',count:abs,total:tot,color:'var(--danger)',filter:'absent'},
+    {lbl:'⏳ En attente',count:pen,total:tot,color:'var(--gold)',filter:'pending'},
+    {lbl:'👰 Mariée',count:mariee,total:tot,color:'var(--rose)',filter:'mariee'},
+    {lbl:'🤵 Marié',count:marie,total:tot,color:'var(--sky)',filter:'marie'},
   ];
   document.getElementById('bar-chart').innerHTML=bData.map(b=>`
-    <div class="bc-row">
+    <div class="bc-row" onclick="setDashFilter('${b.filter}')" style="cursor:pointer;border-radius:6px;padding:3px;transition:background 0.15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
       <div class="bc-lbl">${b.lbl}</div>
       <div class="bc-track"><div class="bc-fill" style="width:0%;background:${b.color}" data-w="${b.total?Math.round(b.count/b.total*100):0}"></div></div>
       <div class="bc-count">${b.count}</div>
@@ -629,6 +699,7 @@ function renderDash(){
       </div>`;
     }).join('');
   }
+  renderDashGuests();
 }
 
 function drawRing(pct){
