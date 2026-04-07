@@ -328,7 +328,7 @@ async function submit(){
   if(btn){btn.disabled=true;btn.textContent='...';}
   try{
     for(const p of people){
-      await insertGuest({prenom:p.prenom,nom:p.nom,age:null,genre:'',type:'',presence:presVal==='maybe'?'pending':presVal,cote:'',via_lien:true});
+      await insertGuest({prenom:p.prenom,nom:p.nom,genre:'',type:'',presence:presVal==='maybe'?'pending':presVal,cote:'',via_lien:true});
     }
   }catch(e){
     toast('Erreur: '+e.message);
