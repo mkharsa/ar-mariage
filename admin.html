@@ -279,8 +279,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div class="charts-row">
       <div class="chart-card">
-        <h3>Âge <small>· distribution</small></h3>
-        <div class="age-bars" id="age-bars"></div>
+        <h3>Profil <small>· adultes & enfants</small></h3>
+        <div class="bar-chart" id="age-bars"></div>
       </div>
       <div class="chart-card">
         <h3>Activité récente <small>· derniers inscrits</small></h3>
@@ -300,6 +300,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <div class="chip"    id="dchip-pending" onclick="dashFilter('pending',this)">⏳ En attente</div>
             <div class="chip"    id="dchip-mariee"  onclick="dashFilter('mariee',this)">👰 Mariée</div>
             <div class="chip"    id="dchip-marie"   onclick="dashFilter('marie',this)">🤵 Marié</div>
+            <div class="chip"    id="dchip-adulte"  onclick="dashFilter('adulte',this)">🧑 Adultes</div>
+            <div class="chip"    id="dchip-enfant"  onclick="dashFilter('enfant',this)">🧒 Enfants</div>
           </div>
         </div>
         <div class="search-bar" style="max-width:220px;flex-shrink:0;">
@@ -424,12 +426,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <h2>Ajouter des invités</h2>
     <div id="modal-rows"></div>
     <button class="btn-add-row" onclick="addRow()">+ Ajouter une personne</button>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:0.4rem">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.8rem;margin-bottom:0.4rem">
       <div class="fgroup" style="margin:0"><label>Présence</label>
         <select id="m-pres"><option value="pending">En attente</option><option value="present">Présent</option><option value="absent">Absent</option></select>
       </div>
       <div class="fgroup" style="margin:0"><label>Côté</label>
         <select id="m-cote"><option value="">—</option><option value="Mariée">Mariée</option><option value="Marié">Marié</option></select>
+      </div>
+      <div class="fgroup" style="margin:0"><label>Profil</label>
+        <select id="m-type"><option value="">—</option><option value="adulte">🧑 Adulte</option><option value="enfant">🧒 Enfant</option></select>
       </div>
     </div>
     <p style="font-size:0.7rem;color:var(--muted);margin-top:0.6rem">Genre & âge optionnels — à compléter dans la liste.</p>
@@ -471,7 +476,7 @@ function showToast(msg){
 
 function openModal(){
   document.getElementById('modal-rows').innerHTML='';rowCount=0;addRow();
-  document.getElementById('m-pres').value='pending';document.getElementById('m-cote').value='';
+  document.getElementById('m-pres').value='pending';document.getElementById('m-cote').value='';document.getElementById('m-type').value='';
   document.getElementById('modal').classList.add('open');
 }
 function closeModal(){document.getElementById('modal').classList.remove('open');}
@@ -490,18 +495,17 @@ function submitModal(){
   if(!rows.length){showToast('Ajoutez au moins une personne');return;}
   const pres=document.getElementById('m-pres').value;
   const cote=document.getElementById('m-cote').value;
+  const type=document.getElementById('m-type').value;
   const g=getG();let added=0;
   rows.forEach(r=>{
     const p=r.querySelector('.rp').value.trim();
     const n=r.querySelector('.rn').value.trim();
-    if(p||n){g.push({id:Date.now()+Math.random(),prenom:p,nom:n,age:null,genre:'',presence:pres,cote,via_lien:false});added++;}
+    if(p||n){g.push({id:Date.now()+Math.random(),prenom:p,nom:n,genre:'',type,presence:pres,cote,via_lien:false});added++;}
   });
   if(!added){showToast('Entrez au moins un nom');return;}
   saveG(g);closeModal();renderGuests();renderDash();updateSbCount();
   showToast(added===1?'Invité ajouté':`${added} invités ajoutés`);
 }
-
-let dashActiveFilter='all';
 
 function dashFilter(v, el){
   dashActiveFilter=v;
@@ -517,11 +521,13 @@ function renderDashGuests(){
     const nm=(x.prenom+' '+x.nom).toLowerCase();
     const matchS=nm.includes(s);
     let matchF=true;
-    if(dashActiveFilter==='present') matchF=x.presence==='present';
-    else if(dashActiveFilter==='absent') matchF=x.presence==='absent';
+    if(dashActiveFilter==='present')  matchF=x.presence==='present';
+    else if(dashActiveFilter==='absent')  matchF=x.presence==='absent';
     else if(dashActiveFilter==='pending') matchF=x.presence==='pending';
-    else if(dashActiveFilter==='mariee') matchF=x.cote==='Mariée';
-    else if(dashActiveFilter==='marie') matchF=x.cote==='Marié';
+    else if(dashActiveFilter==='mariee')  matchF=x.cote==='Mariée';
+    else if(dashActiveFilter==='marie')   matchF=x.cote==='Marié';
+    else if(dashActiveFilter==='adulte')  matchF=x.type==='adulte';
+    else if(dashActiveFilter==='enfant')  matchF=x.type==='enfant';
     return matchS&&matchF;
   });
   const grid=document.getElementById('dash-guest-grid');if(!grid)return;
@@ -534,10 +540,9 @@ function renderDashGuests(){
 function setDashFilter(filterKey){
   dashActiveFilter=filterKey;
   document.querySelectorAll('#dash-chips .chip').forEach(c=>c.classList.remove('on'));
-  const chipMap={all:'dchip-all',present:'dchip-present',absent:'dchip-absent',pending:'dchip-pending',mariee:'dchip-mariee',marie:'dchip-marie'};
+  const chipMap={all:'dchip-all',present:'dchip-present',absent:'dchip-absent',pending:'dchip-pending',mariee:'dchip-mariee',marie:'dchip-marie',adulte:'dchip-adulte',enfant:'dchip-enfant'};
   const target=document.getElementById(chipMap[filterKey]);
   if(target) target.classList.add('on');
-  // Scroll to guest list
   document.querySelector('.dash-guests-card')?.scrollIntoView({behavior:'smooth',block:'start'});
   renderDashGuests();
 }
@@ -564,6 +569,7 @@ function inits(p,n){return((p?p[0]:'')+(n?n[0]:'')).toUpperCase()||'?';}
 function gcCard(g){
   const col=avCol(g.prenom+g.nom);const ini=inits(g.prenom,g.nom);
   const pL=g.presence==='present'?'✅ Présent':g.presence==='absent'?'❌ Absent':'⏳ En attente';
+  const typeLabel=g.type==='enfant'?'🧒 Enfant':g.type==='adulte'?'🧑 Adulte':'';
   return `<div class="guest-card ${g.presence}">
     <div class="gc-avatar" style="background:${col}20;color:${col}">${ini}</div>
     <div class="gc-body">
@@ -574,7 +580,11 @@ function gcCard(g){
           <option value="H" ${g.genre==='H'?'selected':''}>Homme</option>
           <option value="F" ${g.genre==='F'?'selected':''}>Femme</option>
         </select>
-        <input type="number" class="ie-inp" value="${g.age??''}" placeholder="Âge" min="0" max="120" onblur="updG(${g.id},'age',this.value)">
+        <select class="ie-sel" onchange="updG(${g.id},'type',this.value)">
+          <option value="" ${!g.type?'selected':''}>Adulte/Enfant…</option>
+          <option value="adulte" ${g.type==='adulte'?'selected':''}>🧑 Adulte</option>
+          <option value="enfant" ${g.type==='enfant'?'selected':''}>🧒 Enfant</option>
+        </select>
         ${g.cote?`<span style="font-size:0.65rem;color:var(--muted)">${g.cote}</span>`:''}
         ${g.via_lien?'<span class="badge-link">lien</span>':''}
       </div>
@@ -587,7 +597,7 @@ function gcCard(g){
 }
 function updG(id,field,val){
   const g=getG(),it=g.find(x=>x.id===id);if(!it)return;
-  it[field]=field==='age'?(val===''?null:parseInt(val)):val;saveG(g);renderDash();
+  it[field]=val;saveG(g);renderDash();
 }
 function cycleG(id){
   const g=getG(),it=g.find(x=>x.id===id);if(!it)return;
@@ -621,8 +631,8 @@ function renderDash(){
   const F=g.filter(x=>x.genre==='F').length;
   const mariee=g.filter(x=>x.cote==='Mariée').length;
   const marie=g.filter(x=>x.cote==='Marié').length;
-  const wa=g.filter(x=>x.age!=null);
-  const avg=wa.length?Math.round(wa.reduce((s,x)=>s+x.age,0)/wa.length):0;
+  const adultes=g.filter(x=>x.type==='adulte').length;
+  const enfants=g.filter(x=>x.type==='enfant').length;
   updateSbCount();
 
   const mData=[
@@ -632,7 +642,8 @@ function renderDash(){
     {icon:'⏳',val:pen,lbl:'En attente',accent:'linear-gradient(90deg,var(--gold),var(--gold2))',filter:'pending'},
     {icon:'👰',val:mariee,lbl:'Côté mariée',accent:'linear-gradient(90deg,var(--rose),#E8A0B0)',filter:'mariee'},
     {icon:'🤵',val:marie,lbl:'Côté marié',accent:'linear-gradient(90deg,var(--sky),#7AAAD4)',filter:'marie'},
-    {icon:'🎂',val:avg||'—',lbl:'Âge moyen',accent:'linear-gradient(90deg,var(--lavender),#B090D0)',filter:'all'},
+    {icon:'🧑',val:adultes,lbl:'Adultes',accent:'linear-gradient(90deg,var(--lavender),#B090D0)',filter:'adulte'},
+    {icon:'🧒',val:enfants,lbl:'Enfants',accent:'linear-gradient(90deg,var(--gold2),#F0C860)',filter:'enfant'},
   ];
   const mWrap=document.getElementById('metrics');
   mWrap.innerHTML=mData.map((m,i)=>`
@@ -653,7 +664,9 @@ function renderDash(){
     <div class="ring-stat"><div class="ring-stat-val">${responded}</div><div class="ring-stat-lbl">Réponses</div></div>
     <div class="ring-stat"><div class="ring-stat-val">${pen}</div><div class="ring-stat-lbl">En attente</div></div>
     <div class="ring-stat"><div class="ring-stat-val">${mariee}</div><div class="ring-stat-lbl">Côté mariée</div></div>
-    <div class="ring-stat"><div class="ring-stat-val">${marie}</div><div class="ring-stat-lbl">Côté marié</div></div>`;
+    <div class="ring-stat"><div class="ring-stat-val">${marie}</div><div class="ring-stat-lbl">Côté marié</div></div>
+    <div class="ring-stat"><div class="ring-stat-val">${adultes}</div><div class="ring-stat-lbl">Adultes</div></div>
+    <div class="ring-stat"><div class="ring-stat-val">${enfants}</div><div class="ring-stat-lbl">Enfants</div></div>`;
 
   const bData=[
     {lbl:'✅ Présents',count:pres,total:tot,color:'var(--sage)',filter:'present'},
@@ -672,15 +685,21 @@ function renderDash(){
 
   drawDonut(H,F,g.filter(x=>!x.genre).length);
 
-  const buckets=[{l:'0–17',min:0,max:17},{l:'18–29',min:18,max:29},{l:'30–44',min:30,max:44},{l:'45–59',min:45,max:59},{l:'60+',min:60,max:200}];
-  const counts=buckets.map(b=>wa.filter(x=>x.age>=b.min&&x.age<=b.max).length);
-  const maxC=Math.max(...counts,1);
-  document.getElementById('age-bars').innerHTML=counts.map((c,i)=>`
-    <div class="age-bar-wrap">
-      <div class="age-bar" style="height:0px" data-h="${Math.round(c/maxC*80)+4}"></div>
-      <div class="age-bar-lbl">${buckets[i].l}<br>${c}</div>
-    </div>`).join('');
-  setTimeout(()=>{document.querySelectorAll('.age-bar').forEach(b=>{b.style.height=b.dataset.h+'px';});},50);
+  // Adults / children chart
+  const acTotal=adultes+enfants;
+  const acData=[
+    {val:adultes,color:'var(--lavender)',lbl:'Adultes',icon:'🧑'},
+    {val:enfants,color:'var(--gold2)',lbl:'Enfants',icon:'🧒'},
+  ].filter(d=>d.val>0);
+  document.getElementById('age-bars').innerHTML=acData.length===0
+    ?'<p style="font-size:0.82rem;color:var(--muted);padding:1rem 0">Aucune donnée renseignée.</p>'
+    :acData.map(d=>`
+      <div class="bc-row" onclick="setDashFilter('${d.lbl==='Adultes'?'adulte':'enfant'}')" style="cursor:pointer;border-radius:6px;padding:3px;transition:background 0.15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+        <div class="bc-lbl">${d.icon} ${d.lbl}</div>
+        <div class="bc-track"><div class="bc-fill" style="width:0%;background:${d.color}" data-w="${acTotal?Math.round(d.val/acTotal*100):0}"></div></div>
+        <div class="bc-count">${d.val} <span style="font-size:0.65rem;color:var(--muted)">(${acTotal?Math.round(d.val/acTotal*100):0}%)</span></div>
+      </div>`).join('');
+  setTimeout(()=>{document.querySelectorAll('#age-bars .bc-fill').forEach(f=>{f.style.width=f.dataset.w+'%';});},50);
 
   const recent=[...getG()].reverse().slice(0,5);
   const feed=document.getElementById('activity-feed');
