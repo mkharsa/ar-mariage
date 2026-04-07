@@ -995,9 +995,6 @@ function setDashFilter(filterKey){
   renderDashGuests();
 }
 
-</script>
-</body>
-</html>
   const tot=g.length, pres=g.filter(x=>x.presence==='present').length;
   const abs=g.filter(x=>x.presence==='absent').length, pen=g.filter(x=>x.presence==='pending').length;
   const H=g.filter(x=>x.genre==='H').length, F=g.filter(x=>x.genre==='F').length;
@@ -1222,65 +1219,107 @@ document.getElementById('modal').addEventListener('click',e=>{ if(e.target===doc
 
 // Init — clés Supabase intégrées, chargement immédiat
 loadAll();
-</script>
 
-function toggleSidebar(){
-  const sb=document.getElementById('sb');
-  const ov=document.getElementById('sb-overlay');
-  const hb=document.getElementById('hamburger');
-  sb.classList.toggle('open');
-  ov.classList.toggle('open');
-  hb.classList.toggle('open');
-}
-function closeSidebar(){
-  document.getElementById('sb').classList.remove('open');
-  document.getElementById('sb-overlay').classList.remove('open');
-  document.getElementById('hamburger').classList.remove('open');
+// Init — clés Supabase intégrées, chargement immédiat
+
+function animCount(el,target,dur=900){
+  const start=performance.now();
+  function step(now){
+    const p=Math.min((now-start)/dur,1);
+    const ease=1-Math.pow(1-p,3);
+    el.textContent=Math.round(target*ease);
+    if(p<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
 
-function goTo(id,el){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  // Sync sidebar
-  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
-  document.querySelectorAll('.sb-nav .ni').forEach(n=>{
-    if(n.getAttribute('onclick')?.includes("'"+id+"'"))n.classList.add('active');
-  });
-  // Sync bottom nav
-  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
-  const bnTarget=document.getElementById('bn-'+id);
-  if(bnTarget)bnTarget.classList.add('active');
-  const titles={dashboard:'Tableau de bord',guests:'Invités',programme:'Programme',lien:'Hébergement & Lien'};
-  document.getElementById('topbar-title').textContent=titles[id]||id;
-  if(id==='dashboard')renderDash();
-  if(id==='guests')renderGuests();
-  if(id==='programme')renderTimeline();
+function renderDash(){
+  const g=_gCache;
+  const tot=g.length, pres=g.filter(x=>x.presence==='present').length;
+  const abs=g.filter(x=>x.presence==='absent').length, pen=g.filter(x=>x.presence==='pending').length;
+  const H=g.filter(x=>x.genre==='H').length, F=g.filter(x=>x.genre==='F').length;
+  const mariee=g.filter(x=>x.cote==='Mariée').length, marie=g.filter(x=>x.cote==='Marié').length;
+  const adultes=g.filter(x=>x.type==='adulte').length, enfants=g.filter(x=>x.type==='enfant').length;
+  updateSbCount();
+  const mData=[
+    {icon:'💌',val:tot,lbl:'Total invités',accent:'linear-gradient(90deg,var(--rose),var(--rose2))',filter:'all'},
+    {icon:'✅',val:pres,lbl:'Présents',accent:'linear-gradient(90deg,var(--sage),var(--sage2))',filter:'present'},
+    {icon:'❌',val:abs,lbl:'Absents',accent:'linear-gradient(90deg,var(--danger),#E07070)',filter:'absent'},
+    {icon:'⏳',val:pen,lbl:'En attente',accent:'linear-gradient(90deg,var(--gold),var(--gold2))',filter:'pending'},
+    {icon:'👰',val:mariee,lbl:'Côté mariée',accent:'linear-gradient(90deg,var(--rose),#E8A0B0)',filter:'mariee'},
+    {icon:'🤵',val:marie,lbl:'Côté marié',accent:'linear-gradient(90deg,var(--sky),#7AAAD4)',filter:'marie'},
+    {icon:'🧑',val:adultes,lbl:'Adultes',accent:'linear-gradient(90deg,var(--lavender),#B090D0)',filter:'adulte'},
+    {icon:'🧒',val:enfants,lbl:'Enfants',accent:'linear-gradient(90deg,var(--gold2),#F0C860)',filter:'enfant'},
+  ];
+  const mWrap=document.getElementById('metrics');
+  mWrap.innerHTML=mData.map((m,i)=>`
+    <div class="metric" style="animation-delay:${i*0.06}s;cursor:pointer" onclick="setDashFilter('${m.filter}')" title="Filtrer">
+      <div class="metric-accent" style="background:${m.accent}"></div>
+      <span class="metric-icon">${m.icon}</span>
+      <div class="metric-val" id="mv-${i}">0</div>
+      <div class="metric-lbl">${m.lbl}</div>
+      ${m.filter!=='all'?`<div style="position:absolute;bottom:0.7rem;right:0.8rem;font-size:0.52rem;letter-spacing:0.1em;color:var(--muted2);text-transform:uppercase">Filtrer →</div>`:''}
+    </div>`).join('');
+  mData.forEach((m,i)=>{ animCount(document.getElementById('mv-'+i),m.val); });
+  const responded=pres+abs;
+  const pct=responded>0?Math.round(pres/responded*100):0;
+  drawRing(pct);
+  document.getElementById('ring-stats').innerHTML=`
+    <div class="ring-stat"><div class="ring-stat-val">${pct}%</div><div class="ring-stat-lbl">Taux présence</div></div>
+    <div class="ring-stat"><div class="ring-stat-val">${responded}</div><div class="ring-stat-lbl">Réponses</div></div>
+    <div class="ring-stat"><div class="ring-stat-val">${pen}</div><div class="ring-stat-lbl">En attente</div></div>
+    <div class="ring-stat"><div class="ring-stat-val">${mariee}</div><div class="ring-stat-lbl">Côté mariée</div></div>
+    <div class="ring-stat"><div class="ring-stat-val">${marie}</div><div class="ring-stat-lbl">Côté marié</div></div>
+    <div class="ring-stat"><div class="ring-stat-val">${adultes}</div><div class="ring-stat-lbl">Adultes</div></div>
+    <div class="ring-stat"><div class="ring-stat-val">${enfants}</div><div class="ring-stat-lbl">Enfants</div></div>`;
+  const bData=[
+    {lbl:'✅ Présents',count:pres,total:tot,color:'var(--sage)',filter:'present'},
+    {lbl:'❌ Absents',count:abs,total:tot,color:'var(--danger)',filter:'absent'},
+    {lbl:'⏳ En attente',count:pen,total:tot,color:'var(--gold)',filter:'pending'},
+    {lbl:'👰 Mariée',count:mariee,total:tot,color:'var(--rose)',filter:'mariee'},
+    {lbl:'🤵 Marié',count:marie,total:tot,color:'var(--sky)',filter:'marie'},
+  ];
+  document.getElementById('bar-chart').innerHTML=bData.map(b=>`
+    <div class="bc-row" onclick="setDashFilter('${b.filter}')" style="cursor:pointer;border-radius:6px;padding:3px;transition:background 0.15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+      <div class="bc-lbl">${b.lbl}</div>
+      <div class="bc-track"><div class="bc-fill" style="width:0%;background:${b.color}" data-w="${tot?Math.round(b.count/tot*100):0}"></div></div>
+      <div class="bc-count">${b.count}</div>
+    </div>`).join('');
+  setTimeout(()=>{ document.querySelectorAll('.bc-fill').forEach(f=>{ f.style.width=f.dataset.w+'%'; }); },50);
+  drawDonut(H,F,g.filter(x=>!x.genre).length);
+  const acTotal=adultes+enfants;
+  const acData=[{val:adultes,color:'var(--lavender)',lbl:'Adultes',icon:'🧑'},{val:enfants,color:'var(--gold2)',lbl:'Enfants',icon:'🧒'}].filter(d=>d.val>0);
+  document.getElementById('age-bars').innerHTML=acData.length===0
+    ?'<p style="font-size:0.82rem;color:var(--muted);padding:1rem 0">Aucune donnée renseignée.</p>'
+    :acData.map(d=>`
+      <div class="bc-row" onclick="setDashFilter('${d.lbl==='Adultes'?'adulte':'enfant'}')" style="cursor:pointer;border-radius:6px;padding:3px;transition:background 0.15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+        <div class="bc-lbl">${d.icon} ${d.lbl}</div>
+        <div class="bc-track"><div class="bc-fill" style="width:0%;background:${d.color}" data-w="${acTotal?Math.round(d.val/acTotal*100):0}"></div></div>
+        <div class="bc-count">${d.val} <span style="font-size:0.65rem;color:var(--muted)">(${acTotal?Math.round(d.val/acTotal*100):0}%)</span></div>
+      </div>`).join('');
+  setTimeout(()=>{ document.querySelectorAll('#age-bars .bc-fill').forEach(f=>{ f.style.width=f.dataset.w+'%'; }); },50);
+  const recent=[..._gCache].reverse().slice(0,5);
+  const feed=document.getElementById('activity-feed');
+  if(feed){
+    if(!recent.length){ feed.innerHTML='<p style="font-size:0.82rem;color:var(--muted);padding:0.5rem 0">Aucun invité enregistré.</p>'; }
+    else feed.innerHTML=recent.map(g=>{
+      const col=avCol(g.prenom+g.nom);const ini=inits(g.prenom,g.nom);
+      const pL=g.presence==='present'?'✅ Présent':g.presence==='absent'?'❌ Absent':'⏳ En attente';
+      return `<div class="feed-item">
+        <div class="feed-avatar" style="background:${col}20;color:${col}">${ini}</div>
+        <div class="feed-body">
+          <div class="feed-name">${g.prenom} ${g.nom}</div>
+          <div class="feed-meta">${g.via_lien?'Via lien':'Manuel'}${g.cote?' · '+g.cote:''}</div>
+        </div>
+        <span class="feed-badge badge-${g.presence}">${pL}</span>
+      </div>`;
+    }).join('');
+  }
+  renderDashGuests();
 }
 
-function showToast(msg){
-  const t=document.getElementById('toast');
-  if(t.childNodes.length>1)t.removeChild(t.lastChild);
-  t.appendChild(document.createTextNode(' '+msg));
-  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);
-}
-
-function openModal(){
-  document.getElementById('modal-rows').innerHTML='';rowCount=0;addRow();
-  document.getElementById('m-pres').value='pending';document.getElementById('m-cote').value='';document.getElementById('m-type').value='';
-  document.getElementById('modal').classList.add('open');
-}
-function closeModal(){document.getElementById('modal').classList.remove('open');}
-function addRow(){
-  rowCount++;const id='mr-'+rowCount;
-  const c=document.getElementById('modal-rows');
-  const d=document.createElement('div');d.className='person-row';d.id=id;
-  d.innerHTML=`
-    <div class="fgroup" style="margin:0"><label>Prénom</label><input type="text" class="rp" placeholder="Prénom"></div>
-    <div class="fgroup" style="margin:0"><label>Nom</label><input type="text" class="rn" placeholder="Nom"></div>
-    <button class="btn-icon" onclick="document.getElementById('${id}').remove()">✕</button>`;
-  c.appendChild(d);
-}
-
+// Init — clés Supabase intégrées, chargement immédiat
+loadAll();
 </script>
 </body>
 </html>
