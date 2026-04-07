@@ -401,6 +401,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
   </div>
 
+  <!-- CONFIG BANNER -->
+  <div id="cfg-banner" style="display:none;position:sticky;top:60px;z-index:110;background:#FEF3E2;border-bottom:2px solid var(--gold);padding:0.7rem 2rem;align-items:center;gap:1rem;flex-wrap:wrap;">
+    <span style="font-size:0.82rem;color:var(--gold);font-weight:600;">⚠️ Supabase non configuré — les données ne sont pas sauvegardées en ligne.</span>
+    <button class="btn btn-outline" style="font-size:0.65rem;padding:0.38rem 0.9rem" onclick="goTo('lien',document.querySelector('.sb-nav .ni:last-child'))">Configurer maintenant →</button>
+  </div>
+
   <!-- DASHBOARD -->
   <div id="page-dashboard" class="page active">
     <div class="metrics" id="metrics"></div>
@@ -501,8 +507,78 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div id="page-lien" class="page">
     <div style="max-width:720px">
 
+      <!-- SUPABASE CONFIG CARD -->
+      <div class="info-card" style="border:2px solid var(--gold);background:var(--gold-bg)">
+        <h3>🔑 Configuration Supabase <span style="font-size:0.7rem;font-family:'DM Sans';font-style:normal;font-weight:600;background:var(--sage-bg);color:var(--sage);padding:2px 8px;border-radius:20px;margin-left:0.5rem">Obligatoire</span></h3>
+        <p style="font-size:0.84rem;color:var(--text2);line-height:1.7;margin-bottom:1.2rem">
+          Entrez vos clés Supabase pour que les données soient partagées entre tous vos appareils (PC, mobile, tablette) en temps réel.
+        </p>
+        <div style="display:grid;grid-template-columns:1fr;gap:0.8rem;margin-bottom:1rem">
+          <div class="fgroup" style="margin:0">
+            <label>URL du projet Supabase</label>
+            <input type="url" id="cfg-url" placeholder="https://xxxxxxxxxxxx.supabase.co" style="font-family:monospace;font-size:0.82rem">
+          </div>
+          <div class="fgroup" style="margin:0">
+            <label>Clé publique (anon key)</label>
+            <input type="text" id="cfg-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." style="font-family:monospace;font-size:0.72rem">
+          </div>
+        </div>
+        <button class="btn btn-rose" onclick="saveCfgAndLoad()">Connecter à Supabase</button>
+        <p style="font-size:0.72rem;color:var(--muted);margin-top:0.8rem;line-height:1.6">
+          Ces clés sont stockées uniquement dans votre navigateur. La clé <em>anon</em> est publique et sécurisée par les règles RLS de Supabase.
+        </p>
+        <div id="cfg-status" style="margin-top:0.8rem;font-size:0.8rem;color:var(--sage);font-weight:500"></div>
+      </div>
+
       <div class="info-card">
-        <h3>🌐 Où héberger gratuitement ?</h3>
+        <h3>🗄️ Créer les tables Supabase (à faire une seule fois)</h3>
+        <p style="font-size:0.84rem;color:var(--text2);line-height:1.7;margin-bottom:1rem">
+          Dans votre projet Supabase, allez dans <strong>SQL Editor</strong> et exécutez ce script :
+        </p>
+        <div style="background:var(--text);border-radius:10px;padding:1.1rem 1.2rem;margin-bottom:1rem;overflow-x:auto">
+          <pre style="font-family:monospace;font-size:0.75rem;color:#C8D0E0;line-height:1.6;white-space:pre-wrap">-- Table invités
+create table if not exists guests (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamptz default now(),
+  prenom text,
+  nom text,
+  genre text default '',
+  type text default '',
+  presence text default 'pending',
+  cote text default '',
+  via_lien boolean default false
+);
+
+-- Table programme
+create table if not exists events (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamptz default now(),
+  heure text,
+  titre text,
+  desc text default ''
+);
+
+-- Accès public en lecture/écriture (pour les invités)
+alter table guests enable row level security;
+alter table events enable row level security;
+
+create policy "public read guests" on guests for select using (true);
+create policy "public insert guests" on guests for insert with check (true);
+create policy "public update guests" on guests for update using (true);
+create policy "public delete guests" on guests for delete using (true);
+
+create policy "public read events" on events for select using (true);
+create policy "public insert events" on events for insert with check (true);
+create policy "public delete events" on events for delete using (true);</pre>
+        </div>
+        <div class="step-list">
+          <div class="step"><div class="step-num">1</div><div class="step-body">Créez un compte gratuit sur <strong style="color:var(--sage)">supabase.com</strong></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-body">Créez un nouveau projet (choisissez une région proche de vous)</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-body">Allez dans <strong>SQL Editor</strong> → collez et exécutez le script ci-dessus</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-body">Dans <strong>Settings → API</strong>, copiez l'<em>URL</em> et la <em>anon public key</em></div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-body">Collez-les dans le formulaire ci-dessus et cliquez <strong>Connecter</strong></div></div>
+        </div>
+      </div>
         <div class="host-options">
           <div class="host-opt">
             <div class="host-name">Netlify Drop</div>
@@ -618,12 +694,543 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </nav>
 
 <script>
-const SK='mariage_guests',SE='mariage_events';
-const getG=()=>JSON.parse(localStorage.getItem(SK)||'[]');
-const saveG=d=>localStorage.setItem(SK,JSON.stringify(d));
-const getE=()=>JSON.parse(localStorage.getItem(SE)||'[]');
-const saveE=d=>localStorage.setItem(SE,JSON.stringify(d));
-let rowCount=0,activeChip='all';
+/* ═══════════════════════════════════════
+   SUPABASE CONFIG
+   Renseignez vos clés dans la page "Hébergement & Lien"
+   ou directement ici (SUPABASE_URL + SUPABASE_KEY)
+═══════════════════════════════════════ */
+const CFG_KEY = 'mariage_supabase_cfg';
+
+function getCfg(){
+  try{ return JSON.parse(localStorage.getItem(CFG_KEY)||'null'); }catch{ return null; }
+}
+function saveCfg(url,key){ localStorage.setItem(CFG_KEY,JSON.stringify({url:url.replace(/\/$/,''),key})); }
+
+/* ── API helpers ── */
+async function sbFetch(path, opts={}){
+  const cfg=getCfg();
+  if(!cfg) throw new Error('Supabase non configuré');
+  const res=await fetch(cfg.url+'/rest/v1/'+path,{
+    headers:{
+      'apikey':cfg.key,
+      'Authorization':'Bearer '+cfg.key,
+      'Content-Type':'application/json',
+      'Prefer': opts.prefer||'return=representation',
+      ...opts.headers
+    },
+    ...opts
+  });
+  if(!res.ok){const t=await res.text();throw new Error(t);}
+  const txt=await res.text();
+  return txt?JSON.parse(txt):null;
+}
+
+async function getG(){
+  return await sbFetch('guests?order=created_at.asc')|| [];
+}
+async function saveG_insert(guest){
+  return await sbFetch('guests',{method:'POST',body:JSON.stringify(guest)});
+}
+async function saveG_update(id,fields){
+  return await sbFetch(`guests?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(fields),prefer:'return=representation'});
+}
+async function saveG_delete(id){
+  return await sbFetch(`guests?id=eq.${id}`,{method:'DELETE',headers:{'Prefer':'return=minimal'}});
+}
+async function getE(){
+  return await sbFetch('events?order=heure.asc')||[];
+}
+async function saveE_insert(event){
+  return await sbFetch('events',{method:'POST',body:JSON.stringify(event)});
+}
+async function saveE_delete(id){
+  return await sbFetch(`events?id=eq.${id}`,{method:'DELETE',headers:{'Prefer':'return=minimal'}});
+}
+
+/* ── Cache local pour affichage instantané ── */
+let _gCache=[], _eCache=[];
+
+let rowCount=0, activeChip='all', dashActiveFilter='all';
+
+/* ═══ SIDEBAR / NAV ═══ */
+function toggleSidebar(){
+  const sb=document.getElementById('sb');
+  const ov=document.getElementById('sb-overlay');
+  const hb=document.getElementById('hamburger');
+  sb.classList.toggle('open');
+  ov.classList.toggle('open');
+  hb.classList.toggle('open');
+}
+function closeSidebar(){
+  document.getElementById('sb').classList.remove('open');
+  document.getElementById('sb-overlay').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
+}
+
+function goTo(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.sb-nav .ni').forEach(n=>{
+    if(n.getAttribute('onclick')?.includes("'"+id+"'"))n.classList.add('active');
+  });
+  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
+  const bnTarget=document.getElementById('bn-'+id);
+  if(bnTarget)bnTarget.classList.add('active');
+  const titles={dashboard:'Tableau de bord',guests:'Invités',programme:'Programme',lien:'Hébergement & Lien'};
+  document.getElementById('topbar-title').textContent=titles[id]||id;
+  if(id==='dashboard')renderDash();
+  if(id==='guests')renderGuests();
+  if(id==='programme')renderTimeline();
+}
+
+/* ═══ TOAST ═══ */
+function showToast(msg, isError=false){
+  const t=document.getElementById('toast');
+  if(t.childNodes.length>1)t.removeChild(t.lastChild);
+  t.appendChild(document.createTextNode(' '+msg));
+  t.style.borderLeft = isError ? '3px solid var(--danger)' : '3px solid var(--sage)';
+  t.classList.add('show');
+  setTimeout(()=>{ t.classList.remove('show'); t.style.borderLeft=''; },2800);
+}
+
+/* ═══ LOADING STATES ═══ */
+function setLoading(on){
+  document.querySelectorAll('.btn-rose').forEach(b=>{ b.disabled=on; b.style.opacity=on?'0.6':'1'; });
+}
+
+/* ═══ CONFIG CHECK ═══ */
+function checkCfg(){
+  const cfg=getCfg();
+  const banner=document.getElementById('cfg-banner');
+  if(!cfg||!cfg.url||!cfg.key){
+    if(banner) banner.style.display='flex';
+    return false;
+  }
+  if(banner) banner.style.display='none';
+  return true;
+}
+
+async function saveCfgFromForm(){
+  const url=document.getElementById('cfg-url').value.trim();
+  const key=document.getElementById('cfg-key').value.trim();
+  if(!url||!key){ showToast('Renseignez l\'URL et la clé Supabase', true); return; }
+  saveCfg(url,key);
+  showToast('Configuration sauvegardée — chargement…');
+  await loadAll();
+}
+
+/* ═══ LOAD ALL DATA ═══ */
+async function loadAll(){
+  if(!checkCfg()) return;
+  setLoading(true);
+  try{
+    [_gCache, _eCache] = await Promise.all([getG(), getE()]);
+    renderDash();
+    renderGuests();
+    renderTimeline();
+    updateSbCount();
+  }catch(e){
+    showToast('Erreur de connexion Supabase: '+e.message, true);
+    console.error(e);
+  }
+  setLoading(false);
+}
+
+/* ═══ MODAL ═══ */
+function openModal(){
+  document.getElementById('modal-rows').innerHTML='';rowCount=0;addRow();
+  document.getElementById('m-pres').value='pending';
+  document.getElementById('m-cote').value='';
+  document.getElementById('m-type').value='';
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+function addRow(){
+  rowCount++;const id='mr-'+rowCount;
+  const c=document.getElementById('modal-rows');
+  const d=document.createElement('div');d.className='person-row';d.id=id;
+  d.innerHTML=`
+    <div class="fgroup" style="margin:0"><label>Prénom</label><input type="text" class="rp" placeholder="Prénom"></div>
+    <div class="fgroup" style="margin:0"><label>Nom</label><input type="text" class="rn" placeholder="Nom"></div>
+    <button class="btn-icon" onclick="document.getElementById('${id}').remove()">✕</button>`;
+  c.appendChild(d);
+}
+async function submitModal(){
+  const rows=document.querySelectorAll('#modal-rows .person-row');
+  if(!rows.length){ showToast('Ajoutez au moins une personne'); return; }
+  const pres=document.getElementById('m-pres').value;
+  const cote=document.getElementById('m-cote').value;
+  const type=document.getElementById('m-type').value;
+  const toInsert=[];
+  rows.forEach(r=>{
+    const p=r.querySelector('.rp').value.trim();
+    const n=r.querySelector('.rn').value.trim();
+    if(p||n) toInsert.push({prenom:p,nom:n,genre:'',type,presence:pres,cote,via_lien:false});
+  });
+  if(!toInsert.length){ showToast('Entrez au moins un nom'); return; }
+  setLoading(true);
+  try{
+    for(const g of toInsert){ await saveG_insert(g); }
+    closeModal();
+    await loadAll();
+    showToast(toInsert.length===1?'Invité ajouté':`${toInsert.length} invités ajoutés`);
+  }catch(e){ showToast('Erreur: '+e.message,true); }
+  setLoading(false);
+}
+
+/* ═══ GUESTS ═══ */
+function setChip(v,el){
+  activeChip=v;
+  document.querySelectorAll('#page-guests .chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  renderGuests();
+}
+function renderGuests(){
+  const s=(document.getElementById('gsearch')?.value||'').toLowerCase();
+  const list=_gCache.filter(x=>{
+    const nm=(x.prenom+' '+x.nom).toLowerCase();
+    return nm.includes(s)&&(activeChip==='all'||x.presence===activeChip);
+  });
+  const grid=document.getElementById('guest-grid');if(!grid)return;
+  if(!list.length){grid.innerHTML='<div class="guest-empty"><p style="font-size:0.9rem;color:var(--muted)">Aucun invité trouvé.</p></div>';return;}
+  grid.innerHTML=list.map(g=>gcCard(g)).join('');
+}
+const COLS=['#D45C73','#4A7A5A','#C08A20','#4A7AA8','#8A5A8A','#5A7A8A'];
+function avCol(name){let h=0;for(let i=0;i<name.length;i++)h=name.charCodeAt(i)+((h<<5)-h);return COLS[Math.abs(h)%COLS.length];}
+function inits(p,n){return((p?p[0]:'')+(n?n[0]:'')).toUpperCase()||'?';}
+function gcCard(g){
+  const col=avCol(g.prenom+g.nom);const ini=inits(g.prenom,g.nom);
+  const pL=g.presence==='present'?'✅ Présent':g.presence==='absent'?'❌ Absent':'⏳ En attente';
+  return `<div class="guest-card ${g.presence}">
+    <div class="gc-avatar" style="background:${col}20;color:${col}">${ini}</div>
+    <div class="gc-body">
+      <div class="gc-name">${g.prenom} ${g.nom}</div>
+      <div class="gc-meta">
+        <select class="ie-sel" onchange="updG('${g.id}','genre',this.value)">
+          <option value="" ${!g.genre?'selected':''}>Genre…</option>
+          <option value="H" ${g.genre==='H'?'selected':''}>Homme</option>
+          <option value="F" ${g.genre==='F'?'selected':''}>Femme</option>
+        </select>
+        <select class="ie-sel" onchange="updG('${g.id}','type',this.value)">
+          <option value="" ${!g.type?'selected':''}>Adulte/Enfant…</option>
+          <option value="adulte" ${g.type==='adulte'?'selected':''}>🧑 Adulte</option>
+          <option value="enfant" ${g.type==='enfant'?'selected':''}>🧒 Enfant</option>
+        </select>
+        ${g.cote?`<span style="font-size:0.65rem;color:var(--muted)">${g.cote}</span>`:''}
+        ${g.via_lien?'<span class="badge-link">lien</span>':''}
+      </div>
+    </div>
+    <div class="gc-actions">
+      <span class="gc-status badge-${g.presence}" onclick="cycleG('${g.id}')" title="Changer statut">${pL}</span>
+      <button class="btn btn-danger" onclick="delG('${g.id}')">✕</button>
+    </div>
+  </div>`;
+}
+async function updG(id,field,val){
+  // Optimistic update in cache
+  const it=_gCache.find(x=>x.id==id);if(!it)return;
+  it[field]=val;
+  renderDash();renderGuests();renderDashGuests();
+  try{ await saveG_update(id,{[field]:val}); }
+  catch(e){ showToast('Erreur mise à jour: '+e.message,true); await loadAll(); }
+}
+async function cycleG(id){
+  const it=_gCache.find(x=>x.id==id);if(!it)return;
+  const c={pending:'present',present:'absent',absent:'pending'};
+  const newPres=c[it.presence]||'pending';
+  it.presence=newPres;
+  renderGuests();renderDash();updateSbCount();
+  try{ await saveG_update(id,{presence:newPres}); }
+  catch(e){ showToast('Erreur: '+e.message,true); await loadAll(); }
+}
+async function delG(id){
+  if(!confirm('Supprimer cet invité ?'))return;
+  _gCache=_gCache.filter(x=>x.id!=id);
+  renderGuests();renderDash();updateSbCount();
+  try{ await saveG_delete(id); showToast('Supprimé'); }
+  catch(e){ showToast('Erreur: '+e.message,true); await loadAll(); }
+}
+function updateSbCount(){
+  const n=_gCache.length;
+  document.getElementById('sb-count').textContent=n;
+  const sb2=document.getElementById('sb-count2');if(sb2)sb2.textContent=n;
+}
+
+/* ═══ DASHBOARD ═══ */
+function dashFilter(v,el){
+  dashActiveFilter=v;
+  document.querySelectorAll('#dash-chips .chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  renderDashGuests();
+}
+function renderDashGuests(){
+  const s=(document.getElementById('dsearch')?.value||'').toLowerCase();
+  const list=_gCache.filter(x=>{
+    const nm=(x.prenom+' '+x.nom).toLowerCase();
+    const matchS=nm.includes(s);
+    let matchF=true;
+    if(dashActiveFilter==='present')  matchF=x.presence==='present';
+    else if(dashActiveFilter==='absent')  matchF=x.presence==='absent';
+    else if(dashActiveFilter==='pending') matchF=x.presence==='pending';
+    else if(dashActiveFilter==='mariee')  matchF=x.cote==='Mariée';
+    else if(dashActiveFilter==='marie')   matchF=x.cote==='Marié';
+    else if(dashActiveFilter==='adulte')  matchF=x.type==='adulte';
+    else if(dashActiveFilter==='enfant')  matchF=x.type==='enfant';
+    return matchS&&matchF;
+  });
+  const grid=document.getElementById('dash-guest-grid');if(!grid)return;
+  if(!list.length){grid.innerHTML='<div class="guest-empty"><p style="font-size:0.88rem;color:var(--muted)">Aucun invité dans cette catégorie.</p></div>';return;}
+  grid.innerHTML=list.map(g=>gcCard(g)).join('');
+}
+function setDashFilter(filterKey){
+  dashActiveFilter=filterKey;
+  document.querySelectorAll('#dash-chips .chip').forEach(c=>c.classList.remove('on'));
+  const chipMap={all:'dchip-all',present:'dchip-present',absent:'dchip-absent',pending:'dchip-pending',mariee:'dchip-mariee',marie:'dchip-marie',adulte:'dchip-adulte',enfant:'dchip-enfant'};
+  const target=document.getElementById(chipMap[filterKey]);
+  if(target)target.classList.add('on');
+  document.querySelector('.dash-guests-card')?.scrollIntoView({behavior:'smooth',block:'start'});
+  renderDashGuests();
+}
+
+</script>
+</body>
+</html>
+  const tot=g.length, pres=g.filter(x=>x.presence==='present').length;
+  const abs=g.filter(x=>x.presence==='absent').length, pen=g.filter(x=>x.presence==='pending').length;
+  const H=g.filter(x=>x.genre==='H').length, F=g.filter(x=>x.genre==='F').length;
+  const mariee=g.filter(x=>x.cote==='Mariée').length, marie=g.filter(x=>x.cote==='Marié').length;
+  const adultes=g.filter(x=>x.type==='adulte').length, enfants=g.filter(x=>x.type==='enfant').length;
+  updateSbCount();
+
+  const mData=[
+    {icon:'💌',val:tot,lbl:'Total invités',accent:'linear-gradient(90deg,var(--rose),var(--rose2))',filter:'all'},
+    {icon:'✅',val:pres,lbl:'Présents',accent:'linear-gradient(90deg,var(--sage),var(--sage2))',filter:'present'},
+    {icon:'❌',val:abs,lbl:'Absents',accent:'linear-gradient(90deg,var(--danger),#E07070)',filter:'absent'},
+    {icon:'⏳',val:pen,lbl:'En attente',accent:'linear-gradient(90deg,var(--gold),var(--gold2))',filter:'pending'},
+    {icon:'👰',val:mariee,lbl:'Côté mariée',accent:'linear-gradient(90deg,var(--rose),#E8A0B0)',filter:'mariee'},
+    {icon:'🤵',val:marie,lbl:'Côté marié',accent:'linear-gradient(90deg,var(--sky),#7AAAD4)',filter:'marie'},
+    {icon:'🧑',val:adultes,lbl:'Adultes',accent:'linear-gradient(90deg,var(--lavender),#B090D0)',filter:'adulte'},
+    {icon:'🧒',val:enfants,lbl:'Enfants',accent:'linear-gradient(90deg,var(--gold2),#F0C860)',filter:'enfant'},
+  ];
+  const mWrap=document.getElementById('metrics');
+  mWrap.innerHTML=mData.map((m,i)=>`
+    <div class="metric" style="animation-delay:${i*0.06}s;cursor:pointer" onclick="setDashFilter('${m.filter}')" title="Filtrer">
+      <div class="metric-accent" style="background:${m.accent}"></div>
+      <span class="metric-icon">${m.icon}</span>
+      <div class="metric-val" id="mv-${i}">0</div>
+      <div class="metric-lbl">${m.lbl}</div>
+      ${m.filter!=='all'?`<div style="position:absolute;bottom:0.7rem;right:0.8rem;font-size:0.52rem;letter-spacing:0.1em;color:var(--muted2);text-transform:uppercase">Filtrer →</div>`:''}
+    </div>`).join('');
+  mData.forEach((m,i)=>{ animCount(document.getElementById('mv-'+i),m.val); });
+
+  const responded=pres+abs;
+  const pct=responded>0?Math.round(pres/responded*100):0;
+  drawRing(pct);
+  document.getElementById('ring-stats').innerHTML=`
+    <div class="ring-stat"><div class="ring-stat-val">${pct}%</div><div class="ring-stat-lbl">Taux présence</div></div>
+    <div class="ring-stat"><div class="ring-stat-val">${responded}</div><div class="ring-stat-lbl">Réponses</div></div>
+    <div class="ring-stat"><div class="ring-stat-val">${pen}</div><div class="ring-stat-lbl">En attente</div></div>
+    <div class="ring-stat"><div class="ring-stat-val">${mariee}</div><div class="ring-stat-lbl">Côté mariée</div></div>
+    <div class="ring-stat"><div class="ring-stat-val">${marie}</div><div class="ring-stat-lbl">Côté marié</div></div>
+    <div class="ring-stat"><div class="ring-stat-val">${adultes}</div><div class="ring-stat-lbl">Adultes</div></div>
+    <div class="ring-stat"><div class="ring-stat-val">${enfants}</div><div class="ring-stat-lbl">Enfants</div></div>`;
+
+  const bData=[
+    {lbl:'✅ Présents',count:pres,total:tot,color:'var(--sage)',filter:'present'},
+    {lbl:'❌ Absents',count:abs,total:tot,color:'var(--danger)',filter:'absent'},
+    {lbl:'⏳ En attente',count:pen,total:tot,color:'var(--gold)',filter:'pending'},
+    {lbl:'👰 Mariée',count:mariee,total:tot,color:'var(--rose)',filter:'mariee'},
+    {lbl:'🤵 Marié',count:marie,total:tot,color:'var(--sky)',filter:'marie'},
+  ];
+  document.getElementById('bar-chart').innerHTML=bData.map(b=>`
+    <div class="bc-row" onclick="setDashFilter('${b.filter}')" style="cursor:pointer;border-radius:6px;padding:3px;transition:background 0.15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+      <div class="bc-lbl">${b.lbl}</div>
+      <div class="bc-track"><div class="bc-fill" style="width:0%;background:${b.color}" data-w="${tot?Math.round(b.count/tot*100):0}"></div></div>
+      <div class="bc-count">${b.count}</div>
+    </div>`).join('');
+  setTimeout(()=>{ document.querySelectorAll('.bc-fill').forEach(f=>{ f.style.width=f.dataset.w+'%'; }); },50);
+
+  drawDonut(H,F,g.filter(x=>!x.genre).length);
+
+  const acTotal=adultes+enfants;
+  const acData=[{val:adultes,color:'var(--lavender)',lbl:'Adultes',icon:'🧑'},{val:enfants,color:'var(--gold2)',lbl:'Enfants',icon:'🧒'}].filter(d=>d.val>0);
+  document.getElementById('age-bars').innerHTML=acData.length===0
+    ?'<p style="font-size:0.82rem;color:var(--muted);padding:1rem 0">Aucune donnée renseignée.</p>'
+    :acData.map(d=>`
+      <div class="bc-row" onclick="setDashFilter('${d.lbl==='Adultes'?'adulte':'enfant'}')" style="cursor:pointer;border-radius:6px;padding:3px;transition:background 0.15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+        <div class="bc-lbl">${d.icon} ${d.lbl}</div>
+        <div class="bc-track"><div class="bc-fill" style="width:0%;background:${d.color}" data-w="${acTotal?Math.round(d.val/acTotal*100):0}"></div></div>
+        <div class="bc-count">${d.val} <span style="font-size:0.65rem;color:var(--muted)">(${acTotal?Math.round(d.val/acTotal*100):0}%)</span></div>
+      </div>`).join('');
+  setTimeout(()=>{ document.querySelectorAll('#age-bars .bc-fill').forEach(f=>{ f.style.width=f.dataset.w+'%'; }); },50);
+
+  const recent=[..._gCache].reverse().slice(0,5);
+  const feed=document.getElementById('activity-feed');
+  if(feed){
+    if(!recent.length){ feed.innerHTML='<p style="font-size:0.82rem;color:var(--muted);padding:0.5rem 0">Aucun invité enregistré.</p>'; }
+    else feed.innerHTML=recent.map(g=>{
+      const col=avCol(g.prenom+g.nom);const ini=inits(g.prenom,g.nom);
+      const pL=g.presence==='present'?'✅ Présent':g.presence==='absent'?'❌ Absent':'⏳ En attente';
+      return `<div class="feed-item">
+        <div class="feed-avatar" style="background:${col}20;color:${col}">${ini}</div>
+        <div class="feed-body">
+          <div class="feed-name">${g.prenom} ${g.nom}</div>
+          <div class="feed-meta">${g.via_lien?'Via lien':'Manuel'}${g.cote?' · '+g.cote:''}</div>
+        </div>
+        <span class="feed-badge badge-${g.presence}">${pL}</span>
+      </div>`;
+    }).join('');
+  }
+  renderDashGuests();
+}
+
+function drawRing(pct){
+  const cv=document.getElementById('ring-canvas');if(!cv)return;
+  const ctx=cv.getContext('2d');const cx=55,cy=55,r=42,lw=10;let cur=0;
+  function frame(){
+    ctx.clearRect(0,0,110,110);
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle='#EDE8E0';ctx.lineWidth=lw;ctx.stroke();
+    const end=-Math.PI/2+Math.PI*2*(cur/100);
+    ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,end);ctx.strokeStyle='#D45C73';ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();
+    ctx.fillStyle='#1E1A17';ctx.font='bold 16px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(Math.round(cur)+'%',cx,cy);
+    if(cur<pct){cur=Math.min(cur+2,pct);requestAnimationFrame(frame);}
+  }
+  requestAnimationFrame(frame);
+}
+function drawDonut(H,F,none){
+  const cv=document.getElementById('donut-canvas');if(!cv)return;
+  const ctx=cv.getContext('2d');
+  const tot=H+F+none;
+  const data=[{val:H,color:'#4A7AA8',lbl:'Hommes'},{val:F,color:'#D45C73',lbl:'Femmes'},{val:none,color:'#C8BDB5',lbl:'N/A'}].filter(d=>d.val>0);
+  ctx.clearRect(0,0,110,110);
+  if(!tot){
+    ctx.beginPath();ctx.arc(55,55,40,0,Math.PI*2);ctx.fillStyle='#EDE8E0';ctx.fill();
+    document.getElementById('donut-legend').innerHTML='<span style="font-size:0.75rem;color:var(--muted)">Aucune donnée</span>';return;
+  }
+  let anim=0;
+  function frame(){
+    ctx.clearRect(0,0,110,110);let start=-Math.PI/2;
+    data.forEach(d=>{
+      const slice=(d.val/tot)*Math.PI*2*Math.min(anim/100,1);
+      ctx.beginPath();ctx.moveTo(55,55);ctx.arc(55,55,44,start,start+slice);ctx.closePath();
+      ctx.fillStyle=d.color;ctx.fill();start+=slice;
+    });
+    ctx.beginPath();ctx.arc(55,55,26,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+    if(anim<100){anim+=4;requestAnimationFrame(frame);}
+  }
+  requestAnimationFrame(frame);
+  document.getElementById('donut-legend').innerHTML=data.map(d=>`
+    <div class="leg-item"><div class="leg-dot" style="background:${d.color}"></div><div class="leg-lbl">${d.lbl}</div><div class="leg-val">${d.val}</div><div class="leg-pct">${Math.round(d.val/tot*100)}%</div></div>`).join('');
+}
+
+/* ═══ PROGRAMME ═══ */
+async function addEvent(){
+  const h=document.getElementById('p-h').value;
+  const t=document.getElementById('p-t').value.trim();
+  const d=document.getElementById('p-d').value.trim();
+  if(!t){ showToast('Entrez un titre'); return; }
+  setLoading(true);
+  try{
+    await saveE_insert({heure:h,titre:t,desc:d});
+    ['p-h','p-t','p-d'].forEach(id=>document.getElementById(id).value='');
+    _eCache=await getE();
+    renderTimeline();
+    showToast('Moment ajouté');
+  }catch(e){ showToast('Erreur: '+e.message,true); }
+  setLoading(false);
+}
+async function delEvent(id){
+  if(!confirm('Supprimer ?'))return;
+  _eCache=_eCache.filter(e=>e.id!=id);
+  renderTimeline();
+  try{ await saveE_delete(id); }
+  catch(e){ showToast('Erreur: '+e.message,true); _eCache=await getE(); renderTimeline(); }
+}
+function renderTimeline(){
+  const tl=document.getElementById('timeline');if(!tl)return;
+  if(!_eCache.length){ tl.innerHTML='<div class="tl-empty">Aucun moment ajouté.</div>'; return; }
+  tl.innerHTML=_eCache.map(e=>`
+    <div class="tl-item">
+      <div class="tl-row">
+        <div><div class="tl-time">${e.heure||'—'}</div><div class="tl-title">${e.titre}</div>${e.desc?`<div class="tl-desc">${e.desc}</div>`:''}</div>
+        <button class="btn btn-danger" onclick="delEvent('${e.id}')">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+/* ═══ LIEN / EXPORT ═══ */
+function copyLink(){
+  const base=window.location.href.replace('admin.html','');
+  const link=base+'index.html';
+  navigator.clipboard.writeText(link).then(()=>showToast('Lien copié'));
+  document.getElementById('guest-link').textContent=link;
+}
+function exportData(){
+  const data={guests:_gCache,events:_eCache};
+  const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='mariage-data.json';a.click();
+}
+async function importData(e){
+  const f=(e.target.files||[])[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=async ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      setLoading(true);
+      if(data.guests){
+        for(const g of data.guests){
+          const {id,...rest}=g;
+          await saveG_insert(rest);
+        }
+      }
+      if(data.events){
+        for(const ev of data.events){
+          const {id,...rest}=ev;
+          await saveE_insert(rest);
+        }
+      }
+      await loadAll();
+      showToast('Données importées');
+    }catch(err){ showToast('Erreur: '+err.message,true); }
+    setLoading(false);
+  };
+  r.readAsText(f);
+}
+
+async function saveCfgAndLoad(){
+  const url=document.getElementById('cfg-url').value.trim();
+  const key=document.getElementById('cfg-key').value.trim();
+  if(!url||!key){ showToast('Renseignez l\'URL et la clé Supabase', true); return; }
+  saveCfg(url,key);
+  document.getElementById('cfg-status').textContent='Connexion en cours…';
+  try{
+    await loadAll();
+    document.getElementById('cfg-status').textContent='✅ Connecté avec succès — '+_gCache.length+' invité(s) chargé(s)';
+    checkCfg();
+    showToast('Supabase connecté !');
+  }catch(e){
+    document.getElementById('cfg-status').textContent='❌ Erreur : '+e.message;
+    showToast('Erreur de connexion', true);
+  }
+}
+
+document.getElementById('modal').addEventListener('click',e=>{ if(e.target===document.getElementById('modal'))closeModal(); });
+
+// Pre-fill config form if already saved
+const _existingCfg=getCfg();
+if(_existingCfg){
+  const u=document.getElementById('cfg-url');
+  const k=document.getElementById('cfg-key');
+  if(u)u.value=_existingCfg.url||'';
+  if(k)k.value=_existingCfg.key||'';
+}
+
+// Init
+if(_existingCfg){ loadAll(); }
+else{ checkCfg(); renderDash(); }
+</script>
 
 function toggleSidebar(){
   const sb=document.getElementById('sb');

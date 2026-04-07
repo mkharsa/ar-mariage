@@ -181,11 +181,28 @@ footer .ornament{font-size:1rem;color:var(--rose2);display:block;margin-bottom:0
 <div class="toast" id="toast"></div>
 
 <script>
-/* ── SHARED STORAGE (same keys as admin.html) ── */
-const SK='mariage_guests', SE='mariage_events';
-const getG=()=>JSON.parse(localStorage.getItem(SK)||'[]');
-const saveG=d=>localStorage.setItem(SK,JSON.stringify(d));
-const getE=()=>JSON.parse(localStorage.getItem(SE)||'[]');
+/* ── SUPABASE (même config que admin.html) ── */
+const CFG_KEY='mariage_supabase_cfg';
+function getCfg(){try{return JSON.parse(localStorage.getItem(CFG_KEY)||'null');}catch{return null;}}
+
+async function sbFetch(path,opts={}){
+  const cfg=getCfg();
+  if(!cfg)throw new Error('Non configuré');
+  const res=await fetch(cfg.url+'/rest/v1/'+path,{
+    headers:{'apikey':cfg.key,'Authorization':'Bearer '+cfg.key,'Content-Type':'application/json','Prefer':opts.prefer||'return=representation',...(opts.headers||{})},
+    ...opts
+  });
+  if(!res.ok){const t=await res.text();throw new Error(t);}
+  const txt=await res.text();return txt?JSON.parse(txt):null;
+}
+
+async function loadEvents(){
+  try{ return await sbFetch('events?order=heure.asc')||[]; }
+  catch(e){ console.warn('Supabase events error:',e); return []; }
+}
+async function insertGuest(guest){
+  return await sbFetch('guests',{method:'POST',body:JSON.stringify(guest)});
+}
 
 let presVal=null, pCount=0, lang='en';
 
@@ -296,7 +313,7 @@ function reindexPersons(){
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 
-function submit(){
+async function submit(){
   const t=T[lang];
   const blocks=document.querySelectorAll('#person-list .person-block');
   if(!blocks.length){toast(t.toastOne);return;}
@@ -308,9 +325,19 @@ function submit(){
     if(p||n)hasName=true;people.push({prenom:p,nom:n});
   });
   if(!hasName){toast(t.toastName);return;}
-  const g=getG();
-  people.forEach(p=>g.push({id:Date.now()+Math.random(),prenom:p.prenom,nom:p.nom,age:null,genre:'',presence:presVal==='maybe'?'pending':presVal,cote:'',via_lien:true}));
-  saveG(g);
+
+  const btn=document.getElementById('btn-submit');
+  if(btn){btn.disabled=true;btn.textContent='...';}
+  try{
+    for(const p of people){
+      await insertGuest({prenom:p.prenom,nom:p.nom,age:null,genre:'',type:'',presence:presVal==='maybe'?'pending':presVal,cote:'',via_lien:true});
+    }
+  }catch(e){
+    toast('Erreur: '+e.message);
+    if(btn){btn.disabled=false;btn.textContent=T[lang].btnSubmit;}
+    return;
+  }
+
   const names=people.filter(p=>p.prenom||p.nom).map(p=>[p.prenom,p.nom].filter(Boolean).join(' ')).join(' & ');
   const icon=presVal==='present'?'✅':presVal==='maybe'?'🤷‍♂️':'❌';
   const title=presVal==='present'?t.succTitleY:presVal==='maybe'?t.succTitleM:t.succTitleN;
@@ -324,10 +351,10 @@ function submit(){
     </div>`;
 }
 
-function renderProg(){
+async function renderProg(){
   const t=T[lang];
-  const ev=getE();
   const tl=document.getElementById('prog-tl');if(!tl)return;
+  const ev=await loadEvents();
   if(!ev.length){
     tl.innerHTML=`<div class="prog-empty" id="prog-empty">${t.progEmpty}</div>`;return;
   }
