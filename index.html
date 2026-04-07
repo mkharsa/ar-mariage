@@ -181,15 +181,13 @@ footer .ornament{font-size:1rem;color:var(--rose2);display:block;margin-bottom:0
 <div class="toast" id="toast"></div>
 
 <script>
-/* ── SUPABASE (même config que admin.html) ── */
-const CFG_KEY='mariage_supabase_cfg';
-function getCfg(){try{return JSON.parse(localStorage.getItem(CFG_KEY)||'null');}catch{return null;}}
+/* ── SUPABASE — clés intégrées ── */
+const SUPABASE_URL='https://xysemfyhtuvqrzffbnql.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5c2VtZnlodHV2cXJ6ZmZibnFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NjQ1NjAsImV4cCI6MjA5MTE0MDU2MH0.S5iBLIeEr4ULByAjMMdnkFsA7IwP0A4XbOfnOHT-dkU';
 
 async function sbFetch(path,opts={}){
-  const cfg=getCfg();
-  if(!cfg)throw new Error('Non configuré');
-  const res=await fetch(cfg.url+'/rest/v1/'+path,{
-    headers:{'apikey':cfg.key,'Authorization':'Bearer '+cfg.key,'Content-Type':'application/json','Prefer':opts.prefer||'return=representation',...(opts.headers||{})},
+  const res=await fetch(SUPABASE_URL+'/rest/v1/'+path,{
+    headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':opts.prefer||'return=representation',...(opts.headers||{})},
     ...opts
   });
   if(!res.ok){const t=await res.text();throw new Error(t);}

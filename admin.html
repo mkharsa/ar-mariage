@@ -695,14 +695,15 @@ create policy "public delete events" on events for delete using (true);</pre>
 
 <script>
 /* ═══════════════════════════════════════
-   SUPABASE CONFIG
-   Renseignez vos clés dans la page "Hébergement & Lien"
-   ou directement ici (SUPABASE_URL + SUPABASE_KEY)
+   SUPABASE CONFIG — clés intégrées
 ═══════════════════════════════════════ */
 const CFG_KEY = 'mariage_supabase_cfg';
 
+const SUPABASE_URL = 'https://xysemfyhtuvqrzffbnql.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5c2VtZnlodHV2cXJ6ZmZibnFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NjQ1NjAsImV4cCI6MjA5MTE0MDU2MH0.S5iBLIeEr4ULByAjMMdnkFsA7IwP0A4XbOfnOHT-dkU';
+
 function getCfg(){
-  try{ return JSON.parse(localStorage.getItem(CFG_KEY)||'null'); }catch{ return null; }
+  return { url: SUPABASE_URL, key: SUPABASE_KEY };
 }
 function saveCfg(url,key){ localStorage.setItem(CFG_KEY,JSON.stringify({url:url.replace(/\/$/,''),key})); }
 
@@ -1218,18 +1219,8 @@ async function saveCfgAndLoad(){
 
 document.getElementById('modal').addEventListener('click',e=>{ if(e.target===document.getElementById('modal'))closeModal(); });
 
-// Pre-fill config form if already saved
-const _existingCfg=getCfg();
-if(_existingCfg){
-  const u=document.getElementById('cfg-url');
-  const k=document.getElementById('cfg-key');
-  if(u)u.value=_existingCfg.url||'';
-  if(k)k.value=_existingCfg.key||'';
-}
-
-// Init
-if(_existingCfg){ loadAll(); }
-else{ checkCfg(); renderDash(); }
+// Init — clés Supabase intégrées, chargement immédiat
+loadAll();
 </script>
 
 function toggleSidebar(){
