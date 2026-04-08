@@ -162,6 +162,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .badge-H{background:var(--sky-bg);color:var(--sky);}
 .badge-F{background:var(--rose-bg);color:var(--rose);}
 .badge-link{background:#F0EEFF;color:#6050C0;font-size:0.55rem;padding:1px 5px;border-radius:10px;}
+.badge-missing{background:#FFF4D9;color:#B78100;font-size:0.55rem;padding:1px 6px;border-radius:10px;font-weight:700;}
 .ie-sel,.ie-inp{border:1px solid transparent;border-radius:6px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:0.75rem;padding:2px 5px;cursor:pointer;outline:none;background:transparent;transition:all 0.15s;}
 .ie-inp{width:48px;}
 .ie-sel:hover,.ie-inp:hover{border-color:var(--border);background:var(--bg3);}
@@ -457,6 +458,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <div class="chip"    id="dchip-marie"   onclick="dashFilter('marie',this)">🤵 Marié</div>
             <div class="chip"    id="dchip-adulte"  onclick="dashFilter('adulte',this)">🧑 Adultes</div>
             <div class="chip"    id="dchip-enfant"  onclick="dashFilter('enfant',this)">🧒 Enfants</div>
+            <div class="chip"    id="dchip-missing" onclick="dashFilter('missing',this)">⚠️ Infos manquantes</div>
           </div>
         </div>
         <div class="search-bar" style="max-width:220px;flex-shrink:0;">
@@ -481,6 +483,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="chip" id="chip-present" onclick="setChip('present',this)">✅ Présents</div>
         <div class="chip" id="chip-absent" onclick="setChip('absent',this)">❌ Absents</div>
         <div class="chip" id="chip-pending" onclick="setChip('pending',this)">⏳ En attente</div>
+        <div class="chip" id="chip-missing" onclick="setChip('missing',this)">⚠️ Infos manquantes</div>
       </div>
       <button class="btn btn-rose" onclick="openModal()">+ Ajouter</button>
     </div>
@@ -914,11 +917,16 @@ function setChip(v,el){
   el.classList.add('on');
   renderGuests();
 }
+function hasMissingInfo(g){
+  return !String(g.prenom||'').trim() || !String(g.nom||'').trim() || !String(g.genre||'').trim() || !String(g.type||'').trim() || !String(g.cote||'').trim();
+}
 function renderGuests(){
   const s=(document.getElementById('gsearch')?.value||'').toLowerCase();
   const list=_gCache.filter(x=>{
     const nm=(x.prenom+' '+x.nom).toLowerCase();
-    return nm.includes(s)&&(activeChip==='all'||x.presence===activeChip);
+    const matchSearch=nm.includes(s);
+    const matchFilter = activeChip==='all' ? true : activeChip==='missing' ? hasMissingInfo(x) : x.presence===activeChip;
+    return matchSearch && matchFilter;
   });
   const grid=document.getElementById('guest-grid');if(!grid)return;
   if(!list.length){grid.innerHTML='<div class="guest-empty"><p style="font-size:0.9rem;color:var(--muted)">Aucun invité trouvé.</p></div>';return;}
@@ -950,6 +958,7 @@ function gcCard(g){
           <option value="Mariée" ${g.cote==='Mariée'?'selected':''}>👰 Mariée</option>
           <option value="Marié" ${g.cote==='Marié'?'selected':''}>🤵 Marié</option>
         </select>
+        ${hasMissingInfo(g)?'<span class="badge-missing">à compléter</span>':''}
         ${g.via_lien?'<span class="badge-link">lien</span>':''}
       </div>
     </div>
@@ -1009,6 +1018,7 @@ function renderDashGuests(){
     else if(dashActiveFilter==='marie')   matchF=x.cote==='Marié';
     else if(dashActiveFilter==='adulte')  matchF=x.type==='adulte';
     else if(dashActiveFilter==='enfant')  matchF=x.type==='enfant';
+    else if(dashActiveFilter==='missing') matchF=hasMissingInfo(x);
     return matchS&&matchF;
   });
   const grid=document.getElementById('dash-guest-grid');if(!grid)return;
@@ -1018,7 +1028,7 @@ function renderDashGuests(){
 function setDashFilter(filterKey){
   dashActiveFilter=filterKey;
   document.querySelectorAll('#dash-chips .chip').forEach(c=>c.classList.remove('on'));
-  const chipMap={all:'dchip-all',present:'dchip-present',absent:'dchip-absent',pending:'dchip-pending',mariee:'dchip-mariee',marie:'dchip-marie',adulte:'dchip-adulte',enfant:'dchip-enfant'};
+  const chipMap={all:'dchip-all',present:'dchip-present',absent:'dchip-absent',pending:'dchip-pending',mariee:'dchip-mariee',marie:'dchip-marie',adulte:'dchip-adulte',enfant:'dchip-enfant',missing:'dchip-missing'};
   const target=document.getElementById(chipMap[filterKey]);
   if(target)target.classList.add('on');
   document.querySelector('.dash-guests-card')?.scrollIntoView({behavior:'smooth',block:'start'});
@@ -1178,12 +1188,14 @@ function renderDash(){
   const H=g.filter(x=>x.genre==='H').length, F=g.filter(x=>x.genre==='F').length;
   const mariee=g.filter(x=>x.cote==='Mariée').length, marie=g.filter(x=>x.cote==='Marié').length;
   const adultes=g.filter(x=>x.type==='adulte').length, enfants=g.filter(x=>x.type==='enfant').length;
+  const missing=g.filter(x=>hasMissingInfo(x)).length;
   updateSbCount();
   const mData=[
     {icon:'💌',val:tot,lbl:'Total invités',accent:'linear-gradient(90deg,var(--rose),var(--rose2))',filter:'all'},
     {icon:'✅',val:pres,lbl:'Présents',accent:'linear-gradient(90deg,var(--sage),var(--sage2))',filter:'present'},
     {icon:'❌',val:abs,lbl:'Absents',accent:'linear-gradient(90deg,var(--danger),#E07070)',filter:'absent'},
     {icon:'⏳',val:pen,lbl:'En attente',accent:'linear-gradient(90deg,var(--gold),var(--gold2))',filter:'pending'},
+    {icon:'⚠️',val:missing,lbl:'Infos manquantes',accent:'linear-gradient(90deg,#D9A11C,#F0C860)',filter:'missing'},
     {icon:'👰',val:mariee,lbl:'Côté mariée',accent:'linear-gradient(90deg,var(--rose),#E8A0B0)',filter:'mariee'},
     {icon:'🤵',val:marie,lbl:'Côté marié',accent:'linear-gradient(90deg,var(--sky),#7AAAD4)',filter:'marie'},
     {icon:'🧑',val:adultes,lbl:'Adultes',accent:'linear-gradient(90deg,var(--lavender),#B090D0)',filter:'adulte'},
@@ -1206,6 +1218,7 @@ function renderDash(){
     <div class="ring-stat"><div class="ring-stat-val">${pct}%</div><div class="ring-stat-lbl">Taux présence</div></div>
     <div class="ring-stat"><div class="ring-stat-val">${responded}</div><div class="ring-stat-lbl">Réponses</div></div>
     <div class="ring-stat"><div class="ring-stat-val">${pen}</div><div class="ring-stat-lbl">En attente</div></div>
+    <div class="ring-stat"><div class="ring-stat-val">${missing}</div><div class="ring-stat-lbl">À compléter</div></div>
     <div class="ring-stat"><div class="ring-stat-val">${mariee}</div><div class="ring-stat-lbl">Côté mariée</div></div>
     <div class="ring-stat"><div class="ring-stat-val">${marie}</div><div class="ring-stat-lbl">Côté marié</div></div>
     <div class="ring-stat"><div class="ring-stat-val">${adultes}</div><div class="ring-stat-lbl">Adultes</div></div>
@@ -1214,6 +1227,7 @@ function renderDash(){
     {lbl:'✅ Présents',count:pres,total:tot,color:'var(--sage)',filter:'present'},
     {lbl:'❌ Absents',count:abs,total:tot,color:'var(--danger)',filter:'absent'},
     {lbl:'⏳ En attente',count:pen,total:tot,color:'var(--gold)',filter:'pending'},
+    {lbl:'⚠️ À compléter',count:missing,total:tot,color:'#D9A11C',filter:'missing'},
     {lbl:'👰 Mariée',count:mariee,total:tot,color:'var(--rose)',filter:'mariee'},
     {lbl:'🤵 Marié',count:marie,total:tot,color:'var(--sky)',filter:'marie'},
   ];
