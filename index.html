@@ -62,7 +62,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 /* PRESENCE */
 .pres-section{margin-bottom:2rem;}
 .pres-lbl{font-size:0.63rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:0.9rem;}
-.pres-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.8rem;}
+.pres-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;}
 @media(max-width:420px){.pres-grid{grid-template-columns:1fr;}}
 .popt{border:1.5px solid var(--border);border-radius:var(--radius);padding:1.2rem 0.8rem;cursor:pointer;text-align:center;transition:all 0.25s;background:var(--bg2);box-shadow:var(--shadow);}
 .popt:hover{border-color:var(--rose2);background:var(--rose-bg);}
@@ -144,10 +144,6 @@ footer .ornament{font-size:1rem;color:var(--rose2);display:block;margin-bottom:0
           <div class="popt-icon">✅</div>
           <div class="popt-lbl" id="lbl-yes">Attending</div>
         </div>
-        <div class="popt" id="pmaybe" onclick="selPres('maybe')">
-          <div class="popt-icon">🤷‍♂️</div>
-          <div class="popt-lbl" id="lbl-maybe">Maybe</div>
-        </div>
         <div class="popt" id="pno" onclick="selPres('absent')">
           <div class="popt-icon">❌</div>
           <div class="popt-lbl" id="lbl-no">Not attending</div>
@@ -211,7 +207,7 @@ const T={
     eyebrow:'Réponse',formTitle:'Votre participation',
     formLead:'Indiquez votre prénom et nom. Si vous venez accompagné(e).',
     addPerson:'+ Ajouter une personne',presLbl:'Présence de votre groupe',
-    lblYes:'Présent(e)s',lblMaybe:'Peut-être',lblNo:'Absent(e)s',
+    lblYes:'Présent(e)s',lblNo:'Absent(e)s',
     btnSubmit:'Confirmer ma réponse',
     personYou:'Vous',personN:n=>`Personne ${n}`,
     firstName:'Prénom',lastName:'Nom',phFirst:'Votre prénom',phLast:'Votre nom',
@@ -229,7 +225,7 @@ const T={
     eyebrow:'RSVP',formTitle:'Your attendance',
     formLead:'Enter your first and last name. If you are coming with others, add each person in your group.',
     addPerson:'+ Add a person',presLbl:'Attendance for your group',
-    lblYes:'Attending',lblMaybe:'Maybe',lblNo:'Not attending',
+    lblYes:'Attending',lblNo:'Not attending',
     btnSubmit:'Confirm my reply',
     personYou:'You',personN:n=>`Person ${n}`,
     firstName:'First name',lastName:'Last name',phFirst:'Your first name',phLast:'Your last name',
@@ -260,7 +256,7 @@ function applyT(){
   document.getElementById('ft-lead').textContent=t.formLead;
   const bap=document.getElementById('btn-add-person');if(bap)bap.textContent=t.addPerson;
   const pl=document.getElementById('pres-lbl');if(pl)pl.textContent=t.presLbl;
-  ['yes','maybe','no'].forEach(k=>{const el=document.getElementById('lbl-'+k);if(el)el.textContent=k==='yes'?t.lblYes:k==='maybe'?t.lblMaybe:t.lblNo;});
+  ['yes','no'].forEach(k=>{const el=document.getElementById('lbl-'+k);if(el)el.textContent=k==='yes'?t.lblYes:t.lblNo;});
   const bs=document.getElementById('btn-submit');if(bs)bs.textContent=t.btnSubmit;
   document.getElementById('prog-eyebrow').textContent=t.progEyebrow;
   document.getElementById('prog-title').textContent=t.progTitle;
@@ -278,7 +274,6 @@ function applyT(){
 function selPres(v){
   presVal=v;
   document.getElementById('pyes').className='popt'+(v==='present'?' sel-yes':'');
-  document.getElementById('pmaybe').className='popt'+(v==='maybe'?' sel-maybe':'');
   document.getElementById('pno').className='popt'+(v==='absent'?' sel-no':'');
 }
 
@@ -328,7 +323,7 @@ async function submit(){
   if(btn){btn.disabled=true;btn.textContent='...';}
   try{
     for(const p of people){
-      await insertGuest({prenom:p.prenom,nom:p.nom,genre:'',type:'',presence:presVal==='maybe'?'pending':presVal,cote:'',via_lien:true});
+      await insertGuest({prenom:p.prenom,nom:p.nom,genre:'',type:'',presence:presVal,cote:'',via_lien:true});
     }
   }catch(e){
     toast('Erreur: '+e.message);
@@ -337,9 +332,9 @@ async function submit(){
   }
 
   const names=people.filter(p=>p.prenom||p.nom).map(p=>[p.prenom,p.nom].filter(Boolean).join(' ')).join(' & ');
-  const icon=presVal==='present'?'✅':presVal==='maybe'?'🤷‍♂️':'❌';
-  const title=presVal==='present'?t.succTitleY:presVal==='maybe'?t.succTitleM:t.succTitleN;
-  const text=presVal==='present'?t.succTextY:presVal==='maybe'?t.succTextM:t.succTextN;
+  const icon=presVal==='present'?'✅':'❌';
+  const title=presVal==='present'?t.succTitleY:t.succTitleN;
+  const text=presVal==='present'?t.succTextY:t.succTextN;
   document.getElementById('form-content').innerHTML=`
     <div class="success-card">
       <div class="success-icon">${icon}</div>
