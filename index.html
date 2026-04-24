@@ -59,24 +59,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .btn-add-person{width:100%;padding:0.78rem;background:var(--bg2);border:1.5px dashed var(--border2);border-radius:var(--radius);color:var(--sage);font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;font-weight:600;cursor:pointer;transition:all 0.2s;margin-bottom:2rem;box-shadow:var(--shadow);}
 .btn-add-person:hover{border-color:var(--sage2);color:var(--sage2);background:var(--sage-bg);}
 
-/* PRESENCE */
-.pres-section{margin-bottom:2rem;}
-.pres-lbl{font-size:0.63rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:0.9rem;}
-.pres-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;}
-@media(max-width:420px){.pres-grid{grid-template-columns:1fr;}}
-.popt{border:1.5px solid var(--border);border-radius:var(--radius);padding:1.2rem 0.8rem;cursor:pointer;text-align:center;transition:all 0.25s;background:var(--bg2);box-shadow:var(--shadow);}
-.popt:hover{border-color:var(--rose2);background:var(--rose-bg);}
-.popt.sel-yes{border-color:var(--sage);background:var(--sage-bg);box-shadow:0 4px 20px rgba(90,138,106,0.15);}
-.popt.sel-maybe{border-color:var(--gold);background:var(--gold-bg);box-shadow:0 4px 20px rgba(196,146,42,0.15);}
-.popt.sel-no{border-color:var(--rose);background:var(--rose-bg);box-shadow:0 4px 20px rgba(232,99,122,0.15);}
-.popt-icon{font-size:1.6rem;margin-bottom:0.4rem;}
-.popt-lbl{font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:var(--muted);}
-.popt.sel-yes .popt-lbl{color:var(--sage);}
-.popt.sel-maybe .popt-lbl{color:var(--gold);}
-.popt.sel-no .popt-lbl{color:var(--rose);}
+/* Per-person presence selector inside each block */
+.person-pres{display:flex;gap:0.5rem;margin-top:0.9rem;}
+.ppopt{flex:1;border:1.5px solid var(--border);border-radius:10px;padding:0.65rem 0.4rem;cursor:pointer;text-align:center;transition:all 0.2s;background:var(--bg);font-family:'DM Sans',sans-serif;}
+.ppopt:hover{border-color:var(--rose2);}
+.ppopt .ppopt-icon{font-size:1.2rem;display:block;margin-bottom:0.2rem;}
+.ppopt .ppopt-lbl{font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;color:var(--muted);}
+.ppopt.sel-yes{border-color:var(--sage);background:var(--sage-bg);}
+.ppopt.sel-yes .ppopt-lbl{color:var(--sage);}
+.ppopt.sel-no{border-color:var(--rose);background:var(--rose-bg);}
+.ppopt.sel-no .ppopt-lbl{color:var(--rose);}
+.person-block.has-answer{border-color:var(--border2);}
+.person-block.answer-yes{border-left:3px solid var(--sage);}
+.person-block.answer-no{border-left:3px solid var(--rose);}
 
 .btn-submit{width:100%;padding:1rem;background:var(--rose);border:none;border-radius:50px;color:#fff;font-family:'DM Sans',sans-serif;font-size:0.78rem;letter-spacing:0.2em;text-transform:uppercase;font-weight:700;cursor:pointer;transition:all 0.25s;box-shadow:0 6px 24px rgba(232,99,122,0.35);}
 .btn-submit:hover{background:var(--rose2);box-shadow:0 8px 32px rgba(232,99,122,0.45);transform:translateY(-1px);}
+.btn-submit:disabled{opacity:0.5;transform:none;cursor:not-allowed;}
 
 /* SUCCESS */
 .success-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:3rem 2rem;text-align:center;box-shadow:var(--shadow2);}
@@ -137,20 +136,7 @@ footer .ornament{font-size:1rem;color:var(--rose2);display:block;margin-bottom:0
   <div id="form-content">
     <div id="person-list"></div>
     <button class="btn-add-person" id="btn-add-person" onclick="addPerson()">+ Add a person</button>
-    <div class="pres-section">
-      <div class="pres-lbl" id="pres-lbl">Attendance for your group</div>
-      <div class="pres-grid">
-        <div class="popt" id="pyes" onclick="selPres('present')">
-          <div class="popt-icon">✅</div>
-          <div class="popt-lbl" id="lbl-yes">Attending</div>
-        </div>
-        <div class="popt" id="pno" onclick="selPres('absent')">
-          <div class="popt-icon">❌</div>
-          <div class="popt-lbl" id="lbl-no">Not attending</div>
-        </div>
-      </div>
-    </div>
-    <button class="btn-submit" id="btn-submit" onclick="submit()">Confirm my reply</button>
+    <button class="btn-submit" id="btn-submit" onclick="submit()">Confirm all replies</button>
   </div>
 </div>
 
@@ -198,45 +184,43 @@ async function insertGuest(guest){
   return await sbFetch('guests',{method:'POST',body:JSON.stringify(guest)});
 }
 
-let presVal=null, pCount=0, lang='en';
+let pCount=0, lang='en';
 
 /* ── TRANSLATIONS ── */
 const T={
   fr:{
     tagline:'Vous êtes invité(e)',
     eyebrow:'Réponse',formTitle:'Votre participation',
-    formLead:'Indiquez votre prénom et nom. Si vous venez accompagné(e).',
-    addPerson:'+ Ajouter une personne',presLbl:'Présence de votre groupe',
-    lblYes:'Présent(e)s',lblNo:'Absent(e)s',
-    btnSubmit:'Confirmer ma réponse',
+    formLead:'Ajoutez chaque personne de votre groupe et indiquez la présence de chacun.',
+    addPerson:'+ Ajouter une personne',
+    btnSubmit:'Confirmer les réponses',
     personYou:'Vous',personN:n=>`Personne ${n}`,
-    firstName:'Prénom',lastName:'Nom',phFirst:'Votre prénom',phLast:'Votre nom',
+    firstName:'Prénom',lastName:'Nom',phFirst:'Prénom',phLast:'Nom',
+    lblYes:'Présent(e)',lblNo:'Absent(e)',
     progEyebrow:'Journée',progTitle:'Programme',
     progEmpty:'Le programme sera bientôt disponible.',
     footerText:'Avec tout notre amour',
-    toastOne:'Ajoutez au moins une personne.',toastPres:'Indiquez votre présence.',toastName:'Indiquez au moins un prénom ou nom.',
-    succTitleY:'À très bientôt !',succTitleM:'Merci pour votre réponse',succTitleN:'Merci pour votre réponse',
-    succTextY:'Nous sommes heureux de vous compter parmi nous ce jour si particulier.',
-    succTextM:'Votre réponse a bien été enregistrée. Nous espérons vous voir ce jour-là !',
-    succTextN:'Votre réponse a bien été enregistrée. Merci de nous avoir prévenus.',
+    toastName:'Indiquez au moins un prénom ou nom.',
+    toastPres:(n)=>`Indiquez la présence de ${n}.`,
+    succTitle:'Merci !',
+    succText:'Vos réponses ont bien été enregistrées.',
   },
   en:{
     tagline:'You are invited',
     eyebrow:'RSVP',formTitle:'Your attendance',
-    formLead:'Enter your first and last name. If you are coming with others, add each person in your group.',
-    addPerson:'+ Add a person',presLbl:'Attendance for your group',
-    lblYes:'Attending',lblNo:'Not attending',
-    btnSubmit:'Confirm my reply',
+    formLead:'Add each person in your group and indicate attendance for each one.',
+    addPerson:'+ Add a person',
+    btnSubmit:'Confirm all replies',
     personYou:'You',personN:n=>`Person ${n}`,
-    firstName:'First name',lastName:'Last name',phFirst:'Your first name',phLast:'Your last name',
+    firstName:'First name',lastName:'Last name',phFirst:'First name',phLast:'Last name',
+    lblYes:'Attending',lblNo:'Not attending',
     progEyebrow:'The day',progTitle:'Schedule',
     progEmpty:'The schedule will be available soon.',
     footerText:'With all our love',
-    toastOne:'Please add at least one person.',toastPres:'Please indicate your attendance.',toastName:'Please enter at least a name.',
-    succTitleY:'See you soon!',succTitleM:'Thank you for your reply',succTitleN:'Thank you for your reply',
-    succTextY:'We are delighted to have you with us on this very special day.',
-    succTextM:'Your reply has been recorded. We hope to see you on that day!',
-    succTextN:'Your reply has been recorded. Thank you for letting us know.',
+    toastName:'Please enter at least a name.',
+    toastPres:(n)=>`Please indicate attendance for ${n}.`,
+    succTitle:'Thank you!',
+    succText:'Your replies have been recorded.',
   }
 };
 
@@ -245,7 +229,7 @@ function setLang(l,btn){
   document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   document.documentElement.lang=l;
-  applyT();reindexPersons();renderProg();
+  applyT(); renderProg();
 }
 
 function applyT(){
@@ -255,75 +239,122 @@ function applyT(){
   document.getElementById('ft-title').textContent=t.formTitle;
   document.getElementById('ft-lead').textContent=t.formLead;
   const bap=document.getElementById('btn-add-person');if(bap)bap.textContent=t.addPerson;
-  const pl=document.getElementById('pres-lbl');if(pl)pl.textContent=t.presLbl;
-  ['yes','no'].forEach(k=>{const el=document.getElementById('lbl-'+k);if(el)el.textContent=k==='yes'?t.lblYes:t.lblNo;});
   const bs=document.getElementById('btn-submit');if(bs)bs.textContent=t.btnSubmit;
   document.getElementById('prog-eyebrow').textContent=t.progEyebrow;
   document.getElementById('prog-title').textContent=t.progTitle;
   document.getElementById('footer-text').textContent=t.footerText;
-  document.querySelectorAll('#person-list .person-block').forEach(b=>{
+  // Update existing person blocks labels
+  document.querySelectorAll('#person-list .person-block').forEach((b,i)=>{
+    const num=b.querySelector('.person-num');
+    if(num) num.childNodes[0].textContent=i===0?t.personYou:t.personN(i+1);
     const ls=b.querySelectorAll('.fgroup label');
-    const is=b.querySelectorAll('input');
+    const is=b.querySelectorAll('input[type=text]');
     if(ls[0])ls[0].textContent=t.firstName;
     if(ls[1])ls[1].textContent=t.lastName;
     if(is[0])is[0].placeholder=t.phFirst;
     if(is[1])is[1].placeholder=t.phLast;
+    const yes=b.querySelector('.ppopt.yes-btn .ppopt-lbl');
+    const no=b.querySelector('.ppopt.no-btn .ppopt-lbl');
+    if(yes)yes.textContent=t.lblYes;
+    if(no)no.textContent=t.lblNo;
   });
 }
 
-function selPres(v){
-  presVal=v;
-  document.getElementById('pyes').className='popt'+(v==='present'?' sel-yes':'');
-  document.getElementById('pno').className='popt'+(v==='absent'?' sel-no':'');
+function selPersonPres(blockId, val){
+  const block=document.getElementById(blockId);
+  if(!block)return;
+  block.dataset.pres=val;
+  block.querySelector('.ppopt.yes-btn').classList.toggle('sel-yes', val==='present');
+  block.querySelector('.ppopt.no-btn').classList.toggle('sel-no', val==='absent');
+  block.classList.remove('answer-yes','answer-no','has-answer');
+  block.classList.add('has-answer', val==='present'?'answer-yes':'answer-no');
 }
 
 function addPerson(){
   const t=T[lang];
-  pCount++;const id='pb-'+pCount;
+  pCount++;
+  const id='pb-'+pCount;
   const c=document.getElementById('person-list');
   const idx=c.children.length;
-  const d=document.createElement('div');d.className='person-block';d.id=id;
+  const label=idx===0?t.personYou:t.personN(idx+1);
+  const d=document.createElement('div');
+  d.className='person-block';
+  d.id=id;
+  d.dataset.pres='';
   d.innerHTML=`
-    <div class="person-num">${idx===0?t.personYou:t.personN(idx+1)}</div>
+    <div class="person-num"><span>${label}</span></div>
     ${idx>0?`<button class="btn-rm" onclick="removePerson('${id}')">✕</button>`:''}
     <div class="prow">
       <div class="fgroup"><label>${t.firstName}</label><input type="text" class="ip" placeholder="${t.phFirst}"></div>
       <div class="fgroup"><label>${t.lastName}</label><input type="text" class="in_" placeholder="${t.phLast}"></div>
+    </div>
+    <div class="person-pres">
+      <div class="ppopt yes-btn" onclick="selPersonPres('${id}','present')">
+        <span class="ppopt-icon">✅</span>
+        <span class="ppopt-lbl">${t.lblYes}</span>
+      </div>
+      <div class="ppopt no-btn" onclick="selPersonPres('${id}','absent')">
+        <span class="ppopt-icon">❌</span>
+        <span class="ppopt-lbl">${t.lblNo}</span>
+      </div>
     </div>`;
   c.appendChild(d);
 }
 
-function removePerson(id){document.getElementById(id)?.remove();reindexPersons();}
+function removePerson(id){
+  document.getElementById(id)?.remove();
+  reindexPersons();
+}
+
 function reindexPersons(){
   const t=T[lang];
   document.querySelectorAll('#person-list .person-block').forEach((b,i)=>{
-    b.querySelector('.person-num').textContent=i===0?t.personYou:t.personN(i+1);
+    const num=b.querySelector('.person-num span');
+    if(num)num.textContent=i===0?t.personYou:t.personN(i+1);
     const rb=b.querySelector('.btn-rm');
-    if(i===0&&rb)rb.remove();
-    if(i>0&&!rb){const btn=document.createElement('button');btn.className='btn-rm';btn.innerHTML='✕';btn.onclick=()=>removePerson(b.id);b.appendChild(btn);}
+    if(i===0&&rb) rb.remove();
+    if(i>0&&!rb){
+      const btn=document.createElement('button');
+      btn.className='btn-rm';btn.innerHTML='✕';
+      btn.onclick=()=>removePerson(b.id);
+      b.insertBefore(btn,b.querySelector('.prow'));
+    }
   });
 }
 
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
 
 async function submit(){
   const t=T[lang];
-  const blocks=document.querySelectorAll('#person-list .person-block');
-  if(!blocks.length){toast(t.toastOne);return;}
-  if(!presVal){toast(t.toastPres);return;}
-  const people=[];let hasName=false;
-  blocks.forEach(b=>{
+  const blocks=[...document.querySelectorAll('#person-list .person-block')];
+  if(!blocks.length){toast(t.toastName);return;}
+
+  // Validate each block
+  for(const b of blocks){
     const p=b.querySelector('.ip').value.trim();
     const n=b.querySelector('.in_').value.trim();
-    if(p||n)hasName=true;people.push({prenom:p,nom:n});
-  });
-  if(!hasName){toast(t.toastName);return;}
+    if(!p&&!n){toast(t.toastName);b.scrollIntoView({behavior:'smooth',block:'center'});return;}
+    if(!b.dataset.pres){
+      const name=[p,n].filter(Boolean).join(' ')||'…';
+      toast(t.toastPres(name));
+      b.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+  }
 
   const btn=document.getElementById('btn-submit');
   if(btn){btn.disabled=true;btn.textContent='...';}
+
   try{
-    for(const p of people){
-      await insertGuest({prenom:p.prenom,nom:p.nom,genre:'',type:'',presence:presVal,cote:'',via_lien:true});
+    for(const b of blocks){
+      const prenom=b.querySelector('.ip').value.trim();
+      const nom=b.querySelector('.in_').value.trim();
+      const presence=b.dataset.pres;
+      await insertGuest({prenom,nom,genre:'',type:'',presence,cote:'',via_lien:true});
     }
   }catch(e){
     toast('Erreur: '+e.message);
@@ -331,15 +362,17 @@ async function submit(){
     return;
   }
 
-  const names=people.filter(p=>p.prenom||p.nom).map(p=>[p.prenom,p.nom].filter(Boolean).join(' ')).join(' & ');
-  const icon=presVal==='present'?'✅':'❌';
-  const title=presVal==='present'?t.succTitleY:t.succTitleN;
-  const text=presVal==='present'?t.succTextY:t.succTextN;
+  const names=blocks.map(b=>{
+    const p=b.querySelector('.ip').value.trim();
+    const n=b.querySelector('.in_').value.trim();
+    return [p,n].filter(Boolean).join(' ');
+  }).filter(Boolean).join(', ');
+
   document.getElementById('form-content').innerHTML=`
     <div class="success-card">
-      <div class="success-icon">${icon}</div>
-      <div class="success-title">${title}</div>
-      <p class="success-text">${text}</p>
+      <div class="success-icon">💌</div>
+      <div class="success-title">${t.succTitle}</div>
+      <p class="success-text">${t.succText}</p>
       ${names?`<div class="success-names">${names}</div>`:''}
     </div>`;
 }
@@ -361,6 +394,7 @@ async function renderProg(){
 
 // Init
 addPerson();
+applyT();
 renderProg();
 </script>
 </body>
