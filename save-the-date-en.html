@@ -53,13 +53,16 @@ body::before{content:'';position:fixed;inset:0;
 <body>
 <div class="scene">
   <div class="gif-wrap" onclick="go()">
-    <img src="Raoine-et-Aboude-gb.gif" alt="Save the Date — Raoine & Aboudé">
+    <img id="gif" src="" alt="Save the Date — Raoine & Aboudé">
     <div class="progress-bar"><div class="progress-fill"></div></div>
   </div>
   <a class="cta-btn" href="index.html">💌 &nbsp;Confirmer ma présence</a>
   <div class="timer" id="timer">Redirection dans 32 secondes…</div>
 </div>
 <script>
+// Force le GIF à repartir du début à chaque ouverture de la page
+document.getElementById('gif').src = 'Raoine-et-Aboude-gb.gif?t=' + Date.now();
+
 let r=32;
 const el=document.getElementById('timer');
 const iv=setInterval(()=>{
