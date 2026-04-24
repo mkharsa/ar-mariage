@@ -135,7 +135,7 @@ footer .ornament{font-size:1rem;color:var(--rose2);display:block;margin-bottom:0
   </div>
   <div id="form-content">
     <div id="person-list"></div>
-    <button class="btn-add-person" id="btn-add-person" onclick="addPerson()">+ Add a person</button>
+    
     <button class="btn-submit" id="btn-submit" onclick="submit()">Confirm all replies</button>
   </div>
 </div>
@@ -392,15 +392,20 @@ async function renderProg(){
     </div>`).join('');
 }
 
-// Init — lire la langue depuis l'URL (?lang=fr ou ?lang=en)
-const _urlLang = new URLSearchParams(window.location.search).get('lang');
-if(_urlLang === 'fr'){
-  const _frBtn = document.querySelector('.lang-btn[onclick*="fr"]');
-  if(_frBtn) setLang('fr', _frBtn);
-} else {
+// Init — détecter la langue depuis l'URL (?lang=fr ou ?lang=en)
+(function(){
+  const urlLang = new URLSearchParams(window.location.search).get('lang');
+  if(urlLang === 'fr' || urlLang === 'en'){
+    lang = urlLang;
+    document.querySelectorAll('.lang-btn').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('onclick').includes("'" + urlLang + "'"));
+    });
+    document.documentElement.lang = urlLang;
+  }
+  addPerson(); // Afficher le bloc de saisie par défaut
   applyT();
-}
-renderProg();
+  renderProg();
+})();
 </script>
 </body>
 </html>
