@@ -448,7 +448,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="topbar-title" id="topbar-title">Tableau de bord</div>
     </div>
     <div class="topbar-actions">
-      <button class="btn btn-outline" onclick="exportData()">↓ Exporter</button>
+      <button class="btn btn-outline" onclick="exportData()">↓ Exporter Excel</button>
       <button class="btn btn-ghost" onclick="document.getElementById('imp').click()">↑ Importer</button>
       <input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)">
     </div>
@@ -702,7 +702,7 @@ create policy "public delete events" on events for delete using (true);</pre>
         <h3>💾 Sauvegarde des données</h3>
         <p style="font-size:0.84rem;color:var(--muted);margin-bottom:1rem">Exportez ou restaurez invités + programme.</p>
         <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
-          <button class="btn btn-outline" onclick="exportData()">↓ Exporter JSON</button>
+          <button class="btn btn-outline" onclick="exportData()">↓ Exporter Excel</button>
           <button class="btn btn-ghost" onclick="document.getElementById('imp2').click()">↑ Importer JSON</button>
           <input type="file" id="imp2" accept=".json" style="display:none" onchange="importData(event)">
         </div>
@@ -1259,9 +1259,98 @@ function copyLink(){
   document.getElementById('guest-link').textContent=link;
 }
 function exportData(){
-  const data={guests:_gCache,events:_eCache};
-  const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='mariage-data.json';a.click();
+  // ── Build Excel-compatible file using CSV with BOM (opens perfectly in Excel) ──
+  const BOM = '\uFEFF'; // UTF-8 BOM for Excel to detect accents correctly
+
+  // Sheet 1 — Invités
+  const gHeaders = ['Prénom','Nom','Présence','Côté','Genre','Profil','Via lien','Validé','Date ajout'];
+  const presLabel = p => p==='present'?'Présent':p==='absent'?'Absent':'En attente';
+  const gRows = _gCache.map(g => [
+    g.prenom||'',
+    g.nom||'',
+    presLabel(g.presence),
+    g.cote||'',
+    g.genre==='H'?'Homme':g.genre==='F'?'Femme':'',
+    g.type==='adulte'?'Adulte':g.type==='enfant'?'Enfant':'',
+    g.via_lien?'Oui':'Non',
+    g.validated?'Oui':'Non',
+    g.created_at ? new Date(g.created_at).toLocaleDateString('fr-FR') : ''
+  ]);
+
+  const toCSV = (headers, rows) => {
+    const escape = v => {
+      const s = String(v).replace(/"/g,'""');
+      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s}"` : s;
+    };
+    return [headers, ...rows].map(r => r.map(escape).join(',')).join('\r\n');
+  };
+
+  // Stats summary
+  const pres = _gCache.filter(x=>x.presence==='present').length;
+  const abs  = _gCache.filter(x=>x.presence==='absent').length;
+  const pen  = _gCache.filter(x=>x.presence==='pending' || x.presence==='awaiting').length;
+  const present = _gCache.filter(x=>x.presence==='present');
+  const H = present.filter(x=>x.genre==='H').length;
+  const F = present.filter(x=>x.genre==='F').length;
+  const mariee = present.filter(x=>x.cote==='Mariée').length;
+  const marie  = present.filter(x=>x.cote==='Marié').length;
+  const adultes = present.filter(x=>x.type==='adulte').length;
+  const enfants = present.filter(x=>x.type==='enfant').length;
+
+  const statsHeaders = ['Statistique','Valeur'];
+  const statsRows = [
+    ['Total invités', _gCache.length],
+    ['Présents', pres],
+    ['Absents', abs],
+    ['En attente', pen],
+    ['Hommes (présents)', H],
+    ['Femmes (présentes)', F],
+    ['Côté mariée (présents)', mariee],
+    ['Côté marié (présents)', marie],
+    ['Adultes (présents)', adultes],
+    ['Enfants (présents)', enfants],
+    ['Export généré le', new Date().toLocaleDateString('fr-FR') + ' ' + new Date().toLocaleTimeString('fr-FR')]
+  ];
+
+  // Programme
+  const eHeaders = ['Heure','Titre','Description'];
+  const eRows = _eCache.map(e => [e.heure||'', e.titre||'', e.description||'']);
+
+  // Create a multi-sheet workbook using HTML table format (Excel opens it natively)
+  const sheetHTML = `
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8">
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>
+  <x:ExcelWorksheet><x:Name>Invités</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>
+  <x:ExcelWorksheet><x:Name>Statistiques</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>
+  <x:ExcelWorksheet><x:Name>Programme</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>
+</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+</head><body>
+<table>
+  <tr><td colspan="9" style="font-weight:bold;font-size:14pt;background:#D45C73;color:white">✦ Liste des invités — Raoine &amp; Aboudé</td></tr>
+  <tr>${gHeaders.map(h=>`<td style="font-weight:bold;background:#F7F4EF">${h}</td>`).join('')}</tr>
+  ${gRows.map(r=>`<tr>${r.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}
+</table>
+<br>
+<table>
+  <tr><td colspan="2" style="font-weight:bold;font-size:14pt;background:#4A7A5A;color:white">Statistiques</td></tr>
+  <tr>${statsHeaders.map(h=>`<td style="font-weight:bold;background:#F7F4EF">${h}</td>`).join('')}</tr>
+  ${statsRows.map(r=>`<tr>${r.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}
+</table>
+<br>
+<table>
+  <tr><td colspan="3" style="font-weight:bold;font-size:14pt;background:#C08A20;color:white">Programme</td></tr>
+  <tr>${eHeaders.map(h=>`<td style="font-weight:bold;background:#F7F4EF">${h}</td>`).join('')}</tr>
+  ${eRows.map(r=>`<tr>${r.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}
+</table>
+</body></html>`;
+
+  const blob = new Blob([BOM + sheetHTML], {type:'application/vnd.ms-excel;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `mariage-invites-${new Date().toLocaleDateString('fr-FR').replace(/\//g,'-')}.xls`;
+  a.click();
+  showToast('Export Excel téléchargé ✅');
 }
 async function importData(e){
   const f=(e.target.files||[])[0];if(!f)return;
