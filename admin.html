@@ -150,6 +150,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .guest-card.present::before{background:var(--sage);}
 .guest-card.absent::before{background:var(--danger);}
 .guest-card.pending::before{background:var(--gold2);}
+.guest-card.awaiting::before{background:#7B5CF0;}
+
+/* Validation action buttons */
+.btn-approve{background:var(--sage-bg);border:1.5px solid var(--sage);color:var(--sage);font-size:0.6rem;font-weight:700;padding:0.3rem 0.7rem;border-radius:50px;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
+.btn-approve:hover{background:var(--sage);color:#fff;}
+.btn-reject{background:#FEEAEA;border:1.5px solid var(--danger);color:var(--danger);font-size:0.6rem;font-weight:700;padding:0.3rem 0.7rem;border-radius:50px;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif;}
+.btn-reject:hover{background:var(--danger);color:#fff;}
+
+/* Validation banner */
+.validation-banner{background:linear-gradient(135deg,#F0EBFF,#E8E0FF);border:2px solid #7B5CF0;border-radius:var(--r);padding:1.4rem 1.8rem;margin-bottom:1.5rem;display:none;}
+.validation-banner.has-items{display:block;}
+.validation-banner h3{font-family:'Playfair Display',serif;font-size:1rem;font-style:italic;color:#3A1F9C;margin-bottom:0.3rem;display:flex;align-items:center;gap:0.5rem;}
+.validation-banner p{font-size:0.8rem;color:#5A3FC0;margin-bottom:1rem;line-height:1.6;}
+.awaiting-grid{display:flex;flex-direction:column;gap:0.6rem;}
+.awaiting-card{background:#fff;border:1px solid rgba(123,92,240,0.2);border-radius:10px;padding:0.8rem 1rem;display:flex;align-items:center;gap:0.8rem;box-shadow:0 2px 8px rgba(123,92,240,0.08);}
+.awaiting-card .gc-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;background:#EEE8FF;color:#5A3FC0;}
+.awaiting-info{flex:1;min-width:0;}
+.awaiting-name{font-size:0.86rem;font-weight:600;color:var(--text);}
+.awaiting-meta{font-size:0.7rem;color:var(--muted);margin-top:2px;}
+.awaiting-actions{display:flex;gap:0.4rem;flex-shrink:0;}
 .gc-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.82rem;font-weight:700;flex-shrink:0;}
 .gc-body{flex:1;min-width:0;}
 .gc-name{font-size:0.88rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -159,6 +179,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .badge-present{background:var(--sage-bg);color:var(--sage);}
 .badge-absent{background:#FEEAEA;color:var(--danger);}
 .badge-pending{background:var(--gold-bg);color:var(--gold);}
+.badge-awaiting{background:#EEE8FF;color:#5A3FC0;font-weight:700;}
 .badge-H{background:var(--sky-bg);color:var(--sky);}
 .badge-F{background:var(--rose-bg);color:var(--rose);}
 .badge-link{background:#F0EEFF;color:#6050C0;font-size:0.55rem;padding:1px 5px;border-radius:10px;}
@@ -372,6 +393,36 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </style>
 </head>
 <body>
+
+<!-- PASSWORD GATE -->
+<div id="gate" style="
+  position:fixed;inset:0;z-index:9999;
+  background:#F7F4EF;
+  display:flex;align-items:center;justify-content:center;
+">
+  <div style="text-align:center;padding:2rem;">
+    <div style="font-family:'Playfair Display',serif;font-size:1.8rem;font-style:italic;color:#1E1A17;margin-bottom:0.4rem;">✦ Notre Mariage</div>
+    <div style="font-size:0.62rem;letter-spacing:0.25em;text-transform:uppercase;color:#8C8078;margin-bottom:2.5rem;">Administration</div>
+    <div style="background:#fff;border:1px solid #E2D8CE;border-radius:16px;padding:2rem 2.2rem;box-shadow:0 8px 40px rgba(80,50,30,0.1);min-width:280px;">
+      <div style="font-size:0.62rem;letter-spacing:0.2em;text-transform:uppercase;color:#8C8078;margin-bottom:0.5rem;font-weight:600;">Mot de passe</div>
+      <input id="pwd-input" type="password" placeholder="••••••"
+        style="width:100%;padding:0.75rem 1rem;border:1.5px solid #E2D8CE;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:1rem;outline:none;text-align:center;letter-spacing:0.15em;color:#1E1A17;background:#F7F4EF;margin-bottom:0.8rem;"
+        onkeydown="if(event.key==='Enter')checkPwd()"
+        oninput="document.getElementById('pwd-err').style.display='none'"
+      >
+      <div id="pwd-err" style="display:none;font-size:0.75rem;color:#C84040;margin-bottom:0.7rem;">Mot de passe incorrect</div>
+      <button onclick="checkPwd()" style="
+        width:100%;padding:0.75rem;
+        background:#D45C73;color:#fff;border:none;border-radius:50px;
+        font-family:'DM Sans',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;
+        cursor:pointer;transition:background 0.2s;
+      " onmouseover="this.style.background='#E8849A'" onmouseout="this.style.background='#D45C73'">
+        Accéder
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="shell">
 
 <aside class="sb" id="sb">
@@ -411,6 +462,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
   <!-- DASHBOARD -->
   <div id="page-dashboard" class="page active">
+
+    <!-- VALIDATION BANNER -->
+    <div class="validation-banner" id="validation-banner">
+      <h3>🔔 Nouvelles demandes à valider <span id="awaiting-count" style="background:#7B5CF0;color:#fff;font-size:0.65rem;font-family:'DM Sans',sans-serif;font-style:normal;padding:2px 8px;border-radius:20px;"></span></h3>
+      <p>Ces invités ont répondu via le lien partagé. Validez ou refusez leur présence.</p>
+      <div class="awaiting-grid" id="awaiting-grid"></div>
+      <div style="margin-top:0.8rem;display:flex;gap:0.6rem;">
+        <button class="btn btn-rose" style="font-size:0.65rem;padding:0.5rem 1.1rem" onclick="approveAll()">✅ Tout valider</button>
+        <button class="btn btn-ghost" style="font-size:0.65rem;padding:0.5rem 1.1rem" onclick="rejectAll()">🗑 Tout supprimer</button>
+      </div>
+    </div>
+
     <div class="metrics" id="metrics"></div>
     <div class="ring-section">
       <canvas id="ring-canvas" width="110" height="110"></canvas>
@@ -550,7 +613,8 @@ create table if not exists guests (
   type text default '',
   presence text default 'pending',
   cote text default '',
-  via_lien boolean default false
+  via_lien boolean default false,
+  validated boolean default false
 );
 
 -- Table programme
@@ -565,6 +629,9 @@ create table if not exists events (
 -- Accès public en lecture/écriture (pour les invités)
 alter table guests enable row level security;
 alter table events enable row level security;
+
+-- Si la table guests existe déjà, ajoutez la colonne validated :
+-- alter table guests add column if not exists validated boolean default false;
 
 create policy "public read guests" on guests for select using (true);
 create policy "public insert guests" on guests for insert with check (true);
@@ -849,6 +916,77 @@ async function saveCfgFromForm(){
 }
 
 /* ═══ LOAD ALL DATA ═══ */
+/* ═══ VALIDATION DES INVITÉS (via lien) ═══ */
+function renderValidationBanner(){
+  // Invités via lien non encore validés par l'admin
+  const toValidate = _gCache.filter(x => x.via_lien && !x.validated);
+  const banner = document.getElementById('validation-banner');
+  const grid = document.getElementById('awaiting-grid');
+  const count = document.getElementById('awaiting-count');
+  if(!banner || !grid) return;
+  if(!toValidate.length){
+    banner.classList.remove('has-items');
+    return;
+  }
+  banner.classList.add('has-items');
+  count.textContent = toValidate.length;
+  grid.innerHTML = toValidate.map(g => {
+    const ini = ((g.prenom?g.prenom[0]:'') + (g.nom?g.nom[0]:'')).toUpperCase() || '?';
+    const presLabel = g.presence==='present'?'✅ Présent':g.presence==='absent'?'❌ Absent':'⏳ En attente';
+    return `<div class="awaiting-card">
+      <div class="gc-avatar" style="background:#EEE8FF;color:#5A3FC0;">${ini}</div>
+      <div class="awaiting-info">
+        <div class="awaiting-name">${g.prenom || ''} ${g.nom || ''}</div>
+        <div class="awaiting-meta">Via lien · Réponse : ${presLabel}</div>
+      </div>
+      <div class="awaiting-actions">
+        <button class="btn-approve" onclick="approveGuest('${g.id}')">✅ Valider</button>
+        <button class="btn-reject" onclick="rejectGuest('${g.id}')">🗑 Supprimer</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function approveGuest(id){
+  const it = _gCache.find(x => x.id == id); if(!it) return;
+  it.validated = true;
+  renderValidationBanner(); renderDash(); updateSbCount();
+  try{ await saveG_update(id, {validated:true}); showToast('Invité validé ✅'); }
+  catch(e){ showToast('Erreur: '+e.message, true); await loadAll(); }
+}
+
+async function rejectGuest(id){
+  if(!confirm('Supprimer cet invité ?')) return;
+  _gCache = _gCache.filter(x => x.id != id);
+  renderValidationBanner(); renderDash(); renderGuests(); updateSbCount();
+  try{ await saveG_delete(id); showToast('Invité supprimé'); }
+  catch(e){ showToast('Erreur: '+e.message, true); await loadAll(); }
+}
+
+async function approveAll(){
+  const toValidate = _gCache.filter(x => x.via_lien && !x.validated);
+  if(!toValidate.length) return;
+  toValidate.forEach(g => g.validated = true);
+  renderValidationBanner(); renderDash(); updateSbCount();
+  try{
+    for(const g of toValidate) await saveG_update(g.id, {validated:true});
+    showToast(`${toValidate.length} invité(s) validé(s) ✅`);
+  }catch(e){ showToast('Erreur: '+e.message, true); await loadAll(); }
+}
+
+async function rejectAll(){
+  const toValidate = _gCache.filter(x => x.via_lien && !x.validated);
+  if(!toValidate.length) return;
+  if(!confirm(`Supprimer les ${toValidate.length} invité(s) non validé(s) ?`)) return;
+  const ids = toValidate.map(g => g.id);
+  _gCache = _gCache.filter(x => !ids.includes(x.id));
+  renderValidationBanner(); renderDash(); renderGuests(); updateSbCount();
+  try{
+    for(const id of ids) await saveG_delete(id);
+    showToast(`${ids.length} invité(s) supprimé(s)`);
+  }catch(e){ showToast('Erreur: '+e.message, true); await loadAll(); }
+}
+
 async function loadAll(){
   if(!checkCfg()) return;
   setLoading(true);
@@ -858,6 +996,7 @@ async function loadAll(){
     renderGuests();
     renderTimeline();
     updateSbCount();
+    renderValidationBanner();
     return { guests:_gCache, events:_eCache };
   }catch(e){
     showToast('Erreur de connexion Supabase: '+e.message, true);
@@ -918,7 +1057,7 @@ function setChip(v,el){
   renderGuests();
 }
 function hasMissingInfo(g){
-  return !String(g.prenom||'').trim() || !String(g.nom||'').trim() || !String(g.genre||'').trim() || !String(g.type||'').trim() || !String(g.cote||'').trim();
+  return !String(g.prenom||'').trim() || !String(g.nom||'').trim() || !String(g.genre||'').trim() || !String(g.type||'').trim();
 }
 function renderGuests(){
   const s=(document.getElementById('gsearch')?.value||'').toLowerCase();
@@ -1014,6 +1153,7 @@ function renderDashGuests(){
     if(dashActiveFilter==='present')  matchF=x.presence==='present';
     else if(dashActiveFilter==='absent')  matchF=x.presence==='absent';
     else if(dashActiveFilter==='pending') matchF=x.presence==='pending';
+    
     else if(dashActiveFilter==='mariee')  matchF=x.cote==='Mariée';
     else if(dashActiveFilter==='marie')   matchF=x.cote==='Marié';
     else if(dashActiveFilter==='adulte')  matchF=x.type==='adulte';
@@ -1028,7 +1168,6 @@ function renderDashGuests(){
 function setDashFilter(filterKey){
   dashActiveFilter=filterKey;
   document.querySelectorAll('#dash-chips .chip').forEach(c=>c.classList.remove('on'));
-  const chipMap={all:'dchip-all',present:'dchip-present',absent:'dchip-absent',pending:'dchip-pending',mariee:'dchip-mariee',marie:'dchip-marie',adulte:'dchip-adulte',enfant:'dchip-enfant',missing:'dchip-missing'};
   const target=document.getElementById(chipMap[filterKey]);
   if(target)target.classList.add('on');
   document.querySelector('.dash-guests-card')?.scrollIntoView({behavior:'smooth',block:'start'});
@@ -1185,9 +1324,10 @@ function renderDash(){
   const g=_gCache;
   const tot=g.length, pres=g.filter(x=>x.presence==='present').length;
   const abs=g.filter(x=>x.presence==='absent').length, pen=g.filter(x=>x.presence==='pending').length;
-  const H=g.filter(x=>x.genre==='H').length, F=g.filter(x=>x.genre==='F').length;
-  const mariee=g.filter(x=>x.cote==='Mariée').length, marie=g.filter(x=>x.cote==='Marié').length;
-  const adultes=g.filter(x=>x.type==='adulte').length, enfants=g.filter(x=>x.type==='enfant').length;
+  const present = g.filter(x=>x.presence==='present');
+  const H=present.filter(x=>x.genre==='H').length, F=present.filter(x=>x.genre==='F').length;
+  const mariee=present.filter(x=>x.cote==='Mariée').length, marie=present.filter(x=>x.cote==='Marié').length;
+  const adultes=present.filter(x=>x.type==='adulte').length, enfants=present.filter(x=>x.type==='enfant').length;
   const missing=g.filter(x=>hasMissingInfo(x)).length;
   updateSbCount();
   const mData=[
@@ -1299,6 +1439,24 @@ document.addEventListener('visibilitychange', ()=>{
     loadAll().catch(()=>{});
   }
 });
+
+// ── PASSWORD GATE ──
+function checkPwd(){
+  const val = document.getElementById('pwd-input').value;
+  if(val === 'aboudi'){
+    document.getElementById('gate').style.display='none';
+    sessionStorage.setItem('admin_auth','1');
+  } else {
+    document.getElementById('pwd-err').style.display='block';
+    document.getElementById('pwd-input').value='';
+    document.getElementById('pwd-input').focus();
+  }
+}
+if(sessionStorage.getItem('admin_auth')==='1'){
+  document.getElementById('gate').style.display='none';
+} else {
+  setTimeout(()=>document.getElementById('pwd-input').focus(), 150);
+}
 </script>
 </body>
 </html>
