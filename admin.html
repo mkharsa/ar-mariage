@@ -390,6 +390,45 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     justify-content:center;
   }
 }
+
+/* ── BUDGET ── */
+.budget-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.8rem;}
+.bkpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.3rem 1.2rem;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.bkpi-accent{position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0;}
+.bkpi-label{font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:0.4rem;}
+.bkpi-val{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:400;color:var(--text);line-height:1;}
+.bkpi-sub{font-size:0.68rem;color:var(--muted);margin-top:0.3rem;}
+.budget-layout{display:grid;grid-template-columns:1fr 1.2fr;gap:1.4rem;margin-bottom:1.8rem;}
+@media(max-width:800px){.budget-layout{grid-template-columns:1fr;}}
+.budget-form-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;box-shadow:var(--shadow);}
+.budget-form-card h3{font-family:'Playfair Display',serif;font-size:1rem;font-style:italic;color:var(--text);margin-bottom:1.2rem;}
+.budget-initial{background:var(--gold-bg);border:1.5px solid var(--gold);border-radius:var(--r);padding:1.2rem 1.5rem;margin-bottom:1.4rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+.budget-initial label{font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:600;}
+.budget-initial-input{display:flex;align-items:center;gap:0.5rem;}
+.budget-initial-input input{width:130px;padding:0.5rem 0.8rem;border:1.5px solid var(--gold);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:600;color:var(--text);background:#fff;outline:none;text-align:right;}
+.budget-initial-input span{font-weight:600;color:var(--gold);font-size:0.9rem;}
+.budget-progress-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;box-shadow:var(--shadow);}
+.budget-progress-wrap h3{font-family:'Playfair Display',serif;font-size:1rem;font-style:italic;color:var(--text);margin-bottom:1.2rem;}
+.bprog-row{margin-bottom:1.1rem;}
+.bprog-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;}
+.bprog-label{font-size:0.75rem;font-weight:500;color:var(--text2);}
+.bprog-amounts{font-size:0.72rem;color:var(--muted);}
+.bprog-track{height:10px;background:var(--bg3);border-radius:5px;overflow:hidden;}
+.bprog-fill{height:100%;border-radius:5px;transition:width 0.9s cubic-bezier(.4,0,.2,1);}
+.bprog-over{color:var(--danger)!important;font-weight:700;}
+.expense-list{display:flex;flex-direction:column;gap:0.6rem;}
+.expense-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:0.8rem 1rem;display:flex;align-items:center;gap:0.8rem;box-shadow:var(--shadow);transition:all 0.2s;}
+.expense-item:hover{border-color:var(--border2);}
+.expense-cat-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.expense-body{flex:1;min-width:0;}
+.expense-name{font-size:0.86rem;font-weight:500;color:var(--text);}
+.expense-meta{font-size:0.68rem;color:var(--muted);margin-top:2px;}
+.expense-amounts{text-align:right;flex-shrink:0;}
+.expense-prevu{font-size:0.7rem;color:var(--muted);}
+.expense-effectue{font-size:0.88rem;font-weight:600;color:var(--text);}
+.expense-effectue.paid{color:var(--sage);}
+.budget-empty{text-align:center;padding:2.5rem;background:var(--bg2);border:1.5px dashed var(--border2);border-radius:var(--r);font-size:0.85rem;color:var(--muted);}
+@media(max-width:768px){.budget-kpis{grid-template-columns:1fr 1fr;}.bkpi-val{font-size:1.5rem;}}
 </style>
 </head>
 <body>
@@ -434,6 +473,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni active" onclick="goTo('dashboard',this);closeSidebar()"><span class="ni-icon">⬡</span><span>Tableau de bord</span></div>
     <div class="ni" onclick="goTo('guests',this);closeSidebar()"><span class="ni-icon">◇</span><span>Invités</span><span class="ni-badge" id="sb-count">0</span></div>
     <div class="ni" onclick="goTo('programme',this);closeSidebar()"><span class="ni-icon">◆</span><span>Programme</span></div>
+    <div class="ni" onclick="goTo('budget',this);closeSidebar()"><span class="ni-icon">◈</span><span>Budget</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
   <div class="sb-foot">Administration privée</div>
@@ -568,6 +608,81 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="tl" id="timeline"><div class="tl-empty">Aucun moment ajouté.</div></div>
       </div>
     </div>
+  </div>
+
+  <!-- BUDGET -->
+  <div id="page-budget" class="page">
+
+    <!-- Budget initial -->
+    <div class="budget-initial">
+      <label>💰 Budget total prévu</label>
+      <div class="budget-initial-input">
+        <input type="number" id="budget-total-input" placeholder="0" min="0" step="100"
+          onchange="saveBudgetTotal()" onblur="saveBudgetTotal()">
+        <span>€</span>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="budget-kpis" id="budget-kpis"></div>
+
+    <div class="budget-layout">
+
+      <!-- Formulaire ajout dépense -->
+      <div class="budget-form-card">
+        <h3>+ Ajouter une dépense</h3>
+        <div class="fgroup"><label>Libellé</label><input type="text" id="bexp-name" placeholder="ex : Traiteur, Fleurs…"></div>
+        <div class="fgroup"><label>Catégorie</label>
+          <select id="bexp-cat">
+            <option value="Lieu">🏛 Lieu & Réception</option>
+            <option value="Traiteur">🍽 Traiteur & Boissons</option>
+            <option value="Tenue">👗 Tenues & Coiffure</option>
+            <option value="Photo">📸 Photo & Vidéo</option>
+            <option value="Musique">🎵 Musique & Animation</option>
+            <option value="Fleurs">💐 Fleurs & Déco</option>
+            <option value="Papeterie">✉️ Faire-part & Papeterie</option>
+            <option value="Transport">🚗 Transport & Hébergement</option>
+            <option value="Autre">📌 Autre</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem">
+          <div class="fgroup"><label>Montant prévu (€)</label><input type="number" id="bexp-prevu" placeholder="0" min="0"></div>
+          <div class="fgroup"><label>Montant payé (€)</label><input type="number" id="bexp-effectue" placeholder="0" min="0"></div>
+        </div>
+        <div class="fgroup"><label>Note (optionnel)</label><input type="text" id="bexp-note" placeholder="Détails…"></div>
+        <button class="btn btn-rose" style="width:100%;justify-content:center" onclick="addExpense()">Ajouter</button>
+      </div>
+
+      <!-- Barres de progression par catégorie -->
+      <div class="budget-progress-wrap">
+        <h3>Répartition par catégorie</h3>
+        <div id="budget-cat-bars"></div>
+      </div>
+
+    </div>
+
+    <!-- Liste des dépenses -->
+    <div class="budget-form-card">
+      <h3 style="display:flex;justify-content:space-between;align-items:center">
+        <span>Toutes les dépenses</span>
+        <div style="display:flex;gap:0.5rem">
+          <select id="bfilter-cat" onchange="renderBudget()" style="font-size:0.7rem;border:1px solid var(--border);border-radius:8px;padding:0.3rem 0.6rem;background:var(--bg);color:var(--text2);outline:none;">
+            <option value="">Toutes catégories</option>
+            <option value="Lieu">Lieu</option>
+            <option value="Traiteur">Traiteur</option>
+            <option value="Tenue">Tenues</option>
+            <option value="Photo">Photo</option>
+            <option value="Musique">Musique</option>
+            <option value="Fleurs">Fleurs</option>
+            <option value="Papeterie">Papeterie</option>
+            <option value="Transport">Transport</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+      </h3>
+      <div id="expense-list"></div>
+    </div>
+
   </div>
 
   <!-- LIEN & HEBERGEMENT -->
@@ -758,6 +873,9 @@ create policy "public delete events" on events for delete using (true);</pre>
     <button class="bn-item" id="bn-programme" onclick="goTo('programme',this);closeSidebar()">
       <span class="bn-icon">◆</span>Programme
     </button>
+    <button class="bn-item" id="bn-budget" onclick="goTo('budget',this);closeSidebar()">
+      <span class="bn-icon">◈</span>Budget
+    </button>
     <button class="bn-item" id="bn-lien" onclick="goTo('lien',this);closeSidebar()">
       <span class="bn-icon">⊙</span>Lien
     </button>
@@ -872,11 +990,12 @@ function goTo(id,el){
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
   const bnTarget=document.getElementById('bn-'+id);
   if(bnTarget)bnTarget.classList.add('active');
-  const titles={dashboard:'Tableau de bord',guests:'Invités',programme:'Programme',lien:'Hébergement & Lien'};
+  const titles={dashboard:'Tableau de bord',guests:'Invités',programme:'Programme',budget:'Budget',lien:'Hébergement & Lien'};
   document.getElementById('topbar-title').textContent=titles[id]||id;
   if(id==='dashboard')renderDash();
   if(id==='guests')renderGuests();
   if(id==='programme')renderTimeline();
+  if(id==='budget')renderBudget();
 }
 
 /* ═══ TOAST ═══ */
@@ -1529,7 +1648,132 @@ document.addEventListener('visibilitychange', ()=>{
   }
 });
 
-// ── PASSWORD GATE ──
+/* ═══ BUDGET ═══ */
+const BUDGET_KEY = 'mariage_budget';
+const BUDGET_TOTAL_KEY = 'mariage_budget_total';
+
+const CAT_COLORS = {
+  'Lieu':'#D45C73','Traiteur':'#4A7A5A','Tenue':'#7A5AA8','Photo':'#4A7AA8',
+  'Musique':'#C08A20','Fleurs':'#E8849A','Papeterie':'#6A9E7A','Transport':'#5A7A8A','Autre':'#8C8078'
+};
+
+function getExpenses(){ try{ return JSON.parse(localStorage.getItem(BUDGET_KEY)||'[]'); }catch{ return []; } }
+function saveExpenses(d){ localStorage.setItem(BUDGET_KEY, JSON.stringify(d)); }
+function getBudgetTotal(){ return parseFloat(localStorage.getItem(BUDGET_TOTAL_KEY)||'0'); }
+
+function saveBudgetTotal(){
+  const v = parseFloat(document.getElementById('budget-total-input').value)||0;
+  localStorage.setItem(BUDGET_TOTAL_KEY, v);
+  renderBudget();
+}
+
+function addExpense(){
+  const name = document.getElementById('bexp-name').value.trim();
+  const cat  = document.getElementById('bexp-cat').value;
+  const prevu = parseFloat(document.getElementById('bexp-prevu').value)||0;
+  const effectue = parseFloat(document.getElementById('bexp-effectue').value)||0;
+  const note = document.getElementById('bexp-note').value.trim();
+  if(!name){ showToast('Entrez un libellé', true); return; }
+  const expenses = getExpenses();
+  expenses.push({ id: Date.now(), name, cat, prevu, effectue, note, date: new Date().toLocaleDateString('fr-FR') });
+  saveExpenses(expenses);
+  ['bexp-name','bexp-prevu','bexp-effectue','bexp-note'].forEach(id=>document.getElementById(id).value='');
+  renderBudget();
+  showToast('Dépense ajoutée');
+}
+
+function deleteExpense(id){
+  if(!confirm('Supprimer cette dépense ?')) return;
+  saveExpenses(getExpenses().filter(e=>e.id!==id));
+  renderBudget();
+  showToast('Supprimé');
+}
+
+function fmt(n){ return n.toLocaleString('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}); }
+
+function renderBudget(){
+  const expenses = getExpenses();
+  const total = getBudgetTotal();
+  const filterCat = document.getElementById('bfilter-cat')?.value || '';
+
+  // Restore total input
+  const ti = document.getElementById('budget-total-input');
+  if(ti && !ti.value) ti.value = total || '';
+
+  const totalPrevu = expenses.reduce((s,e)=>s+e.prevu, 0);
+  const totalPaye  = expenses.reduce((s,e)=>s+e.effectue, 0);
+  const reste = total - totalPaye;
+  const restePrevu = total - totalPrevu;
+
+  // KPIs
+  const kpis = [
+    { label:'Budget prévu', val: fmt(total), sub: 'Budget initial', color:'linear-gradient(90deg,var(--gold),var(--gold2))' },
+    { label:'Dépenses prévues', val: fmt(totalPrevu), sub: total ? `${Math.round(totalPrevu/total*100)}% du budget` : '', color:'linear-gradient(90deg,var(--sky),#7AAAD4)' },
+    { label:'Déjà payé', val: fmt(totalPaye), sub: total ? `${Math.round(totalPaye/total*100)}% du budget` : '', color:'linear-gradient(90deg,var(--sage),var(--sage2))' },
+    { label:'Reste à payer', val: fmt(Math.max(0,totalPrevu-totalPaye)), sub: 'Sur dépenses prévues', color:'linear-gradient(90deg,var(--rose),var(--rose2))' },
+    { label:'Solde restant', val: fmt(Math.max(0, reste)), sub: reste < 0 ? '⚠️ Budget dépassé !' : 'Après paiements', color: reste < 0 ? 'linear-gradient(90deg,var(--danger),#E07070)' : 'linear-gradient(90deg,var(--lavender),#B090D0)' },
+    { label:'Nb dépenses', val: expenses.length, sub: `${expenses.filter(e=>e.effectue>0).length} payées`, color:'linear-gradient(90deg,var(--gold2),#F0C860)' },
+  ];
+  document.getElementById('budget-kpis').innerHTML = kpis.map(k=>`
+    <div class="bkpi">
+      <div class="bkpi-accent" style="background:${k.color}"></div>
+      <div class="bkpi-label">${k.label}</div>
+      <div class="bkpi-val">${k.val}</div>
+      <div class="bkpi-sub">${k.sub}</div>
+    </div>`).join('');
+
+  // Barres par catégorie
+  const cats = [...new Set(expenses.map(e=>e.cat))];
+  const barsEl = document.getElementById('budget-cat-bars');
+  if(!cats.length){ barsEl.innerHTML='<p style="font-size:0.82rem;color:var(--muted)">Aucune dépense enregistrée.</p>'; }
+  else {
+    barsEl.innerHTML = cats.map(cat => {
+      const items = expenses.filter(e=>e.cat===cat);
+      const cp = items.reduce((s,e)=>s+e.prevu,0);
+      const ce = items.reduce((s,e)=>s+e.effectue,0);
+      const pct = total ? Math.round(cp/total*100) : 0;
+      const pctPaid = cp ? Math.round(ce/cp*100) : 0;
+      const color = CAT_COLORS[cat]||'#8C8078';
+      return `<div class="bprog-row">
+        <div class="bprog-head">
+          <div class="bprog-label" style="display:flex;align-items:center;gap:0.4rem">
+            <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></div>${cat}
+          </div>
+          <div class="bprog-amounts ${ce>cp?'bprog-over':''}">${fmt(ce)} / ${fmt(cp)}</div>
+        </div>
+        <div class="bprog-track"><div class="bprog-fill" style="width:0%;background:${color}" data-w="${Math.min(pctPaid,100)}"></div></div>
+        <div style="font-size:0.62rem;color:var(--muted);margin-top:2px">${pct}% du budget · ${pctPaid}% payé</div>
+      </div>`;
+    }).join('');
+    setTimeout(()=>document.querySelectorAll('#budget-cat-bars .bprog-fill').forEach(f=>f.style.width=f.dataset.w+'%'),50);
+  }
+
+  // Liste dépenses filtrée
+  const filtered = filterCat ? expenses.filter(e=>e.cat===filterCat) : expenses;
+  const listEl = document.getElementById('expense-list');
+  if(!filtered.length){ listEl.innerHTML='<div class="budget-empty">Aucune dépense enregistrée.</div>'; return; }
+  listEl.innerHTML = [...filtered].reverse().map(e => {
+    const color = CAT_COLORS[e.cat]||'#8C8078';
+    return `<div class="expense-item">
+      <div class="expense-cat-dot" style="background:${color}"></div>
+      <div class="expense-body">
+        <div class="expense-name">${e.name}</div>
+        <div class="expense-meta">${e.cat}${e.note?' · '+e.note:''} · ${e.date}</div>
+      </div>
+      <div class="expense-amounts">
+        <div class="expense-prevu">Prévu : ${fmt(e.prevu)}</div>
+        <div class="expense-effectue ${e.effectue>0?'paid':''}">${e.effectue>0?'✓ '+fmt(e.effectue):'Non payé'}</div>
+      </div>
+      <button class="btn btn-danger" onclick="deleteExpense(${e.id})" style="margin-left:0.4rem">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// Charger budget au démarrage
+document.addEventListener('DOMContentLoaded', ()=>{
+  const ti = document.getElementById('budget-total-input');
+  if(ti){ const t = getBudgetTotal(); if(t) ti.value = t; }
+});
 function checkPwd(){
   const val = document.getElementById('pwd-input').value;
   if(val === 'aboudi'){
