@@ -2053,7 +2053,7 @@ function renderBudget(){
       }).join('');
     }
   }
-  const cats = [...new Set(expenses.map(e=>e.cat))];
+  const catsBars = [...new Set(expenses.map(e=>e.cat))];
   const barsEl = document.getElementById('budget-cat-bars');
   if(!cats.length){ barsEl.innerHTML='<p style="font-size:0.82rem;color:var(--muted)">Aucune dépense enregistrée.</p>'; }
   else {
