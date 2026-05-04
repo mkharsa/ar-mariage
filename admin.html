@@ -392,43 +392,114 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 }
 
 /* ── BUDGET ── */
-.budget-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.8rem;}
-.bkpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.3rem 1.2rem;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+
+/* Hero banner */
+.budget-hero{
+  position:relative;overflow:hidden;
+  background:linear-gradient(135deg,#1E1A17 0%,#2E2420 50%,#1E1A17 100%);
+  border-radius:var(--r);margin-bottom:1.6rem;
+  padding:1.8rem 2rem;
+  display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;
+  box-shadow:0 12px 40px rgba(26,20,16,0.22);
+}
+.budget-hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 20% 50%,rgba(212,92,115,0.15) 0%,transparent 60%),
+             radial-gradient(ellipse at 80% 50%,rgba(192,138,32,0.12) 0%,transparent 60%);
+  pointer-events:none;
+}
+.budget-hero-left{position:relative;z-index:1;}
+.budget-hero-label{font-size:0.58rem;letter-spacing:0.28em;text-transform:uppercase;color:rgba(255,255,255,0.4);font-weight:600;margin-bottom:0.4rem;}
+.budget-hero-total{font-family:'Playfair Display',serif;font-size:2.8rem;font-weight:400;color:#fff;line-height:1;}
+.budget-hero-sub{font-size:0.75rem;color:rgba(255,255,255,0.45);margin-top:0.4rem;}
+.budget-hero-right{position:relative;z-index:1;display:flex;align-items:center;gap:0.7rem;}
+.budget-hero-input-wrap{display:flex;align-items:center;gap:0.5rem;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.55rem 0.9rem;backdrop-filter:blur(8px);}
+.budget-hero-input-wrap input{width:120px;background:transparent;border:none;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:600;color:#fff;outline:none;text-align:right;}
+.budget-hero-input-wrap input::placeholder{color:rgba(255,255,255,0.3);}
+.budget-hero-input-wrap span{color:rgba(255,255,255,0.5);font-size:0.85rem;}
+.budget-hero-ring{width:88px;height:88px;flex-shrink:0;}
+
+/* KPI Grid */
+.budget-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.9rem;margin-bottom:1.6rem;}
+.bkpi{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:1.2rem 1.1rem;box-shadow:var(--shadow);position:relative;overflow:hidden;
+  transition:transform 0.2s,box-shadow 0.2s;cursor:default;
+}
+.bkpi:hover{transform:translateY(-3px);box-shadow:var(--shadow2);}
 .bkpi-accent{position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0;}
-.bkpi-label{font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:0.4rem;}
-.bkpi-val{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:400;color:var(--text);line-height:1;}
-.bkpi-sub{font-size:0.68rem;color:var(--muted);margin-top:0.3rem;}
-.budget-layout{display:grid;grid-template-columns:1fr 1.2fr;gap:1.4rem;margin-bottom:1.8rem;}
+.bkpi-glow{position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;opacity:0.06;filter:blur(12px);}
+.bkpi-icon{font-size:1.3rem;margin-bottom:0.35rem;display:block;}
+.bkpi-label{font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:0.3rem;}
+.bkpi-val{font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:400;color:var(--text);line-height:1;}
+.bkpi-sub{font-size:0.65rem;color:var(--muted);margin-top:0.3rem;}
+.bkpi.danger .bkpi-val{color:var(--danger);}
+
+/* Dashboard cards */
+.bdash-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:1.4rem;}
+@media(max-width:900px){.bdash-grid{grid-template-columns:1fr;}}
+.bdash-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.4rem;box-shadow:var(--shadow);overflow:hidden;}
+.bdash-card h4{font-family:'Playfair Display',serif;font-size:0.95rem;font-style:italic;color:var(--text);margin-bottom:1.1rem;display:flex;align-items:center;gap:0.45rem;}
+.bdash-card h4 .bdash-count{font-family:'DM Sans',sans-serif;font-style:normal;font-size:0.6rem;font-weight:700;background:var(--bg3);color:var(--muted);padding:1px 7px;border-radius:20px;margin-left:auto;}
+
+/* Pay method cards */
+.pay-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:0.6rem;margin-bottom:1rem;}
+.pay-card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  padding:0.8rem 0.6rem;text-align:center;transition:all 0.2s;
+}
+.pay-card:hover{border-color:var(--border2);box-shadow:var(--shadow);}
+.pay-card-icon{font-size:1.3rem;margin-bottom:0.25rem;}
+.pay-card-val{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--text);line-height:1.1;}
+.pay-card-label{font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-top:0.15rem;}
+.pay-card-paid{font-size:0.65rem;font-weight:600;margin-top:0.3rem;}
+
+/* Bars */
+.bprog-row{margin-bottom:0.95rem;}
+.bprog-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.35rem;}
+.bprog-label{font-size:0.73rem;font-weight:500;color:var(--text2);}
+.bprog-amounts{font-size:0.7rem;color:var(--muted);}
+.bprog-track{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;}
+.bprog-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.4,0,.2,1);}
+.bprog-over{color:var(--danger)!important;font-weight:700;}
+
+/* Top list */
+.top-item{display:flex;align-items:center;gap:0.75rem;padding:0.7rem 0;border-bottom:1px solid var(--bg3);}
+.top-item:last-child{border-bottom:none;}
+.top-rank{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.68rem;font-weight:700;flex-shrink:0;}
+.top-body{flex:1;min-width:0;}
+.top-name{font-size:0.83rem;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.top-meta{font-size:0.65rem;color:var(--muted);margin-top:1px;}
+.top-amount{font-family:'Playfair Display',serif;font-size:1rem;color:var(--text);flex-shrink:0;text-align:right;}
+.top-bar-wrap{height:3px;background:var(--bg3);border-radius:2px;margin-top:4px;overflow:hidden;}
+.top-bar{height:100%;border-radius:2px;transition:width 1s ease;}
+
+/* Budget layout (form + list) */
+.budget-layout{display:grid;grid-template-columns:1fr 1.2fr;gap:1.4rem;margin-bottom:1.4rem;}
 @media(max-width:800px){.budget-layout{grid-template-columns:1fr;}}
 .budget-form-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;box-shadow:var(--shadow);}
 .budget-form-card h3{font-family:'Playfair Display',serif;font-size:1rem;font-style:italic;color:var(--text);margin-bottom:1.2rem;}
-.budget-initial{background:var(--gold-bg);border:1.5px solid var(--gold);border-radius:var(--r);padding:1.2rem 1.5rem;margin-bottom:1.4rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
-.budget-initial label{font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:600;}
-.budget-initial-input{display:flex;align-items:center;gap:0.5rem;}
-.budget-initial-input input{width:130px;padding:0.5rem 0.8rem;border:1.5px solid var(--gold);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:600;color:var(--text);background:#fff;outline:none;text-align:right;}
-.budget-initial-input span{font-weight:600;color:var(--gold);font-size:0.9rem;}
-.budget-progress-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;box-shadow:var(--shadow);}
-.budget-progress-wrap h3{font-family:'Playfair Display',serif;font-size:1rem;font-style:italic;color:var(--text);margin-bottom:1.2rem;}
-.bprog-row{margin-bottom:1.1rem;}
-.bprog-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.4rem;}
-.bprog-label{font-size:0.75rem;font-weight:500;color:var(--text2);}
-.bprog-amounts{font-size:0.72rem;color:var(--muted);}
-.bprog-track{height:10px;background:var(--bg3);border-radius:5px;overflow:hidden;}
-.bprog-fill{height:100%;border-radius:5px;transition:width 0.9s cubic-bezier(.4,0,.2,1);}
-.bprog-over{color:var(--danger)!important;font-weight:700;}
-.expense-list{display:flex;flex-direction:column;gap:0.6rem;}
-.expense-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:0.8rem 1rem;display:flex;align-items:center;gap:0.8rem;box-shadow:var(--shadow);transition:all 0.2s;}
-.expense-item:hover{border-color:var(--border2);}
-.expense-cat-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+
+/* Expense items */
+.expense-list{display:flex;flex-direction:column;gap:0.55rem;max-height:480px;overflow-y:auto;padding-right:2px;}
+.expense-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:0.8rem 1rem;display:flex;align-items:center;gap:0.8rem;box-shadow:var(--shadow);transition:all 0.2s;animation:fadeIn .3s ease;}
+.expense-item:hover{border-color:var(--rose2);transform:translateX(2px);}
+.expense-cat-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
 .expense-body{flex:1;min-width:0;}
-.expense-name{font-size:0.86rem;font-weight:500;color:var(--text);}
-.expense-meta{font-size:0.68rem;color:var(--muted);margin-top:2px;}
+.expense-name{font-size:0.84rem;font-weight:500;color:var(--text);}
+.expense-meta{font-size:0.66rem;color:var(--muted);margin-top:2px;}
 .expense-amounts{text-align:right;flex-shrink:0;}
-.expense-prevu{font-size:0.7rem;color:var(--muted);}
-.expense-effectue{font-size:0.88rem;font-weight:600;color:var(--text);}
+.expense-prevu{font-size:0.68rem;color:var(--muted);}
+.expense-effectue{font-size:0.85rem;font-weight:600;color:var(--text);}
 .expense-effectue.paid{color:var(--sage);}
 .budget-empty{text-align:center;padding:2.5rem;background:var(--bg2);border:1.5px dashed var(--border2);border-radius:var(--r);font-size:0.85rem;color:var(--muted);}
-@media(max-width:768px){.budget-kpis{grid-template-columns:1fr 1fr;}.bkpi-val{font-size:1.5rem;}}
+
+@media(max-width:768px){
+  .budget-kpis{grid-template-columns:1fr 1fr;}
+  .bkpi-val{font-size:1.4rem;}
+  .budget-hero-total{font-size:2rem;}
+  .bdash-grid{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
@@ -613,39 +684,49 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <!-- BUDGET -->
   <div id="page-budget" class="page">
 
-    <!-- Budget initial -->
-    <div class="budget-initial">
-      <label>💰 Budget total prévu</label>
-      <div class="budget-initial-input">
-        <input type="number" id="budget-total-input" placeholder="0" min="0" step="100"
-          onchange="saveBudgetTotal()" onblur="saveBudgetTotal()">
-        <span>€</span>
+    <!-- HERO BANNER -->
+    <div class="budget-hero">
+      <div class="budget-hero-left">
+        <div class="budget-hero-label">Budget total prévu</div>
+        <div class="budget-hero-total" id="bh-total">— €</div>
+        <div class="budget-hero-sub" id="bh-sub">Définissez votre enveloppe globale</div>
+      </div>
+      <div class="budget-hero-right">
+        <canvas class="budget-hero-ring" id="bh-ring" width="88" height="88"></canvas>
+        <div>
+          <div style="font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:0.4rem">Modifier le budget</div>
+          <div class="budget-hero-input-wrap">
+            <input type="number" id="budget-total-input" placeholder="30 000" min="0" step="100"
+              onchange="saveBudgetTotal()" onblur="saveBudgetTotal()">
+            <span>€</span>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- KPIs globaux -->
+    <!-- KPIs -->
     <div class="budget-kpis" id="budget-kpis"></div>
 
-    <!-- DASHBOARD ROW 1 : Catégories + Moyens de paiement -->
-    <div class="budget-layout" style="margin-bottom:1.4rem;">
-      <div class="budget-progress-wrap">
-        <h3>📊 Répartition par catégorie</h3>
+    <!-- DASHBOARD ROW 1 -->
+    <div class="bdash-grid">
+      <div class="bdash-card">
+        <h4>📊 Par catégorie <span class="bdash-count" id="bdc-count"></span></h4>
         <div id="budget-cat-bars"></div>
       </div>
-      <div class="budget-progress-wrap">
-        <h3>💳 Prévisions par moyen de paiement</h3>
+      <div class="bdash-card">
+        <h4>💳 Par moyen de paiement</h4>
         <div id="budget-pay-dashboard"></div>
       </div>
     </div>
 
-    <!-- DASHBOARD ROW 2 : Payé vs Prévu + Top dépenses -->
-    <div class="budget-layout" style="margin-bottom:1.4rem;">
-      <div class="budget-progress-wrap">
-        <h3>✅ Payé vs Prévu par catégorie</h3>
+    <!-- DASHBOARD ROW 2 -->
+    <div class="bdash-grid">
+      <div class="bdash-card">
+        <h4>✅ Payé vs Prévu</h4>
         <div id="budget-paye-vs-prevu"></div>
       </div>
-      <div class="budget-progress-wrap">
-        <h3>🔝 Top 5 dépenses</h3>
+      <div class="bdash-card">
+        <h4>🔝 Top 5 dépenses</h4>
         <div id="budget-top-depenses"></div>
       </div>
     </div>
@@ -685,7 +766,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           </div>
           <div class="fgroup"><label>Note (optionnel)</label><input type="text" id="bexp-note" placeholder="Détails…"></div>
         </div>
-        <button class="btn btn-rose" style="width:100%;justify-content:center" onclick="addExpense()">Ajouter</button>
+        <button class="btn btn-rose" style="width:100%;justify-content:center" onclick="submitExpense()">Ajouter</button>
         <button id="bexp-cancel" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:0.5rem;display:none" onclick="cancelEditExpense()">✕ Annuler la modification</button>
       </div>
 
@@ -1677,6 +1758,15 @@ document.addEventListener('visibilitychange', ()=>{
 /* ═══ BUDGET ═══ */
 const BUDGET_KEY = 'mariage_budget';
 const BUDGET_TOTAL_KEY = 'mariage_budget_total';
+let _editingExpenseId = null; // null = mode ajout, sinon = mode édition
+
+function submitExpense(){
+  if(_editingExpenseId !== null){
+    updateExpense(_editingExpenseId);
+  } else {
+    addExpense();
+  }
+}
 
 const CAT_COLORS = {
   'Lieu':'#D45C73','Traiteur':'#4A7A5A','Tenue':'#7A5AA8','Photo':'#4A7AA8',
@@ -1741,34 +1831,28 @@ function editExpense(id){
   const e = expenses.find(x=>String(x.id)===String(id));
   if(!e) return;
 
-  // Remplir le formulaire avec les valeurs existantes
+  _editingExpenseId = id;
   document.getElementById('bexp-name').value = e.name;
   document.getElementById('bexp-cat').value = e.cat;
   document.getElementById('bexp-paiement').value = e.paiement||'';
   document.getElementById('bexp-prevu').value = e.prevu;
   document.getElementById('bexp-effectue').value = e.effectue;
   document.getElementById('bexp-note').value = e.note||'';
-
-  // Changer le bouton Ajouter en Mettre à jour
-  const btn = document.querySelector('#page-budget .btn-rose');
-  btn.textContent = '✏️ Mettre à jour';
-  btn.onclick = () => updateExpense(id);
+  document.querySelector('#page-budget .btn-rose').textContent = '✏️ Mettre à jour';
   document.getElementById('bexp-cancel').style.display = 'flex';
-
-  // Scroll vers le formulaire
   document.querySelector('#page-budget .budget-form-card').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 function cancelEditExpense(){
+  _editingExpenseId = null;
   ['bexp-name','bexp-prevu','bexp-effectue','bexp-note'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('bexp-paiement').value='';
-  const btn = document.querySelector('#page-budget .btn-rose');
-  btn.textContent = 'Ajouter';
-  btn.onclick = () => addExpense();
+  document.querySelector('#page-budget .btn-rose').textContent = 'Ajouter';
   document.getElementById('bexp-cancel').style.display = 'none';
 }
 
 function updateExpense(id){
+  const name = document.getElementById('bexp-name').value.trim();
   const cat  = document.getElementById('bexp-cat').value;
   const prevu = parseFloat(document.getElementById('bexp-prevu').value)||0;
   const effectue = parseFloat(document.getElementById('bexp-effectue').value)||0;
@@ -1784,11 +1868,10 @@ function updateExpense(id){
   }
 
   // Reset formulaire
+  _editingExpenseId = null;
   ['bexp-name','bexp-prevu','bexp-effectue','bexp-note'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('bexp-paiement').value='';
-  const btn = document.querySelector('#page-budget .btn-rose');
-  btn.textContent = 'Ajouter';
-  btn.onclick = () => addExpense();
+  document.querySelector('#page-budget .btn-rose').textContent = 'Ajouter';
   document.getElementById('bexp-cancel').style.display = 'none';
 
   renderBudget();
@@ -1809,24 +1892,62 @@ function renderBudget(){
   const totalPrevu = expenses.reduce((s,e)=>s+e.prevu, 0);
   const totalPaye  = expenses.reduce((s,e)=>s+e.effectue, 0);
   const reste = total - totalPaye;
-  const restePrevu = total - totalPrevu;
+  const pctPaye = total > 0 ? Math.round(totalPaye/total*100) : 0;
 
-  // KPIs
+  // ── Hero banner ──
+  const bhTotal = document.getElementById('bh-total');
+  const bhSub   = document.getElementById('bh-sub');
+  if(bhTotal) bhTotal.textContent = total > 0 ? fmt(total) : '— €';
+  if(bhSub)   bhSub.textContent   = total > 0
+    ? `${fmt(totalPaye)} payé · ${fmt(reste > 0 ? reste : 0)} restant`
+    : 'Définissez votre enveloppe globale';
+
+  // ── Animated ring ──
+  const ringEl = document.getElementById('bh-ring');
+  if(ringEl){
+    const ctx = ringEl.getContext('2d');
+    const cx=44,cy=44,r=36,lw=7;
+    let cur=0, target=pctPaye;
+    function drawRingFrame(){
+      ctx.clearRect(0,0,88,88);
+      ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+      ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=lw;ctx.stroke();
+      if(cur>0){
+        const end=-Math.PI/2+Math.PI*2*(cur/100);
+        ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,end);
+        ctx.strokeStyle= reste<0?'#E07070':'#D4AF50';
+        ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();
+      }
+      ctx.fillStyle='#fff';ctx.font='bold 13px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(Math.round(cur)+'%',cx,cy);
+      if(cur<target){cur=Math.min(cur+2,target);requestAnimationFrame(drawRingFrame);}
+    }
+    requestAnimationFrame(drawRingFrame);
+  }
+
+  // ── KPIs ──
   const kpis = [
-    { label:'Budget prévu', val: fmt(total), sub: 'Budget initial', color:'linear-gradient(90deg,var(--gold),var(--gold2))' },
-    { label:'Dépenses prévues', val: fmt(totalPrevu), sub: total ? `${Math.round(totalPrevu/total*100)}% du budget` : '', color:'linear-gradient(90deg,var(--sky),#7AAAD4)' },
-    { label:'Déjà payé', val: fmt(totalPaye), sub: total ? `${Math.round(totalPaye/total*100)}% du budget` : '', color:'linear-gradient(90deg,var(--sage),var(--sage2))' },
-    { label:'Reste à payer', val: fmt(Math.max(0,totalPrevu-totalPaye)), sub: 'Sur dépenses prévues', color:'linear-gradient(90deg,var(--rose),var(--rose2))' },
-    { label:'Solde restant', val: fmt(Math.max(0, reste)), sub: reste < 0 ? '⚠️ Budget dépassé !' : 'Après paiements', color: reste < 0 ? 'linear-gradient(90deg,var(--danger),#E07070)' : 'linear-gradient(90deg,var(--lavender),#B090D0)' },
-    { label:'Nb dépenses', val: expenses.length, sub: `${expenses.filter(e=>e.effectue>0).length} payées`, color:'linear-gradient(90deg,var(--gold2),#F0C860)' },
+    { icon:'💰', label:'Budget total', val: fmt(total), sub: 'Enveloppe globale', color:'linear-gradient(135deg,#C08A20,#E8D070)', isDanger:false },
+    { icon:'📋', label:'Prévu', val: fmt(totalPrevu), sub: total ? `${Math.round(totalPrevu/total*100)}% du budget` : '—', color:'linear-gradient(135deg,var(--sky),#7AAAD4)', isDanger:false },
+    { icon:'✅', label:'Payé', val: fmt(totalPaye), sub: total ? `${pctPaye}% réglé` : '—', color:'linear-gradient(135deg,var(--sage),var(--sage2))', isDanger:false },
+    { icon:'⏳', label:'Reste à payer', val: fmt(Math.max(0,totalPrevu-totalPaye)), sub: 'Sur dépenses prévues', color:'linear-gradient(135deg,var(--rose),var(--rose2))', isDanger:false },
+    { icon: reste<0?'🚨':'💚', label:'Solde', val: fmt(Math.abs(reste)), sub: reste<0?'⚠️ Dépassé !':'Disponible', color: reste<0?'linear-gradient(135deg,var(--danger),#E07070)':'linear-gradient(135deg,var(--lavender),#B090D0)', isDanger:reste<0 },
+    { icon:'📌', label:'Dépenses', val: expenses.length, sub: `${expenses.filter(e=>e.effectue>0).length} payées`, color:'linear-gradient(135deg,var(--gold2),#F0C860)', isDanger:false },
   ];
-  document.getElementById('budget-kpis').innerHTML = kpis.map(k=>`
-    <div class="bkpi">
+  document.getElementById('budget-kpis').innerHTML = kpis.map((k,i)=>`
+    <div class="bkpi ${k.isDanger?'danger':''}" style="animation-delay:${i*0.05}s">
       <div class="bkpi-accent" style="background:${k.color}"></div>
+      <div class="bkpi-glow" style="background:${k.color}"></div>
+      <span class="bkpi-icon">${k.icon}</span>
       <div class="bkpi-label">${k.label}</div>
-      <div class="bkpi-val">${k.val}</div>
+      <div class="bkpi-val" id="bkv-${i}">${k.val}</div>
       <div class="bkpi-sub">${k.sub}</div>
     </div>`).join('');
+
+  // ── Catégories count badge ──
+  const cats = [...new Set(expenses.map(e=>e.cat))];
+  const bdc = document.getElementById('bdc-count');
+  if(bdc) bdc.textContent = cats.length + ' catégorie' + (cats.length>1?'s':'');
 
   // ── Dashboard paiement ──
   const PAY_CONFIG = [
