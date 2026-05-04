@@ -2106,7 +2106,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if(ti){ const t = getBudgetTotal(); if(t) ti.value = t; }
 });
 function checkPwd(){
-  const val = document.getElementById('pwd-input').value;
+  const val = document.getElementById('pwd-input').value.trim();
   if(val === 'aboudi'){
     document.getElementById('gate').style.display='none';
     sessionStorage.setItem('admin_auth','1');
@@ -2116,11 +2116,17 @@ function checkPwd(){
     document.getElementById('pwd-input').focus();
   }
 }
-if(sessionStorage.getItem('admin_auth')==='1'){
-  document.getElementById('gate').style.display='none';
-} else {
-  setTimeout(()=>document.getElementById('pwd-input').focus(), 150);
-}
+// Gate init — après chargement du DOM
+document.addEventListener('DOMContentLoaded', ()=>{
+  if(sessionStorage.getItem('admin_auth')==='1'){
+    document.getElementById('gate').style.display='none';
+  } else {
+    setTimeout(()=>{
+      const inp = document.getElementById('pwd-input');
+      if(inp) inp.focus();
+    }, 150);
+  }
+});
 </script>
 </body>
 </html>
