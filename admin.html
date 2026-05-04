@@ -649,7 +649,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <div class="fgroup"><label>Montant prévu (€)</label><input type="number" id="bexp-prevu" placeholder="0" min="0"></div>
           <div class="fgroup"><label>Montant payé (€)</label><input type="number" id="bexp-effectue" placeholder="0" min="0"></div>
         </div>
-        <div class="fgroup"><label>Note (optionnel)</label><input type="text" id="bexp-note" placeholder="Détails…"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem">
+          <div class="fgroup"><label>Moyen de paiement</label>
+            <select id="bexp-paiement">
+              <option value="">— Non défini</option>
+              <option value="Cash">💵 Cash</option>
+              <option value="Virement">🏦 Virement</option>
+              <option value="CB">💳 Carte bancaire</option>
+              <option value="Chèque">📝 Chèque</option>
+              <option value="Autre">📌 Autre</option>
+            </select>
+          </div>
+          <div class="fgroup"><label>Note (optionnel)</label><input type="text" id="bexp-note" placeholder="Détails…"></div>
+        </div>
         <button class="btn btn-rose" style="width:100%;justify-content:center" onclick="addExpense()">Ajouter</button>
         <button id="bexp-cancel" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:0.5rem;display:none" onclick="cancelEditExpense()">✕ Annuler la modification</button>
       </div>
@@ -1684,19 +1696,19 @@ function addExpense(){
   const prevu = parseFloat(document.getElementById('bexp-prevu').value)||0;
   const effectue = parseFloat(document.getElementById('bexp-effectue').value)||0;
   const note = document.getElementById('bexp-note').value.trim();
-  if(!name){ showToast('Entrez un libellé', true); return; }
-  const expenses = getExpenses();
-  expenses.push({
+  const paiement = document.getElementById('bexp-paiement').value;
     id: Date.now(),
     name,
     cat,
     prevu: Number(prevu),
     effectue: Number(effectue),
     note,
+    paiement,
     date: new Date().toLocaleDateString('fr-FR')
   });
   saveExpenses(expenses);
   ['bexp-name','bexp-prevu','bexp-effectue','bexp-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('bexp-paiement').value='';
   renderBudget();
   showToast('Dépense ajoutée');
 }
@@ -1716,6 +1728,7 @@ function editExpense(id){
   // Remplir le formulaire avec les valeurs existantes
   document.getElementById('bexp-name').value = e.name;
   document.getElementById('bexp-cat').value = e.cat;
+  document.getElementById('bexp-paiement').value = e.paiement||'';
   document.getElementById('bexp-prevu').value = e.prevu;
   document.getElementById('bexp-effectue').value = e.effectue;
   document.getElementById('bexp-note').value = e.note||'';
@@ -1732,29 +1745,32 @@ function editExpense(id){
 
 function cancelEditExpense(){
   ['bexp-name','bexp-prevu','bexp-effectue','bexp-note'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('bexp-paiement').value='';
   const btn = document.querySelector('#page-budget .btn-rose');
   btn.textContent = 'Ajouter';
   btn.onclick = () => addExpense();
   document.getElementById('bexp-cancel').style.display = 'none';
 }
 
-function updateExpense(id){
+function updateExpense
   const name = document.getElementById('bexp-name').value.trim();
   const cat  = document.getElementById('bexp-cat').value;
   const prevu = parseFloat(document.getElementById('bexp-prevu').value)||0;
   const effectue = parseFloat(document.getElementById('bexp-effectue').value)||0;
   const note = document.getElementById('bexp-note').value.trim();
+  const paiement = document.getElementById('bexp-paiement').value;
   if(!name){ showToast('Entrez un libellé', true); return; }
 
   const expenses = getExpenses();
   const idx = expenses.findIndex(x=>String(x.id)===String(id));
   if(idx!==-1){
-    expenses[idx] = { ...expenses[idx], name, cat, prevu, effectue, note };
+    expenses[idx] = { ...expenses[idx], name, cat, prevu, effectue, note, paiement };
     saveExpenses(expenses);
   }
 
   // Reset formulaire
   ['bexp-name','bexp-prevu','bexp-effectue','bexp-note'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('bexp-paiement').value='';
   const btn = document.querySelector('#page-budget .btn-rose');
   btn.textContent = 'Ajouter';
   btn.onclick = () => addExpense();
@@ -1833,7 +1849,7 @@ function renderBudget(){
       <div class="expense-cat-dot" style="background:${color}"></div>
       <div class="expense-body">
         <div class="expense-name">${e.name}</div>
-        <div class="expense-meta">${e.cat}${e.note?' · '+e.note:''} · ${e.date}</div>
+        <div class="expense-meta">${e.cat}${e.paiement?' · '+e.paiement:''}${e.note?' · '+e.note:''} · ${e.date}</div>
       </div>
       <div class="expense-amounts">
         <div class="expense-prevu">Prévu : ${fmt(e.prevu)}</div>
