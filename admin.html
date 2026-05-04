@@ -623,12 +623,35 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
     </div>
 
-    <!-- KPIs -->
+    <!-- KPIs globaux -->
     <div class="budget-kpis" id="budget-kpis"></div>
 
-    <div class="budget-layout">
+    <!-- DASHBOARD ROW 1 : Catégories + Moyens de paiement -->
+    <div class="budget-layout" style="margin-bottom:1.4rem;">
+      <div class="budget-progress-wrap">
+        <h3>📊 Répartition par catégorie</h3>
+        <div id="budget-cat-bars"></div>
+      </div>
+      <div class="budget-progress-wrap">
+        <h3>💳 Prévisions par moyen de paiement</h3>
+        <div id="budget-pay-dashboard"></div>
+      </div>
+    </div>
 
-      <!-- Formulaire ajout dépense -->
+    <!-- DASHBOARD ROW 2 : Payé vs Prévu + Top dépenses -->
+    <div class="budget-layout" style="margin-bottom:1.4rem;">
+      <div class="budget-progress-wrap">
+        <h3>✅ Payé vs Prévu par catégorie</h3>
+        <div id="budget-paye-vs-prevu"></div>
+      </div>
+      <div class="budget-progress-wrap">
+        <h3>🔝 Top 5 dépenses</h3>
+        <div id="budget-top-depenses"></div>
+      </div>
+    </div>
+
+    <!-- Formulaire + Liste -->
+    <div class="budget-layout">
       <div class="budget-form-card">
         <h3>+ Ajouter une dépense</h3>
         <div class="fgroup"><label>Libellé</label><input type="text" id="bexp-name" placeholder="ex : Traiteur, Fleurs…"></div>
@@ -666,19 +689,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <button id="bexp-cancel" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:0.5rem;display:none" onclick="cancelEditExpense()">✕ Annuler la modification</button>
       </div>
 
-      <!-- Barres de progression par catégorie -->
-      <div class="budget-progress-wrap">
-        <h3>Répartition par catégorie</h3>
-        <div id="budget-cat-bars"></div>
-      </div>
-
-    </div>
-
-    <!-- Liste des dépenses -->
-    <div class="budget-form-card">
-      <h3 style="display:flex;justify-content:space-between;align-items:center">
-        <span>Toutes les dépenses</span>
-        <div style="display:flex;gap:0.5rem">
+      <div class="budget-form-card">
+        <h3 style="display:flex;justify-content:space-between;align-items:center">
+          <span>Toutes les dépenses</span>
           <select id="bfilter-cat" onchange="renderBudget()" style="font-size:0.7rem;border:1px solid var(--border);border-radius:8px;padding:0.3rem 0.6rem;background:var(--bg);color:var(--text2);outline:none;">
             <option value="">Toutes catégories</option>
             <option value="Lieu">Lieu</option>
@@ -691,9 +704,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <option value="Transport">Transport</option>
             <option value="Autre">Autre</option>
           </select>
-        </div>
-      </h3>
-      <div id="expense-list"></div>
+        </h3>
+        <div id="expense-list"></div>
+      </div>
     </div>
 
   </div>
@@ -1815,7 +1828,110 @@ function renderBudget(){
       <div class="bkpi-sub">${k.sub}</div>
     </div>`).join('');
 
-  // Barres par catégorie
+  // ── Dashboard paiement ──
+  const PAY_CONFIG = [
+    { key:'Cash',     label:'💵 Cash',          color:'#C08A20' },
+    { key:'Virement', label:'🏦 Virement',       color:'#4A7AA8' },
+    { key:'CB',       label:'💳 Carte bancaire', color:'#4A7A5A' },
+    { key:'Chèque',   label:'📝 Chèque',         color:'#7A5AA8' },
+    { key:'Autre',    label:'📌 Autre',           color:'#8C8078' },
+    { key:'',         label:'❓ Non défini',      color:'#C8BDB5' },
+  ];
+  const payEl = document.getElementById('budget-pay-dashboard');
+  if(payEl){
+    const payData = PAY_CONFIG.map(p => {
+      const items = expenses.filter(e=>e.paiement===(p.key));
+      return { ...p, prevu: items.reduce((s,e)=>s+e.prevu,0), paye: items.reduce((s,e)=>s+e.effectue,0), count: items.length };
+    }).filter(p=>p.prevu>0||p.paye>0);
+
+    const totalPay = payData.reduce((s,p)=>s+p.prevu,0) || 1;
+    if(!payData.length){
+      payEl.innerHTML='<p style="font-size:0.82rem;color:var(--muted)">Aucune dépense avec moyen de paiement.</p>';
+    } else {
+      payEl.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.7rem;margin-bottom:1.2rem;">
+          ${payData.map(p=>`
+            <div style="background:var(--bg3);border-radius:10px;padding:0.9rem 0.8rem;border:1px solid var(--border);text-align:center;">
+              <div style="font-size:1.1rem;margin-bottom:0.3rem">${p.label.split(' ')[0]}</div>
+              <div style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--text)">${fmt(p.prevu)}</div>
+              <div style="font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-top:0.2rem">${p.label.split(' ').slice(1).join(' ')}</div>
+              <div style="font-size:0.68rem;color:${p.color};font-weight:600;margin-top:0.3rem">${p.paye>0?'✓ '+fmt(p.paye)+' payé':'Non payé'}</div>
+            </div>`).join('')}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.5rem;">
+          ${payData.map(p=>{
+            const pct = Math.round(p.prevu/totalPay*100);
+            const pctPaid = p.prevu ? Math.round(p.paye/p.prevu*100) : 0;
+            return `<div class="bprog-row" style="margin-bottom:0.6rem">
+              <div class="bprog-head">
+                <div class="bprog-label">${p.label} <span style="color:var(--muted);font-weight:400">(${p.count} dépense${p.count>1?'s':''})</span></div>
+                <div class="bprog-amounts ${p.paye>p.prevu?'bprog-over':''}">${fmt(p.paye)} / ${fmt(p.prevu)}</div>
+              </div>
+              <div class="bprog-track"><div class="bprog-fill" style="width:0%;background:${p.color}" data-w="${Math.min(pctPaid,100)}"></div></div>
+              <div style="font-size:0.62rem;color:var(--muted);margin-top:2px">${pct}% du total prévu · ${pctPaid}% réglé</div>
+            </div>`;
+          }).join('')}
+        </div>`;
+      setTimeout(()=>document.querySelectorAll('#budget-pay-dashboard .bprog-fill').forEach(f=>f.style.width=f.dataset.w+'%'),50);
+    }
+  }
+
+  // ── Payé vs Prévu par catégorie ──
+  const pvpEl = document.getElementById('budget-paye-vs-prevu');
+  if(pvpEl){
+    const allCats = [...new Set(expenses.map(e=>e.cat))];
+    if(!allCats.length){ pvpEl.innerHTML='<p style="font-size:0.82rem;color:var(--muted)">Aucune donnée.</p>'; }
+    else {
+      pvpEl.innerHTML = allCats.map(cat=>{
+        const items = expenses.filter(e=>e.cat===cat);
+        const cp = items.reduce((s,e)=>s+e.prevu,0);
+        const ce = items.reduce((s,e)=>s+e.effectue,0);
+        const color = CAT_COLORS[cat]||'#8C8078';
+        const pct = cp ? Math.min(Math.round(ce/cp*100),100) : 0;
+        const over = ce > cp;
+        return `<div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.75rem;">
+          <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+              <span style="font-size:0.75rem;font-weight:500;color:var(--text2)">${cat}</span>
+              <span style="font-size:0.7rem;${over?'color:var(--danger);font-weight:700':'color:var(--muted)'}">${fmt(ce)} / ${fmt(cp)}</span>
+            </div>
+            <div class="bprog-track">
+              <div class="bprog-fill" style="width:0%;background:${over?'var(--danger)':color}" data-w2="${pct}"></div>
+            </div>
+          </div>
+          <div style="font-size:0.68rem;font-weight:600;color:${over?'var(--danger)':'var(--sage)'};min-width:32px;text-align:right">${pct}%</div>
+        </div>`;
+      }).join('');
+      setTimeout(()=>document.querySelectorAll('#budget-paye-vs-prevu .bprog-fill').forEach(f=>f.style.width=f.dataset.w2+'%'),50);
+    }
+  }
+
+  // ── Top 5 dépenses ──
+  const topEl = document.getElementById('budget-top-depenses');
+  if(topEl){
+    const top5 = [...expenses].sort((a,b)=>b.prevu-a.prevu).slice(0,5);
+    if(!top5.length){ topEl.innerHTML='<p style="font-size:0.82rem;color:var(--muted)">Aucune dépense.</p>'; }
+    else {
+      const maxVal = top5[0].prevu || 1;
+      topEl.innerHTML = top5.map((e,i)=>{
+        const color = CAT_COLORS[e.cat]||'#8C8078';
+        const pct = Math.round(e.prevu/maxVal*100);
+        const payIcon = e.paiement==='Cash'?'💵':e.paiement==='Virement'?'🏦':e.paiement==='CB'?'💳':e.paiement==='Chèque'?'📝':'';
+        return `<div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.8rem;">
+          <div style="width:22px;height:22px;border-radius:50%;background:${color}20;color:${color};font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;">
+              <span style="font-size:0.8rem;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">${e.name}</span>
+              <span style="font-size:0.75rem;font-weight:600;color:var(--text);flex-shrink:0">${fmt(e.prevu)} ${payIcon}</span>
+            </div>
+            <div class="bprog-track"><div style="height:100%;border-radius:5px;background:${color};width:${pct}%;transition:width .8s ease"></div></div>
+            <div style="font-size:0.62rem;color:var(--muted);margin-top:2px">${e.cat}${e.effectue>0?' · ✓ '+fmt(e.effectue)+' payé':''}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
   const cats = [...new Set(expenses.map(e=>e.cat))];
   const barsEl = document.getElementById('budget-cat-bars');
   if(!cats.length){ barsEl.innerHTML='<p style="font-size:0.82rem;color:var(--muted)">Aucune dépense enregistrée.</p>'; }
