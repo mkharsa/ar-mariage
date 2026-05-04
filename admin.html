@@ -693,12 +693,32 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
       <div class="budget-hero-right">
         <canvas class="budget-hero-ring" id="bh-ring" width="88" height="88"></canvas>
-        <div>
-          <div style="font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:0.4rem">Modifier le budget</div>
-          <div class="budget-hero-input-wrap">
-            <input type="number" id="budget-total-input" placeholder="30 000" min="0" step="100"
-              onchange="saveBudgetTotal()" onblur="saveBudgetTotal()">
-            <span>€</span>
+        <div style="display:flex;flex-direction:column;gap:0.6rem;">
+          <div>
+            <div style="font-size:0.55rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:0.25rem">Budget total</div>
+            <div class="budget-hero-input-wrap">
+              <input type="number" id="budget-total-input" placeholder="30 000" min="0" step="100"
+                onchange="saveBudgetTotal()" onblur="saveBudgetTotal()">
+              <span>€</span>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+            <div>
+              <div style="font-size:0.55rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(232,132,154,0.8);margin-bottom:0.25rem">👰 Raoine</div>
+              <div class="budget-hero-input-wrap" style="border-color:rgba(232,132,154,0.3);">
+                <input type="number" id="budget-raoine-input" placeholder="0" min="0" step="100"
+                  onchange="saveBudgetTotal()" onblur="saveBudgetTotal()" style="width:90px;">
+                <span>€</span>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:0.55rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(122,170,212,0.8);margin-bottom:0.25rem">🤵 Aboudé</div>
+              <div class="budget-hero-input-wrap" style="border-color:rgba(122,170,212,0.3);">
+                <input type="number" id="budget-aboude-input" placeholder="0" min="0" step="100"
+                  onchange="saveBudgetTotal()" onblur="saveBudgetTotal()" style="width:90px;">
+                <span>€</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -764,8 +784,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
               <option value="Autre">📌 Autre</option>
             </select>
           </div>
-          <div class="fgroup"><label>Note (optionnel)</label><input type="text" id="bexp-note" placeholder="Détails…"></div>
+          <div class="fgroup"><label>À l'initiative de</label>
+            <select id="bexp-origine">
+              <option value="">— Non défini</option>
+              <option value="Raoine">👰 Raoine</option>
+              <option value="Aboudé">🤵 Aboudé</option>
+              <option value="Ensemble">💑 Ensemble</option>
+            </select>
+          </div>
         </div>
+        <div class="fgroup"><label>Note (optionnel)</label><input type="text" id="bexp-note" placeholder="Détails…"></div>
         <button class="btn btn-rose" style="width:100%;justify-content:center" onclick="submitExpense()">Ajouter</button>
         <button id="bexp-cancel" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:0.5rem;display:none" onclick="cancelEditExpense()">✕ Annuler la modification</button>
       </div>
@@ -1757,7 +1785,9 @@ document.addEventListener('visibilitychange', ()=>{
 
 /* ═══ BUDGET ═══ */
 const BUDGET_KEY = 'mariage_budget';
-const BUDGET_TOTAL_KEY = 'mariage_budget_total';
+const BUDGET_TOTAL_KEY  = 'mariage_budget_total';
+const BUDGET_RAOINE_KEY = 'mariage_budget_raoine';
+const BUDGET_ABOUDE_KEY = 'mariage_budget_aboude';
 let _editingExpenseId = null; // null = mode ajout, sinon = mode édition
 
 function submitExpense(){
@@ -1785,11 +1815,17 @@ function getExpenses(){
   }catch{ return []; }
 }
 function saveExpenses(d){ localStorage.setItem(BUDGET_KEY, JSON.stringify(d)); }
-function getBudgetTotal(){ return parseFloat(localStorage.getItem(BUDGET_TOTAL_KEY)||'0'); }
+function getBudgetTotal(){  return parseFloat(localStorage.getItem(BUDGET_TOTAL_KEY)||'0'); }
+function getBudgetRaoine(){ return parseFloat(localStorage.getItem(BUDGET_RAOINE_KEY)||'0'); }
+function getBudgetAboude(){ return parseFloat(localStorage.getItem(BUDGET_ABOUDE_KEY)||'0'); }
 
 function saveBudgetTotal(){
-  const v = parseFloat(document.getElementById('budget-total-input').value)||0;
+  const v  = parseFloat(document.getElementById('budget-total-input').value)||0;
+  const vr = parseFloat(document.getElementById('budget-raoine-input').value)||0;
+  const va = parseFloat(document.getElementById('budget-aboude-input').value)||0;
   localStorage.setItem(BUDGET_TOTAL_KEY, v);
+  localStorage.setItem(BUDGET_RAOINE_KEY, vr);
+  localStorage.setItem(BUDGET_ABOUDE_KEY, va);
   renderBudget();
 }
 
@@ -1800,6 +1836,7 @@ function addExpense(){
   const effectue = parseFloat(document.getElementById('bexp-effectue').value)||0;
   const note = document.getElementById('bexp-note').value.trim();
   const paiement = document.getElementById('bexp-paiement').value;
+  const origine = document.getElementById('bexp-origine').value;
   if(!name){ showToast('Entrez un libellé', true); return; }
   const expenses = getExpenses();
   expenses.push({
@@ -1810,11 +1847,13 @@ function addExpense(){
     effectue: Number(effectue),
     note,
     paiement,
+    origine,
     date: new Date().toLocaleDateString('fr-FR')
   });
   saveExpenses(expenses);
   ['bexp-name','bexp-prevu','bexp-effectue','bexp-note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('bexp-paiement').value='';
+  document.getElementById('bexp-origine').value='';
   renderBudget();
   showToast('Dépense ajoutée');
 }
@@ -1835,6 +1874,7 @@ function editExpense(id){
   document.getElementById('bexp-name').value = e.name;
   document.getElementById('bexp-cat').value = e.cat;
   document.getElementById('bexp-paiement').value = e.paiement||'';
+  document.getElementById('bexp-origine').value = e.origine||'';
   document.getElementById('bexp-prevu').value = e.prevu;
   document.getElementById('bexp-effectue').value = e.effectue;
   document.getElementById('bexp-note').value = e.note||'';
@@ -1847,6 +1887,7 @@ function cancelEditExpense(){
   _editingExpenseId = null;
   ['bexp-name','bexp-prevu','bexp-effectue','bexp-note'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('bexp-paiement').value='';
+  document.getElementById('bexp-origine').value='';
   document.querySelector('#page-budget .btn-rose').textContent = 'Ajouter';
   document.getElementById('bexp-cancel').style.display = 'none';
 }
@@ -1858,12 +1899,13 @@ function updateExpense(id){
   const effectue = parseFloat(document.getElementById('bexp-effectue').value)||0;
   const note = document.getElementById('bexp-note').value.trim();
   const paiement = document.getElementById('bexp-paiement').value;
+  const origine = document.getElementById('bexp-origine').value;
   if(!name){ showToast('Entrez un libellé', true); return; }
 
   const expenses = getExpenses();
   const idx = expenses.findIndex(x=>String(x.id)===String(id));
   if(idx!==-1){
-    expenses[idx] = { ...expenses[idx], name, cat, prevu, effectue, note, paiement };
+    expenses[idx] = { ...expenses[idx], name, cat, prevu, effectue, note, paiement, origine };
     saveExpenses(expenses);
   }
 
@@ -1871,6 +1913,7 @@ function updateExpense(id){
   _editingExpenseId = null;
   ['bexp-name','bexp-prevu','bexp-effectue','bexp-note'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('bexp-paiement').value='';
+  document.getElementById('bexp-origine').value='';
   document.querySelector('#page-budget .btn-rose').textContent = 'Ajouter';
   document.getElementById('bexp-cancel').style.display = 'none';
 
@@ -1885,9 +1928,15 @@ function renderBudget(){
   const total = getBudgetTotal();
   const filterCat = document.getElementById('bfilter-cat')?.value || '';
 
-  // Restaurer la valeur dans le champ si vide
+  // Restaurer les valeurs dans les champs si vides
   const ti = document.getElementById('budget-total-input');
   if(ti && (ti.value==='' || ti.value==='0')) ti.value = total>0 ? total : '';
+  const tr = document.getElementById('budget-raoine-input');
+  const ta = document.getElementById('budget-aboude-input');
+  const budgetRaoine = getBudgetRaoine();
+  const budgetAboude = getBudgetAboude();
+  if(tr && (tr.value==='' || tr.value==='0')) tr.value = budgetRaoine>0 ? budgetRaoine : '';
+  if(ta && (ta.value==='' || ta.value==='0')) ta.value = budgetAboude>0 ? budgetAboude : '';
 
   const totalPrevu = expenses.reduce((s,e)=>s+e.prevu, 0);
   const totalPaye  = expenses.reduce((s,e)=>s+e.effectue, 0);
@@ -1948,6 +1997,29 @@ function renderBudget(){
   const cats = [...new Set(expenses.map(e=>e.cat))];
   const bdc = document.getElementById('bdc-count');
   if(bdc) bdc.textContent = cats.length + ' catégorie' + (cats.length>1?'s':'');
+
+  // ── Stats par personne ──
+  const origines = ['Raoine','Aboudé','Ensemble'];
+  const oriColors = {'Raoine':'#E8849A','Aboudé':'#4A7AA8','Ensemble':'#4A7A5A'};
+  const oriBudgets = {'Raoine': budgetRaoine, 'Aboudé': budgetAboude, 'Ensemble': 0};
+  const oriStats = origines.map(o => {
+    const items = expenses.filter(e=>e.origine===o);
+    return { o, prevu: items.reduce((s,e)=>s+e.prevu,0), paye: items.reduce((s,e)=>s+e.effectue,0), count: items.length, budget: oriBudgets[o] };
+  }).filter(x=>x.prevu>0||x.paye>0||x.budget>0);
+
+  // Injecter les cards personne dans le hero
+  let heroSub = '';
+  if(oriStats.length){
+    heroSub = oriStats.map(x=>`
+      <span style="display:inline-flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:0.3rem 0.8rem;font-size:0.72rem;color:rgba(255,255,255,0.7);">
+        <span style="width:7px;height:7px;border-radius:50%;background:${oriColors[x.o]||'#aaa'};flex-shrink:0;"></span>
+        ${x.o} : <strong style="color:#fff">${fmt(x.paye)}</strong> payé / ${fmt(x.prevu)} prévu${x.budget>0?' · budget '+fmt(x.budget):''}
+      </span>`).join('');
+  }
+  const bhSub2 = document.getElementById('bh-sub');
+  if(bhSub2 && oriStats.length){
+    bhSub2.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.5rem">${heroSub}</div>`;
+  }
 
   // ── Dashboard paiement ──
   const PAY_CONFIG = [
@@ -2047,7 +2119,7 @@ function renderBudget(){
               <span style="font-size:0.75rem;font-weight:600;color:var(--text);flex-shrink:0">${fmt(e.prevu)} ${payIcon}</span>
             </div>
             <div class="bprog-track"><div style="height:100%;border-radius:5px;background:${color};width:${pct}%;transition:width .8s ease"></div></div>
-            <div style="font-size:0.62rem;color:var(--muted);margin-top:2px">${e.cat}${e.effectue>0?' · ✓ '+fmt(e.effectue)+' payé':''}</div>
+            <div style="font-size:0.62rem;color:var(--muted);margin-top:2px">${e.cat}${e.origine?' · '+e.origine:''}${e.effectue>0?' · ✓ '+fmt(e.effectue)+' payé':''}</div>
           </div>
         </div>`;
       }).join('');
@@ -2088,7 +2160,7 @@ function renderBudget(){
       <div class="expense-cat-dot" style="background:${color}"></div>
       <div class="expense-body">
         <div class="expense-name">${e.name}</div>
-        <div class="expense-meta">${e.cat}${e.paiement?' · '+e.paiement:''}${e.note?' · '+e.note:''} · ${e.date}</div>
+        <div class="expense-meta">${e.cat}${e.origine?' · '+e.origine:''}${e.paiement?' · '+e.paiement:''}${e.note?' · '+e.note:''} · ${e.date}</div>
       </div>
       <div class="expense-amounts">
         <div class="expense-prevu">Prévu : ${fmt(e.prevu)}</div>
@@ -2104,6 +2176,10 @@ function renderBudget(){
 document.addEventListener('DOMContentLoaded', ()=>{
   const ti = document.getElementById('budget-total-input');
   if(ti){ const t = getBudgetTotal(); if(t) ti.value = t; }
+  const tr2 = document.getElementById('budget-raoine-input');
+  if(tr2){ const r = getBudgetRaoine(); if(r) tr2.value = r; }
+  const ta2 = document.getElementById('budget-aboude-input');
+  if(ta2){ const a = getBudgetAboude(); if(a) ta2.value = a; }
 });
 function checkPwd(){
   const val = document.getElementById('pwd-input').value.trim();
