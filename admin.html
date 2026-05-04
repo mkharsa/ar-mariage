@@ -1697,6 +1697,9 @@ function addExpense(){
   const effectue = parseFloat(document.getElementById('bexp-effectue').value)||0;
   const note = document.getElementById('bexp-note').value.trim();
   const paiement = document.getElementById('bexp-paiement').value;
+  if(!name){ showToast('Entrez un libellé', true); return; }
+  const expenses = getExpenses();
+  expenses.push({
     id: Date.now(),
     name,
     cat,
@@ -1752,8 +1755,7 @@ function cancelEditExpense(){
   document.getElementById('bexp-cancel').style.display = 'none';
 }
 
-function updateExpense
-  const name = document.getElementById('bexp-name').value.trim();
+function updateExpense(id){
   const cat  = document.getElementById('bexp-cat').value;
   const prevu = parseFloat(document.getElementById('bexp-prevu').value)||0;
   const effectue = parseFloat(document.getElementById('bexp-effectue').value)||0;
