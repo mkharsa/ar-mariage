@@ -651,6 +651,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </div>
         <div class="fgroup"><label>Note (optionnel)</label><input type="text" id="bexp-note" placeholder="Détails…"></div>
         <button class="btn btn-rose" style="width:100%;justify-content:center" onclick="addExpense()">Ajouter</button>
+        <button id="bexp-cancel" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:0.5rem;display:none" onclick="cancelEditExpense()">✕ Annuler la modification</button>
       </div>
 
       <!-- Barres de progression par catégorie -->
@@ -1684,9 +1685,65 @@ function addExpense(){
 
 function deleteExpense(id){
   if(!confirm('Supprimer cette dépense ?')) return;
-  saveExpenses(getExpenses().filter(e=>e.id!==id));
+  saveExpenses(getExpenses().filter(e=>String(e.id)!==String(id)));
   renderBudget();
   showToast('Supprimé');
+}
+
+function editExpense(id){
+  const expenses = getExpenses();
+  const e = expenses.find(x=>String(x.id)===String(id));
+  if(!e) return;
+
+  // Remplir le formulaire avec les valeurs existantes
+  document.getElementById('bexp-name').value = e.name;
+  document.getElementById('bexp-cat').value = e.cat;
+  document.getElementById('bexp-prevu').value = e.prevu;
+  document.getElementById('bexp-effectue').value = e.effectue;
+  document.getElementById('bexp-note').value = e.note||'';
+
+  // Changer le bouton Ajouter en Mettre à jour
+  const btn = document.querySelector('#page-budget .btn-rose');
+  btn.textContent = '✏️ Mettre à jour';
+  btn.onclick = () => updateExpense(id);
+  document.getElementById('bexp-cancel').style.display = 'flex';
+
+  // Scroll vers le formulaire
+  document.querySelector('#page-budget .budget-form-card').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function cancelEditExpense(){
+  ['bexp-name','bexp-prevu','bexp-effectue','bexp-note'].forEach(i=>document.getElementById(i).value='');
+  const btn = document.querySelector('#page-budget .btn-rose');
+  btn.textContent = 'Ajouter';
+  btn.onclick = () => addExpense();
+  document.getElementById('bexp-cancel').style.display = 'none';
+}
+
+function updateExpense(id){
+  const name = document.getElementById('bexp-name').value.trim();
+  const cat  = document.getElementById('bexp-cat').value;
+  const prevu = parseFloat(document.getElementById('bexp-prevu').value)||0;
+  const effectue = parseFloat(document.getElementById('bexp-effectue').value)||0;
+  const note = document.getElementById('bexp-note').value.trim();
+  if(!name){ showToast('Entrez un libellé', true); return; }
+
+  const expenses = getExpenses();
+  const idx = expenses.findIndex(x=>String(x.id)===String(id));
+  if(idx!==-1){
+    expenses[idx] = { ...expenses[idx], name, cat, prevu, effectue, note };
+    saveExpenses(expenses);
+  }
+
+  // Reset formulaire
+  ['bexp-name','bexp-prevu','bexp-effectue','bexp-note'].forEach(i=>document.getElementById(i).value='');
+  const btn = document.querySelector('#page-budget .btn-rose');
+  btn.textContent = 'Ajouter';
+  btn.onclick = () => addExpense();
+  document.getElementById('bexp-cancel').style.display = 'none';
+
+  renderBudget();
+  showToast('Dépense mise à jour ✅');
 }
 
 function fmt(n){ return n.toLocaleString('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}); }
@@ -1764,7 +1821,8 @@ function renderBudget(){
         <div class="expense-prevu">Prévu : ${fmt(e.prevu)}</div>
         <div class="expense-effectue ${e.effectue>0?'paid':''}">${e.effectue>0?'✓ '+fmt(e.effectue):'Non payé'}</div>
       </div>
-      <button class="btn btn-danger" onclick="deleteExpense(${e.id})" style="margin-left:0.4rem">✕</button>
+      <button class="btn btn-outline" onclick="editExpense(${e.id})" style="margin-left:0.4rem;font-size:0.6rem;padding:0.3rem 0.6rem">✏️</button>
+      <button class="btn btn-danger" onclick="deleteExpense(${e.id})" style="margin-left:0.2rem">✕</button>
     </div>`;
   }).join('');
 }
