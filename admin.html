@@ -2057,51 +2057,69 @@ function renderBudget(){
   const anyPerson = expenses.some(e=>e.origine);
   if(personSection) personSection.style.display = anyPerson ? 'block' : 'none';
   if(personCards && anyPerson){
-    personCards.innerHTML = personConfig.map(p=>{
+    personCards.innerHTML = personConfig.map((p,pi)=>{
       const items  = expenses.filter(e=>e.origine===p.key);
       const prevu  = items.reduce((s,e)=>s+e.prevu,0);
       const paye   = items.reduce((s,e)=>s+e.effectue,0);
       const count  = items.length;
-      const ref    = p.budget || prevu || 1;
-      const pctBudget = p.budget ? Math.min(Math.round(prevu/p.budget*100),100) : 0;
-      const pctPaye   = prevu   ? Math.min(Math.round(paye/prevu*100),100)      : 0;
-      const over      = p.budget > 0 && prevu > p.budget;
-      if(count===0 && p.budget===0) return `
-        <div class="person-card" style="border-style:dashed;opacity:0.5;">
-          <div class="person-card-header">
-            <div class="person-card-avatar" style="background:${p.color}18;color:${p.color}">${p.icon}</div>
-            <div>
-              <div class="person-card-name">${p.key}</div>
-              <div class="person-card-budget">Aucune dépense</div>
-            </div>
-          </div>
-          <div class="person-card-amount">— €</div>
-        </div>`;
+      const pctBudget = p.budget>0 ? Math.min(Math.round(prevu/p.budget*100),999) : (prevu>0?100:0);
+      const pctPaye   = prevu>0    ? Math.min(Math.round(paye/prevu*100),100)      : 0;
+      const over      = p.budget>0 && prevu>p.budget;
       return `
-        <div class="person-card">
-          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,${p.color},${p.color}88)"></div>
-          <div class="person-card-header">
-            <div class="person-card-avatar" style="background:${p.color}18;color:${p.color}">${p.icon}</div>
-            <div>
-              <div class="person-card-name">${p.key}</div>
-              <div class="person-card-budget">${p.budget>0?'Budget : '+fmt(p.budget):'Budget non défini'} · ${count} dépense${count>1?'s':''}</div>
+        <div class="person-card" style="text-align:center;">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,${p.color},${p.color}55)"></div>
+          <div style="position:relative;display:inline-block;margin:0 auto 0.8rem;">
+            <canvas id="pgauge-${pi}" width="130" height="75" style="display:block;"></canvas>
+            <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);text-align:center;line-height:1;">
+              <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:400;color:${over?'var(--danger)':'var(--text)'};">${pctBudget}%</div>
+              <div style="font-size:0.55rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">utilisé</div>
             </div>
           </div>
-          <div class="person-card-amount" style="${over?'color:var(--danger)':''}">${fmt(prevu)}</div>
-          <div class="person-card-sub">prévu · <span style="color:${paye>0?'var(--sage)':'var(--muted)'};font-weight:${paye>0?'600':'400'}">${paye>0?'✓ '+fmt(paye)+' payé':'non payé'}</span></div>
-          ${p.budget>0?`
-          <div style="font-size:0.62rem;color:${over?'var(--danger)':'var(--muted)'};margin-bottom:0.4rem;font-weight:${over?'700':'400'}">
-            ${over?'⚠️ Dépassement de '+fmt(prevu-p.budget):fmt(p.budget-prevu)+' restant dans l\'enveloppe'}
+          <div style="display:flex;align-items:center;justify-content:center;gap:0.4rem;margin-bottom:0.6rem;">
+            <span style="font-size:1.1rem">${p.icon}</span>
+            <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">${p.key}</span>
           </div>
-          <div class="person-card-bar-wrap">
-            <div class="person-card-bar" style="width:0%;background:${over?'var(--danger)':p.color}" data-pw="${pctBudget}"></div>
+          <div style="font-family:'Playfair Display',serif;font-size:1.5rem;color:${over?'var(--danger)':'var(--text)'};line-height:1;margin-bottom:0.2rem">${fmt(prevu)}</div>
+          <div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.7rem">prévu${p.budget>0?' / '+fmt(p.budget):''}</div>
+          <div style="background:var(--bg3);border-radius:4px;height:6px;overflow:hidden;margin-bottom:0.3rem;">
+            <div style="height:100%;border-radius:4px;background:var(--sage);width:0%;transition:width 1s ease" data-pw2="${pctPaye}"></div>
           </div>
-          <div class="person-card-pct"><span>${pctBudget}% du budget utilisé</span><span style="color:${paye>0?'var(--sage)':'var(--muted)'}">${pctPaye}% payé</span></div>`:''}
+          <div style="display:flex;justify-content:space-between;font-size:0.62rem;color:var(--muted);">
+            <span style="color:${paye>0?'var(--sage)':'var(--muted)'};font-weight:${paye>0?'600':'400'}">${paye>0?'✓ '+fmt(paye):' Non payé'}</span>
+            <span>${pctPaye}% réglé</span>
+          </div>
+          ${over?`<div style="margin-top:0.6rem;font-size:0.65rem;font-weight:700;color:var(--danger);background:#FEEAEA;border-radius:6px;padding:0.3rem 0.6rem;">⚠️ +${fmt(prevu-p.budget)}</div>`:''}
+          ${!over&&p.budget>0?`<div style="margin-top:0.6rem;font-size:0.65rem;color:var(--sage);background:var(--sage-bg);border-radius:6px;padding:0.3rem 0.6rem;">${fmt(p.budget-prevu)} disponible</div>`:''}
+          <div style="font-size:0.6rem;color:var(--muted2);margin-top:0.5rem">${count} dépense${count>1?'s':''}</div>
         </div>`;
     }).join('');
-    setTimeout(()=>document.querySelectorAll('.person-card-bar').forEach(b=>b.style.width=b.dataset.pw+'%'),50);
-  }
 
+    setTimeout(()=>{
+      personConfig.forEach((p,pi)=>{
+        const items = expenses.filter(e=>e.origine===p.key);
+        const prevu = items.reduce((s,e)=>s+e.prevu,0);
+        const pctFill = p.budget>0 ? Math.min(prevu/p.budget,1) : (prevu>0?1:0);
+        const over = p.budget>0 && prevu>p.budget;
+        const cv = document.getElementById('pgauge-'+pi);
+        if(!cv) return;
+        const ctx=cv.getContext('2d'), cx=65, cy=70, r=52, lw=10;
+        let cur=0, target=pctFill;
+        const color = over ? '#C84040' : p.color;
+        function drawG(){
+          ctx.clearRect(0,0,130,75);
+          ctx.beginPath();ctx.arc(cx,cy,r,Math.PI,2*Math.PI);
+          ctx.strokeStyle='#EDE8E0';ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();
+          if(cur>0){
+            ctx.beginPath();ctx.arc(cx,cy,r,Math.PI,Math.PI+Math.PI*cur);
+            ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();
+          }
+          if(cur<target){cur=Math.min(cur+0.025,target);requestAnimationFrame(drawG);}
+        }
+        requestAnimationFrame(drawG);
+      });
+      document.querySelectorAll('[data-pw2]').forEach(b=>b.style.width=b.dataset.pw2+'%');
+    }, 80);
+  }
   // ── Dashboard paiement ──
   const PAY_CONFIG = [
     { key:'Cash',     label:'💵 Cash',          color:'#C08A20' },
