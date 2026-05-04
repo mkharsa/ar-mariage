@@ -1658,7 +1658,17 @@ const CAT_COLORS = {
   'Musique':'#C08A20','Fleurs':'#E8849A','Papeterie':'#6A9E7A','Transport':'#5A7A8A','Autre':'#8C8078'
 };
 
-function getExpenses(){ try{ return JSON.parse(localStorage.getItem(BUDGET_KEY)||'[]'); }catch{ return []; } }
+function getExpenses(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(BUDGET_KEY)||'[]');
+    // S'assurer que prevu et effectue sont bien des nombres
+    return raw.map(e=>({
+      ...e,
+      prevu: parseFloat(e.prevu)||0,
+      effectue: parseFloat(e.effectue)||0,
+    }));
+  }catch{ return []; }
+}
 function saveExpenses(d){ localStorage.setItem(BUDGET_KEY, JSON.stringify(d)); }
 function getBudgetTotal(){ return parseFloat(localStorage.getItem(BUDGET_TOTAL_KEY)||'0'); }
 
@@ -1676,7 +1686,15 @@ function addExpense(){
   const note = document.getElementById('bexp-note').value.trim();
   if(!name){ showToast('Entrez un libellé', true); return; }
   const expenses = getExpenses();
-  expenses.push({ id: Date.now(), name, cat, prevu, effectue, note, date: new Date().toLocaleDateString('fr-FR') });
+  expenses.push({
+    id: Date.now(),
+    name,
+    cat,
+    prevu: Number(prevu),
+    effectue: Number(effectue),
+    note,
+    date: new Date().toLocaleDateString('fr-FR')
+  });
   saveExpenses(expenses);
   ['bexp-name','bexp-prevu','bexp-effectue','bexp-note'].forEach(id=>document.getElementById(id).value='');
   renderBudget();
@@ -1753,9 +1771,9 @@ function renderBudget(){
   const total = getBudgetTotal();
   const filterCat = document.getElementById('bfilter-cat')?.value || '';
 
-  // Restore total input
+  // Restaurer la valeur dans le champ si vide
   const ti = document.getElementById('budget-total-input');
-  if(ti && !ti.value) ti.value = total || '';
+  if(ti && (ti.value==='' || ti.value==='0')) ti.value = total>0 ? total : '';
 
   const totalPrevu = expenses.reduce((s,e)=>s+e.prevu, 0);
   const totalPaye  = expenses.reduce((s,e)=>s+e.effectue, 0);
