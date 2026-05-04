@@ -474,7 +474,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .top-bar-wrap{height:3px;background:var(--bg3);border-radius:2px;margin-top:4px;overflow:hidden;}
 .top-bar{height:100%;border-radius:2px;transition:width 1s ease;}
 
-/* Budget layout (form + list) */
+/* Person indicator cards */
+.person-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:1.2rem;box-shadow:var(--shadow);position:relative;overflow:hidden;
+  transition:transform 0.2s,box-shadow 0.2s;
+}
+.person-card:hover{transform:translateY(-2px);box-shadow:var(--shadow2);}
+.person-card-header{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.9rem;}
+.person-card-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;}
+.person-card-name{font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);}
+.person-card-budget{font-size:0.62rem;color:var(--muted);margin-top:1px;}
+.person-card-amount{font-family:'Playfair Display',serif;font-size:1.7rem;color:var(--text);line-height:1;margin-bottom:0.3rem;}
+.person-card-sub{font-size:0.68rem;color:var(--muted);margin-bottom:0.8rem;}
+.person-card-bar-wrap{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:0.4rem;}
+.person-card-bar{height:100%;border-radius:3px;transition:width 1s cubic-bezier(.4,0,.2,1);}
+.person-card-pct{font-size:0.62rem;color:var(--muted);display:flex;justify-content:space-between;}
+@media(max-width:768px){
+  #budget-person-section > div:last-child{grid-template-columns:1fr!important;}
+}
+
 .budget-layout{display:grid;grid-template-columns:1fr 1.2fr;gap:1.4rem;margin-bottom:1.4rem;}
 @media(max-width:800px){.budget-layout{grid-template-columns:1fr;}}
 .budget-form-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;box-shadow:var(--shadow);}
@@ -726,6 +745,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
     <!-- KPIs -->
     <div class="budget-kpis" id="budget-kpis"></div>
+
+    <!-- INDICATEURS PAR PERSONNE -->
+    <div id="budget-person-section" style="display:none;margin-bottom:1.4rem;">
+      <div style="font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:0.8rem;">Dépenses par personne</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;" id="budget-person-cards"></div>
+    </div>
 
     <!-- DASHBOARD ROW 1 -->
     <div class="bdash-grid">
@@ -2019,6 +2044,62 @@ function renderBudget(){
   const bhSub2 = document.getElementById('bh-sub');
   if(bhSub2 && oriStats.length){
     bhSub2.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.5rem">${heroSub}</div>`;
+  }
+
+  // ── Indicateurs par personne ──
+  const personConfig = [
+    { key:'Raoine',  icon:'👰', color:'#E8849A', budget: budgetRaoine },
+    { key:'Aboudé',  icon:'🤵', color:'#4A7AA8', budget: budgetAboude },
+    { key:'Ensemble',icon:'💑', color:'#4A7A5A', budget: 0 },
+  ];
+  const personSection = document.getElementById('budget-person-section');
+  const personCards   = document.getElementById('budget-person-cards');
+  const anyPerson = expenses.some(e=>e.origine);
+  if(personSection) personSection.style.display = anyPerson ? 'block' : 'none';
+  if(personCards && anyPerson){
+    personCards.innerHTML = personConfig.map(p=>{
+      const items  = expenses.filter(e=>e.origine===p.key);
+      const prevu  = items.reduce((s,e)=>s+e.prevu,0);
+      const paye   = items.reduce((s,e)=>s+e.effectue,0);
+      const count  = items.length;
+      const ref    = p.budget || prevu || 1;
+      const pctBudget = p.budget ? Math.min(Math.round(prevu/p.budget*100),100) : 0;
+      const pctPaye   = prevu   ? Math.min(Math.round(paye/prevu*100),100)      : 0;
+      const over      = p.budget > 0 && prevu > p.budget;
+      if(count===0 && p.budget===0) return `
+        <div class="person-card" style="border-style:dashed;opacity:0.5;">
+          <div class="person-card-header">
+            <div class="person-card-avatar" style="background:${p.color}18;color:${p.color}">${p.icon}</div>
+            <div>
+              <div class="person-card-name">${p.key}</div>
+              <div class="person-card-budget">Aucune dépense</div>
+            </div>
+          </div>
+          <div class="person-card-amount">— €</div>
+        </div>`;
+      return `
+        <div class="person-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,${p.color},${p.color}88)"></div>
+          <div class="person-card-header">
+            <div class="person-card-avatar" style="background:${p.color}18;color:${p.color}">${p.icon}</div>
+            <div>
+              <div class="person-card-name">${p.key}</div>
+              <div class="person-card-budget">${p.budget>0?'Budget : '+fmt(p.budget):'Budget non défini'} · ${count} dépense${count>1?'s':''}</div>
+            </div>
+          </div>
+          <div class="person-card-amount" style="${over?'color:var(--danger)':''}">${fmt(prevu)}</div>
+          <div class="person-card-sub">prévu · <span style="color:${paye>0?'var(--sage)':'var(--muted)'};font-weight:${paye>0?'600':'400'}">${paye>0?'✓ '+fmt(paye)+' payé':'non payé'}</span></div>
+          ${p.budget>0?`
+          <div style="font-size:0.62rem;color:${over?'var(--danger)':'var(--muted)'};margin-bottom:0.4rem;font-weight:${over?'700':'400'}">
+            ${over?'⚠️ Dépassement de '+fmt(prevu-p.budget):fmt(p.budget-prevu)+' restant dans l\'enveloppe'}
+          </div>
+          <div class="person-card-bar-wrap">
+            <div class="person-card-bar" style="width:0%;background:${over?'var(--danger)':p.color}" data-pw="${pctBudget}"></div>
+          </div>
+          <div class="person-card-pct"><span>${pctBudget}% du budget utilisé</span><span style="color:${paye>0?'var(--sage)':'var(--muted)'}">${pctPaye}% payé</span></div>`:''}
+        </div>`;
+    }).join('');
+    setTimeout(()=>document.querySelectorAll('.person-card-bar').forEach(b=>b.style.width=b.dataset.pw+'%'),50);
   }
 
   // ── Dashboard paiement ──
