@@ -1868,7 +1868,7 @@ async function saveBudgetTotal(){
     }
     showToast('Budget sauvegardé');
   }catch(e){ showToast('Erreur budget: '+e.message,true); }
-  renderBudget();
+  await renderBudget();
 }
 
 const CAT_COLORS = {
@@ -1914,8 +1914,8 @@ async function deleteExpense(id){
   }catch(e){ showToast('Erreur: '+e.message,true); }
 }
 
-function editExpense(id){
-  const expenses = getExpenses();
+async function editExpense(id){
+  const expenses = await getExpenses();
   const e = expenses.find(x=>String(x.id)===String(id));
   if(!e) return;
 
@@ -1967,7 +1967,7 @@ async function updateExpense(id){
   document.querySelector('#page-budget .btn-rose').textContent = 'Ajouter';
   document.getElementById('bexp-cancel').style.display = 'none';
 
-  renderBudget();
+  await renderBudget();
   showToast('Dépense mise à jour ✅');
 }
 
@@ -2291,8 +2291,8 @@ async function renderBudget(){
         <div class="expense-prevu">Prévu : ${fmt(e.prevu)}</div>
         <div class="expense-effectue ${e.effectue>0?'paid':''}">${e.effectue>0?'✓ '+fmt(e.effectue):'Non payé'}</div>
       </div>
-      <button class="btn btn-outline" onclick="editExpense(${e.id})" style="margin-left:0.4rem;font-size:0.6rem;padding:0.3rem 0.6rem">✏️</button>
-      <button class="btn btn-danger" onclick="deleteExpense(${e.id})" style="margin-left:0.2rem">✕</button>
+      <button class="btn btn-outline" onclick="editExpense('${e.id}')" style="margin-left:0.4rem;font-size:0.6rem;padding:0.3rem 0.6rem">✏️</button>
+      <button class="btn btn-danger" onclick="deleteExpense('${e.id}')" style="margin-left:0.2rem">✕</button>
     </div>`;
   }).join('');
 }
