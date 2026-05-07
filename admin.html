@@ -1911,7 +1911,7 @@ async function saveEnveloppe(){
 async function deleteEnveloppe(id){
   if(!confirm('Supprimer cette enveloppe ?')) return;
   try{
-    await sbExpFetch(`budget_config?id=eq.${id}`,{method:'DELETE',headers:{'Prefer':'return=minimal'}});
+    await sbExpFetch(`budget_config?id=eq.${id}`,{method:'DELETE', prefer:'return=minimal'});
     await renderBudget();
     showToast('Enveloppe supprimée');
   }catch(e){ showToast('Erreur: '+e.message,true); }
@@ -1921,13 +1921,16 @@ async function deleteEnveloppe(id){
 async function sbExpFetch(path, opts={}){
   const cfg = getCfg();
   if(!cfg) throw new Error('Supabase non configuré');
+  const { prefer, headers: extraHeaders, ...fetchOpts } = opts;
   const res = await fetch(cfg.url+'/rest/v1/'+path, {
+    ...fetchOpts,
     headers:{
-      'apikey':cfg.key,'Authorization':'Bearer '+cfg.key,
-      'Content-Type':'application/json',
-      'Prefer': opts.prefer||'return=representation',
-      ...(opts.headers||{})
-    }, ...opts
+      'apikey': cfg.key,
+      'Authorization': 'Bearer '+cfg.key,
+      'Content-Type': 'application/json',
+      'Prefer': prefer || 'return=representation',
+      ...(extraHeaders||{})
+    }
   });
   if(!res.ok){ const t=await res.text(); throw new Error(t); }
   const txt = await res.text();
@@ -2012,7 +2015,7 @@ async function addExpense(){
 async function deleteExpense(id){
   if(!confirm('Supprimer cette dépense ?')) return;
   try{
-    await sbExpFetch(`expenses?id=eq.${id}`,{method:'DELETE',headers:{'Prefer':'return=minimal'}});
+    await sbExpFetch(`expenses?id=eq.${id}`,{method:'DELETE', prefer:'return=minimal'});
     await renderBudget();
     showToast('Supprimé');
   }catch(e){ showToast('Erreur: '+e.message,true); }
