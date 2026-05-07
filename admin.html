@@ -791,6 +791,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <option value="Fleurs">💐 Fleurs & Déco</option>
             <option value="Papeterie">✉️ Faire-part & Papeterie</option>
             <option value="Transport">🚗 Transport & Hébergement</option>
+            <option value="Bijoux">💍 Bijoux & Accessoires</option>
             <option value="Autre">📌 Autre</option>
           </select>
         </div>
@@ -836,6 +837,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <option value="Fleurs">Fleurs</option>
             <option value="Papeterie">Papeterie</option>
             <option value="Transport">Transport</option>
+            <option value="Bijoux">Bijoux</option>
             <option value="Autre">Autre</option>
           </select>
         </h3>
@@ -1871,9 +1873,10 @@ async function saveBudgetTotal(){
   await renderBudget();
 }
 
+const PAY_COLORS_MAP={'Cash':'#C08A20','Virement':'#4A7AA8','CB':'#4A7A5A','Chèque':'#7A5AA8','Bijoux':'#C05A8A','Autre':'#8C8078','':'#C8BDB5'};
 const CAT_COLORS = {
   'Lieu':'#D45C73','Traiteur':'#4A7A5A','Tenue':'#7A5AA8','Photo':'#4A7AA8',
-  'Musique':'#C08A20','Fleurs':'#E8849A','Papeterie':'#6A9E7A','Transport':'#5A7A8A','Autre':'#8C8078'
+  'Musique':'#C08A20','Fleurs':'#E8849A','Papeterie':'#6A9E7A','Transport':'#5A7A8A','Bijoux':'#C05A8A','Autre':'#8C8078'
 };
 
 
@@ -2091,6 +2094,27 @@ async function renderBudget(){
       const pctBudget = p.budget>0 ? Math.min(Math.round(prevu/p.budget*100),999) : (prevu>0?100:0);
       const pctPaye   = prevu>0    ? Math.min(Math.round(paye/prevu*100),100)      : 0;
       const over      = p.budget>0 && prevu>p.budget;
+      // Segments par moyen de paiement (sur les payés)
+      const paySegs = ['Cash','Virement','CB','Chèque','Autre',''].map(pk=>{
+        const segItems = items.filter(e=>e.paiement===(pk));
+        const segPaye = segItems.reduce((s,e)=>s+e.effectue,0);
+        return {pk, segPaye, color:PAY_COLORS_MAP[pk]||'#C8BDB5'};
+      }).filter(s=>s.segPaye>0);
+      const totalRef = paye > 0 ? paye : 1;
+      const segHTML = paye>0 ? paySegs.map(s=>{
+        const w = Math.round(s.segPaye/totalRef*100);
+        return `<div style="height:100%;width:${w}%;background:${s.color};transition:width 1.2s ease;flex-shrink:0;" title="${s.pk||'Non défini'}: ${fmt(s.segPaye)}"></div>`;
+      }).join('') : '';
+
+      // Légende paiements
+      const legendHTML = paySegs.length ? `
+        <div style="display:flex;flex-wrap:wrap;gap:0.35rem;justify-content:center;margin-top:0.5rem;">
+          ${paySegs.map(s=>`<span style="display:inline-flex;align-items:center;gap:3px;font-size:0.58rem;color:var(--muted);">
+            <span style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0;"></span>
+            ${s.pk||'?'} ${fmt(s.segPaye)}
+          </span>`).join('')}
+        </div>` : '';
+
       return `
         <div class="person-card" style="text-align:center;">
           <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,${p.color},${p.color}55)"></div>
@@ -2107,13 +2131,16 @@ async function renderBudget(){
           </div>
           <div style="font-family:'Playfair Display',serif;font-size:1.5rem;color:${over?'var(--danger)':'var(--text)'};line-height:1;margin-bottom:0.2rem">${fmt(prevu)}</div>
           <div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.7rem">prévu${p.budget>0?' / '+fmt(p.budget):''}</div>
-          <div style="background:var(--bg3);border-radius:4px;height:6px;overflow:hidden;margin-bottom:0.3rem;">
-            <div style="height:100%;border-radius:4px;background:var(--sage);width:0%;transition:width 1s ease" data-pw2="${pctPaye}"></div>
+
+          <!-- Barre multi-couleurs par moyen de paiement -->
+          <div style="background:var(--bg3);border-radius:4px;height:10px;overflow:hidden;margin-bottom:0.3rem;display:flex;">
+            ${segHTML || `<div style="height:100%;width:0%"></div>`}
           </div>
           <div style="display:flex;justify-content:space-between;font-size:0.62rem;color:var(--muted);">
-            <span style="color:${paye>0?'var(--sage)':'var(--muted)'};font-weight:${paye>0?'600':'400'}">${paye>0?'✓ '+fmt(paye):' Non payé'}</span>
+            <span style="color:${paye>0?'var(--text2)':'var(--muted)'};font-weight:${paye>0?'600':'400'}">${paye>0?'✓ '+fmt(paye)+' payé':' Non payé'}</span>
             <span>${pctPaye}% réglé</span>
           </div>
+          ${legendHTML}
           ${over?`<div style="margin-top:0.6rem;font-size:0.65rem;font-weight:700;color:var(--danger);background:#FEEAEA;border-radius:6px;padding:0.3rem 0.6rem;">⚠️ +${fmt(prevu-p.budget)}</div>`:''}
           ${!over&&p.budget>0?`<div style="margin-top:0.6rem;font-size:0.65rem;color:var(--sage);background:var(--sage-bg);border-radius:6px;padding:0.3rem 0.6rem;">${fmt(p.budget-prevu)} disponible</div>`:''}
           <div style="font-size:0.6rem;color:var(--muted2);margin-top:0.5rem">${count} dépense${count>1?'s':''}</div>
