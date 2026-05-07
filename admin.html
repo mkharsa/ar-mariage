@@ -810,6 +810,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           </div>
         </div>
         <div class="fgroup"><label>Note (optionnel)</label><input type="text" id="bexp-note" placeholder="Détails…"></div>
+        <div class="fgroup"><label>Enveloppe budgétaire</label>
+          <select id="bexp-enveloppe">
+            <option value="">— Aucune</option>
+          </select>
+        </div>
         <button class="btn btn-rose" style="width:100%;justify-content:center" onclick="submitExpense()">Ajouter</button>
         <button id="bexp-cancel" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:0.5rem;display:none" onclick="cancelEditExpense()">✕ Annuler la modification</button>
       </div>
@@ -1983,6 +1988,7 @@ async function addExpense(){
   const note = document.getElementById('bexp-note').value.trim();
   const paiement = document.getElementById('bexp-paiement').value;
   const origine = document.getElementById('bexp-origine').value;
+  const enveloppe = document.getElementById('bexp-enveloppe').value;
   if(!name){ showToast('Entrez un libellé', true); return; }
   try{
     await sbExpFetch('expenses', {
@@ -1997,6 +2003,7 @@ async function addExpense(){
     ['bexp-name','bexp-prevu','bexp-effectue','bexp-note'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('bexp-paiement').value='';
     document.getElementById('bexp-origine').value='';
+    document.getElementById('bexp-enveloppe').value='';
     await renderBudget();
     showToast('Dépense ajoutée');
   }catch(e){ showToast('Erreur: '+e.message, true); }
@@ -2021,6 +2028,7 @@ async function editExpense(id){
   document.getElementById('bexp-cat').value = e.cat;
   document.getElementById('bexp-paiement').value = e.paiement||'';
   document.getElementById('bexp-origine').value = e.origine||'';
+  document.getElementById('bexp-enveloppe').value = e.enveloppe||'';
   document.getElementById('bexp-prevu').value = e.prevu;
   document.getElementById('bexp-effectue').value = e.effectue;
   document.getElementById('bexp-note').value = e.note||'';
@@ -2034,6 +2042,7 @@ function cancelEditExpense(){
   ['bexp-name','bexp-prevu','bexp-effectue','bexp-note'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('bexp-paiement').value='';
   document.getElementById('bexp-origine').value='';
+  document.getElementById('bexp-enveloppe').value='';
   document.querySelector('#page-budget .btn-rose').textContent = 'Ajouter';
   document.getElementById('bexp-cancel').style.display = 'none';
 }
@@ -2046,12 +2055,13 @@ async function updateExpense(id){
   const note = document.getElementById('bexp-note').value.trim();
   const paiement = document.getElementById('bexp-paiement').value;
   const origine = document.getElementById('bexp-origine').value;
+  const enveloppe = document.getElementById('bexp-enveloppe').value;
   if(!name){ showToast('Entrez un libellé', true); return; }
 
   try{
     await sbExpFetch(`expenses?id=eq.${id}`,{
       method:'PATCH',
-      body: JSON.stringify({name, cat, prevu:Number(prevu), effectue:Number(effectue), note, paiement, origine}),
+      body: JSON.stringify({name, cat, prevu:Number(prevu), effectue:Number(effectue), note, paiement, origine, enveloppe}),
       prefer:'return=minimal'
     });
   }catch(e){ showToast('Erreur: '+e.message,true); return; }
@@ -2061,6 +2071,7 @@ async function updateExpense(id){
   ['bexp-name','bexp-prevu','bexp-effectue','bexp-note'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('bexp-paiement').value='';
   document.getElementById('bexp-origine').value='';
+  document.getElementById('bexp-enveloppe').value='';
   document.querySelector('#page-budget .btn-rose').textContent = 'Ajouter';
   document.getElementById('bexp-cancel').style.display = 'none';
 
@@ -2088,6 +2099,14 @@ async function renderBudget(){
   const ti = document.getElementById('budget-total-input');
   if(ti) ti.value = total > 0 ? total : '';
 
+  // Peupler le select enveloppe dans le formulaire
+  const envSel = document.getElementById('bexp-enveloppe');
+  if(envSel){
+    const curVal = envSel.value;
+    envSel.innerHTML = '<option value="">— Aucune</option>' +
+      _enveloppes.map(e=>`<option value="${e.name}" ${curVal===e.name?'selected':''}>${e.name}${e.person?' ('+e.person+')':''}</option>`).join('');
+  }
+
   // Rendre les enveloppes
   const envGrid = document.getElementById('enveloppes-grid');
   if(envGrid){
@@ -2097,13 +2116,13 @@ async function renderBudget(){
       </div>`;
     } else {
       envGrid.innerHTML = _enveloppes.map(e=>{
-        const envItems = expenses.filter(x=>x.cat===e.name || x.note===e.name || x.name===e.name);
-        // Match by cat or just show total prevu vs budget
-        const envPrevu = expenses.filter(x=>true).length; // show global for now
-        const pct = e.budget>0 ? Math.min(Math.round(totalPrevu/e.budget*100),100) : 0;
-        const envPaye = totalPaye;
-        const pctP = e.budget>0 ? Math.min(Math.round(envPaye/e.budget*100),100) : 0;
-        const over = e.budget>0 && totalPrevu>e.budget;
+        // Dépenses liées à cette enveloppe
+        const envItems = expenses.filter(x=>x.enveloppe===e.name);
+        const envPrevu = envItems.reduce((s,x)=>s+x.prevu,0);
+        const envPaye  = envItems.reduce((s,x)=>s+x.effectue,0);
+        const pct  = e.budget>0 ? Math.min(Math.round(envPrevu/e.budget*100),100) : 0;
+        const pctP = e.budget>0 ? Math.min(Math.round(envPaye/e.budget*100),100)  : 0;
+        const over = e.budget>0 && envPrevu>e.budget;
         return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.2rem;box-shadow:var(--shadow);position:relative;overflow:hidden;">
           <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${e.color}"></div>
           <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0.7rem;">
@@ -2118,10 +2137,19 @@ async function renderBudget(){
           </div>
           <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--text);line-height:1;">${fmt(e.budget)}</div>
           <div style="font-size:0.62rem;color:var(--muted);margin-bottom:0.6rem;margin-top:0.1rem">Budget alloué</div>
-          <div style="background:var(--bg3);border-radius:3px;height:5px;overflow:hidden;">
-            <div style="height:100%;background:${e.color};width:${pct}%;transition:width 1s ease;border-radius:3px;"></div>
+          ${envItems.length>0?`
+          <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:0.4rem;">
+            <span style="color:var(--text2)">Prévu : <strong>${fmt(envPrevu)}</strong></span>
+            <span style="color:${envPaye>0?'var(--sage)':'var(--muted)'}">Payé : <strong>${fmt(envPaye)}</strong></span>
+          </div>`:''}
+          <div style="background:var(--bg3);border-radius:3px;height:6px;overflow:hidden;margin-bottom:3px;display:flex;">
+            <div style="height:100%;background:${over?'var(--danger)':e.color};width:${pct}%;transition:width 1s ease;border-radius:3px;flex-shrink:0;"></div>
+            ${pctP>0&&!over?`<div style="height:100%;background:${e.color}55;width:${Math.max(0,pctP-pct)}%;transition:width 1s ease;flex-shrink:0;"></div>`:''}
           </div>
-          <div style="font-size:0.6rem;color:var(--muted);margin-top:3px;text-align:right">${pct}% utilisé</div>
+          <div style="display:flex;justify-content:space-between;font-size:0.6rem;color:var(--muted);">
+            <span style="${over?'color:var(--danger);font-weight:700':''}">${pct}% prévu${over?' ⚠️':''}</span>
+            <span style="color:${pctP>0?'var(--sage)':'var(--muted)'}">${pctP}% payé · ${envItems.length} dép.</span>
+          </div>
         </div>`;
       }).join('');
     }
@@ -2442,7 +2470,7 @@ async function renderBudget(){
       <div class="expense-cat-dot" style="background:${color}"></div>
       <div class="expense-body">
         <div class="expense-name">${e.name}</div>
-        <div class="expense-meta">${e.cat}${e.origine?' · '+e.origine:''}${e.paiement?' · '+e.paiement:''}${e.note?' · '+e.note:''} · ${e.date}</div>
+        <div class="expense-meta">${e.cat}${e.enveloppe?' · 📁 '+e.enveloppe:''}${e.origine?' · '+e.origine:''}${e.paiement?' · '+e.paiement:''}${e.note?' · '+e.note:''} · ${e.date}</div>
       </div>
       <div class="expense-amounts">
         <div class="expense-prevu">Prévu : ${fmt(e.prevu)}</div>
