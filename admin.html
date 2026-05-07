@@ -1938,7 +1938,7 @@ async function getExpenses(){
 
 async function loadBudgetConfig(){
   try{
-    const rows = await sbExpFetch('budget_config') || [];
+    const rows = await sbExpFetch('budget_config?select=id,key,value,color,person') || [];
     const totalRow = rows.find(r=>r.key==='total');
     _budgetTotal = totalRow ? parseFloat(totalRow.value)||0 : 0;
     _enveloppes = rows.filter(r=>r.key!=='total').map(r=>({
