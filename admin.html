@@ -712,35 +712,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
       <div class="budget-hero-right">
         <canvas class="budget-hero-ring" id="bh-ring" width="88" height="88"></canvas>
-        <div style="display:flex;flex-direction:column;gap:0.6rem;">
-          <div>
-            <div style="font-size:0.55rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:0.25rem">Budget total</div>
-            <div class="budget-hero-input-wrap">
-              <input type="number" id="budget-total-input" placeholder="30 000" min="0" step="100"
-                onchange="saveBudgetTotal()" onblur="saveBudgetTotal()">
-              <span>€</span>
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
-            <div>
-              <div style="font-size:0.55rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(232,132,154,0.8);margin-bottom:0.25rem">👰 Raoine</div>
-              <div class="budget-hero-input-wrap" style="border-color:rgba(232,132,154,0.3);">
-                <input type="number" id="budget-raoine-input" placeholder="0" min="0" step="100"
-                  onchange="saveBudgetTotal()" onblur="saveBudgetTotal()" style="width:90px;">
-                <span>€</span>
-              </div>
-            </div>
-            <div>
-              <div style="font-size:0.55rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(122,170,212,0.8);margin-bottom:0.25rem">🤵 Aboudé</div>
-              <div class="budget-hero-input-wrap" style="border-color:rgba(122,170,212,0.3);">
-                <input type="number" id="budget-aboude-input" placeholder="0" min="0" step="100"
-                  onchange="saveBudgetTotal()" onblur="saveBudgetTotal()" style="width:90px;">
-                <span>€</span>
-              </div>
-            </div>
+        <div>
+          <div style="font-size:0.55rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:0.25rem">Budget total</div>
+          <div class="budget-hero-input-wrap">
+            <input type="number" id="budget-total-input" placeholder="30 000" min="0" step="100"
+              onchange="saveBudgetTotal()" onblur="saveBudgetTotal()">
+            <span>€</span>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- ENVELOPPES BUDGÉTAIRES -->
+    <div style="margin-bottom:1.4rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">
+        <div style="font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);font-weight:600;">Enveloppes budgétaires</div>
+        <button class="btn btn-outline" style="font-size:0.62rem;padding:0.35rem 0.8rem" onclick="openEnveloppeModal()">+ Ajouter</button>
+      </div>
+      <div id="enveloppes-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.8rem;"></div>
     </div>
 
     <!-- KPIs -->
@@ -792,6 +781,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <option value="Papeterie">✉️ Faire-part & Papeterie</option>
             <option value="Transport">🚗 Transport & Hébergement</option>
             <option value="Bijoux">💍 Bijoux & Accessoires</option>
+            <option value="Voyage">✈️ Voyage & Lune de miel</option>
             <option value="Autre">📌 Autre</option>
           </select>
         </div>
@@ -838,6 +828,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <option value="Papeterie">Papeterie</option>
             <option value="Transport">Transport</option>
             <option value="Bijoux">Bijoux</option>
+            <option value="Voyage">Voyage</option>
             <option value="Autre">Autre</option>
           </select>
         </h3>
@@ -989,6 +980,47 @@ create policy "public delete events" on events for delete using (true);</pre>
   </div>
 
 </div>
+</div>
+
+<!-- MODAL ENVELOPPE -->
+<div class="overlay" id="modal-enveloppe">
+  <div class="modal" style="max-width:420px;">
+    <button class="modal-x" onclick="closeEnveloppeModal()">✕</button>
+    <h2 id="env-modal-title">Nouvelle enveloppe</h2>
+    <input type="hidden" id="env-edit-id">
+    <div class="fgroup"><label>Nom de l'enveloppe</label>
+      <input type="text" id="env-name" placeholder="ex : Mariage, Lune de miel, Raoine…">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;">
+      <div class="fgroup"><label>Budget (€)</label>
+        <input type="number" id="env-budget" placeholder="0" min="0">
+      </div>
+      <div class="fgroup"><label>Couleur</label>
+        <select id="env-color">
+          <option value="#D45C73">🌸 Rose</option>
+          <option value="#4A7AA8">💙 Bleu</option>
+          <option value="#4A7A5A">💚 Vert</option>
+          <option value="#C08A20">🟡 Or</option>
+          <option value="#7A5AA8">💜 Violet</option>
+          <option value="#2A9D8F">🩵 Turquoise</option>
+          <option value="#C05A8A">💗 Fuchsia</option>
+          <option value="#8C8078">⚫ Gris</option>
+        </select>
+      </div>
+    </div>
+    <div class="fgroup"><label>Personne associée (optionnel)</label>
+      <select id="env-person">
+        <option value="">— Commune</option>
+        <option value="Raoine">👰 Raoine</option>
+        <option value="Aboudé">🤵 Aboudé</option>
+        <option value="Ensemble">💑 Ensemble</option>
+      </select>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeEnveloppeModal()">Annuler</button>
+      <button class="btn btn-rose" onclick="saveEnveloppe()">Enregistrer</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL -->
@@ -1812,11 +1844,62 @@ document.addEventListener('visibilitychange', ()=>{
 
 /* ═══ BUDGET ═══ */
 let _editingExpenseId = null;
-let _budgetConfig = { total:0, raoine:0, aboude:0 };
+let _budgetTotal = 0;
+let _enveloppes = []; // [{id, name, budget, color, person}]
 
 function submitExpense(){
   if(_editingExpenseId !== null){ updateExpense(_editingExpenseId); }
   else { addExpense(); }
+}
+
+/* ── Enveloppes modal ── */
+function openEnveloppeModal(id=null){
+  document.getElementById('env-edit-id').value = id||'';
+  document.getElementById('env-modal-title').textContent = id ? "Modifier l'enveloppe" : 'Nouvelle enveloppe';
+  if(id){
+    const e = _enveloppes.find(x=>x.id===id);
+    if(e){
+      document.getElementById('env-name').value = e.name||'';
+      document.getElementById('env-budget').value = e.budget||0;
+      document.getElementById('env-color').value = e.color||'#D45C73';
+      document.getElementById('env-person').value = e.person||'';
+    }
+  } else {
+    document.getElementById('env-name').value='';
+    document.getElementById('env-budget').value='';
+    document.getElementById('env-color').value='#D45C73';
+    document.getElementById('env-person').value='';
+  }
+  document.getElementById('modal-enveloppe').classList.add('open');
+}
+function closeEnveloppeModal(){ document.getElementById('modal-enveloppe').classList.remove('open'); }
+
+async function saveEnveloppe(){
+  const name   = document.getElementById('env-name').value.trim();
+  const budget = parseFloat(document.getElementById('env-budget').value)||0;
+  const color  = document.getElementById('env-color').value;
+  const person = document.getElementById('env-person').value;
+  const editId = document.getElementById('env-edit-id').value;
+  if(!name){ showToast('Entrez un nom', true); return; }
+  try{
+    if(editId){
+      await sbExpFetch(`budget_config?id=eq.${editId}`,{method:'PATCH',body:JSON.stringify({value:budget,key:name,color,person}),prefer:'return=minimal'});
+    } else {
+      await sbExpFetch('budget_config',{method:'POST',body:JSON.stringify({key:name,value:budget,color,person})});
+    }
+    closeEnveloppeModal();
+    await renderBudget();
+    showToast(editId?'Enveloppe mise à jour':'Enveloppe créée');
+  }catch(e){ showToast('Erreur: '+e.message,true); }
+}
+
+async function deleteEnveloppe(id){
+  if(!confirm('Supprimer cette enveloppe ?')) return;
+  try{
+    await sbExpFetch(`budget_config?id=eq.${id}`,{method:'DELETE',headers:{'Prefer':'return=minimal'}});
+    await renderBudget();
+    showToast('Enveloppe supprimée');
+  }catch(e){ showToast('Erreur: '+e.message,true); }
 }
 
 /* ── Supabase budget helpers ── */
@@ -1846,37 +1929,38 @@ async function getExpenses(){
 async function loadBudgetConfig(){
   try{
     const rows = await sbExpFetch('budget_config') || [];
-    rows.forEach(r=>{ if(r.key==='total') _budgetConfig.total=parseFloat(r.value)||0;
-      else if(r.key==='raoine') _budgetConfig.raoine=parseFloat(r.value)||0;
-      else if(r.key==='aboude') _budgetConfig.aboude=parseFloat(r.value)||0; });
+    const totalRow = rows.find(r=>r.key==='total');
+    _budgetTotal = totalRow ? parseFloat(totalRow.value)||0 : 0;
+    _enveloppes = rows.filter(r=>r.key!=='total').map(r=>({
+      id:r.id, name:r.key, budget:parseFloat(r.value)||0,
+      color:r.color||'#D45C73', person:r.person||''
+    }));
   }catch(e){ console.warn('loadBudgetConfig error:',e); }
 }
 
-function getBudgetTotal(){  return _budgetConfig.total; }
-function getBudgetRaoine(){ return _budgetConfig.raoine; }
-function getBudgetAboude(){ return _budgetConfig.aboude; }
+function getBudgetTotal(){ return _budgetTotal; }
+function getBudgetRaoine(){ return _enveloppes.filter(e=>e.person==='Raoine').reduce((s,e)=>s+e.budget,0); }
+function getBudgetAboude(){ return _enveloppes.filter(e=>e.person==='Aboudé').reduce((s,e)=>s+e.budget,0); }
 
 async function saveBudgetTotal(){
-  const v  = parseFloat(document.getElementById('budget-total-input').value)||0;
-  const vr = parseFloat(document.getElementById('budget-raoine-input').value)||0;
-  const va = parseFloat(document.getElementById('budget-aboude-input').value)||0;
-  _budgetConfig = {total:v, raoine:vr, aboude:va};
+  const v = parseFloat(document.getElementById('budget-total-input').value)||0;
+  _budgetTotal = v;
   try{
-    for(const [key,value] of [['total',v],['raoine',vr],['aboude',va]]){
-      await sbExpFetch(`budget_config?key=eq.${key}`,{
-        method:'PATCH', body:JSON.stringify({value}),
-        prefer:'return=minimal'
-      });
+    const existing = await sbExpFetch('budget_config?key=eq.total') || [];
+    if(existing.length>0){
+      await sbExpFetch('budget_config?key=eq.total',{method:'PATCH',body:JSON.stringify({value:v}),prefer:'return=minimal'});
+    } else {
+      await sbExpFetch('budget_config',{method:'POST',body:JSON.stringify({key:'total',value:v})});
     }
-    showToast('Budget sauvegardé');
-  }catch(e){ showToast('Erreur budget: '+e.message,true); }
+    showToast('Budget total sauvegardé');
+  }catch(e){ showToast('Erreur: '+e.message,true); }
   await renderBudget();
 }
 
-const PAY_COLORS_MAP={'Cash':'#C08A20','Virement':'#4A7AA8','CB':'#4A7A5A','Chèque':'#7A5AA8','Bijoux':'#C05A8A','Autre':'#8C8078','':'#C8BDB5'};
+const PAY_COLORS_MAP={'Cash':'#C08A20','Virement':'#4A7AA8','CB':'#4A7A5A','Chèque':'#7A5AA8','Bijoux':'#C05A8A','Voyage':'#2A9D8F','Autre':'#8C8078','':'#C8BDB5'};
 const CAT_COLORS = {
   'Lieu':'#D45C73','Traiteur':'#4A7A5A','Tenue':'#7A5AA8','Photo':'#4A7AA8',
-  'Musique':'#C08A20','Fleurs':'#E8849A','Papeterie':'#6A9E7A','Transport':'#5A7A8A','Bijoux':'#C05A8A','Autre':'#8C8078'
+  'Musique':'#C08A20','Fleurs':'#E8849A','Papeterie':'#6A9E7A','Transport':'#5A7A8A','Bijoux':'#C05A8A','Voyage':'#2A9D8F','Autre':'#8C8078'
 };
 
 
@@ -1982,15 +2066,50 @@ async function renderBudget(){
   const total = getBudgetTotal();
   const filterCat = document.getElementById('bfilter-cat')?.value || '';
 
-  // Restaurer les valeurs dans les champs depuis Supabase
+  // Restaurer le budget total
   const budgetRaoine = getBudgetRaoine();
   const budgetAboude = getBudgetAboude();
   const ti = document.getElementById('budget-total-input');
   if(ti) ti.value = total > 0 ? total : '';
-  const tr = document.getElementById('budget-raoine-input');
-  if(tr) tr.value = budgetRaoine > 0 ? budgetRaoine : '';
-  const ta = document.getElementById('budget-aboude-input');
-  if(ta) ta.value = budgetAboude > 0 ? budgetAboude : '';
+
+  // Rendre les enveloppes
+  const envGrid = document.getElementById('enveloppes-grid');
+  if(envGrid){
+    if(!_enveloppes.length){
+      envGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:1.2rem;background:var(--bg2);border:1.5px dashed var(--border2);border-radius:var(--r);font-size:0.82rem;color:var(--muted)">
+        Aucune enveloppe — cliquez <strong>+ Ajouter</strong> pour créer un budget Mariage, Lune de miel, etc.
+      </div>`;
+    } else {
+      envGrid.innerHTML = _enveloppes.map(e=>{
+        const envItems = expenses.filter(x=>x.cat===e.name || x.note===e.name || x.name===e.name);
+        // Match by cat or just show total prevu vs budget
+        const envPrevu = expenses.filter(x=>true).length; // show global for now
+        const pct = e.budget>0 ? Math.min(Math.round(totalPrevu/e.budget*100),100) : 0;
+        const envPaye = totalPaye;
+        const pctP = e.budget>0 ? Math.min(Math.round(envPaye/e.budget*100),100) : 0;
+        const over = e.budget>0 && totalPrevu>e.budget;
+        return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.2rem;box-shadow:var(--shadow);position:relative;overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${e.color}"></div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0.7rem;">
+            <div>
+              <div style="font-size:0.8rem;font-weight:600;color:var(--text)">${e.name}</div>
+              ${e.person?`<div style="font-size:0.62rem;color:var(--muted);margin-top:1px">${e.person==='Raoine'?'👰':e.person==='Aboudé'?'🤵':'💑'} ${e.person}</div>`:''}
+            </div>
+            <div style="display:flex;gap:0.3rem;">
+              <button class="btn btn-ghost" style="font-size:0.55rem;padding:0.2rem 0.5rem" onclick="openEnveloppeModal('${e.id}')">✏️</button>
+              <button class="btn btn-danger" style="font-size:0.55rem;padding:0.2rem 0.5rem" onclick="deleteEnveloppe('${e.id}')">✕</button>
+            </div>
+          </div>
+          <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--text);line-height:1;">${fmt(e.budget)}</div>
+          <div style="font-size:0.62rem;color:var(--muted);margin-bottom:0.6rem;margin-top:0.1rem">Budget alloué</div>
+          <div style="background:var(--bg3);border-radius:3px;height:5px;overflow:hidden;">
+            <div style="height:100%;background:${e.color};width:${pct}%;transition:width 1s ease;border-radius:3px;"></div>
+          </div>
+          <div style="font-size:0.6rem;color:var(--muted);margin-top:3px;text-align:right">${pct}% utilisé</div>
+        </div>`;
+      }).join('');
+    }
+  }
 
   const totalPrevu = expenses.reduce((s,e)=>s+e.prevu, 0);
   const totalPaye  = expenses.reduce((s,e)=>s+e.effectue, 0);
