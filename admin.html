@@ -782,6 +782,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <option value="Transport">🚗 Transport & Hébergement</option>
             <option value="Bijoux">💍 Bijoux & Accessoires</option>
             <option value="Voyage">✈️ Voyage & Lune de miel</option>
+            <option value="Ameublement">🛋️ Ameublement</option>
             <option value="Autre">📌 Autre</option>
           </select>
         </div>
@@ -835,6 +836,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <option value="Transport">Transport</option>
             <option value="Bijoux">Bijoux</option>
             <option value="Voyage">Voyage</option>
+            <option value="Ameublement">Ameublement</option>
             <option value="Autre">Autre</option>
           </select>
         </h3>
@@ -1976,10 +1978,10 @@ async function saveBudgetTotal(){
   await renderBudget();
 }
 
-const PAY_COLORS_MAP={'Cash':'#C08A20','Virement':'#4A7AA8','CB':'#4A7A5A','Chèque':'#7A5AA8','Bijoux':'#C05A8A','Voyage':'#2A9D8F','Autre':'#8C8078','':'#C8BDB5'};
+const PAY_COLORS_MAP={'Cash':'#C08A20','Virement':'#4A7AA8','CB':'#4A7A5A','Chèque':'#7A5AA8','Bijoux':'#C05A8A','Voyage':'#2A9D8F','Ameublement':'#E76F51','Autre':'#8C8078','':'#C8BDB5'};
 const CAT_COLORS = {
   'Lieu':'#D45C73','Traiteur':'#4A7A5A','Tenue':'#7A5AA8','Photo':'#4A7AA8',
-  'Musique':'#C08A20','Fleurs':'#E8849A','Papeterie':'#6A9E7A','Transport':'#5A7A8A','Bijoux':'#C05A8A','Voyage':'#2A9D8F','Autre':'#8C8078'
+  'Musique':'#C08A20','Fleurs':'#E8849A','Papeterie':'#6A9E7A','Transport':'#5A7A8A','Bijoux':'#C05A8A','Voyage':'#2A9D8F','Ameublement':'#E76F51','Autre':'#8C8078'
 };
 
 
