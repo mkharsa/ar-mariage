@@ -2076,6 +2076,12 @@ async function renderBudget(){
   const total = getBudgetTotal();
   const filterCat = document.getElementById('bfilter-cat')?.value || '';
 
+  // Calculs globaux (nécessaires pour les enveloppes)
+  const totalPrevu = expenses.reduce((s,e)=>s+e.prevu, 0);
+  const totalPaye  = expenses.reduce((s,e)=>s+e.effectue, 0);
+  const reste = total - totalPaye;
+  const pctPaye = total > 0 ? Math.round(totalPaye/total*100) : 0;
+
   // Restaurer le budget total
   const budgetRaoine = getBudgetRaoine();
   const budgetAboude = getBudgetAboude();
@@ -2120,11 +2126,6 @@ async function renderBudget(){
       }).join('');
     }
   }
-
-  const totalPrevu = expenses.reduce((s,e)=>s+e.prevu, 0);
-  const totalPaye  = expenses.reduce((s,e)=>s+e.effectue, 0);
-  const reste = total - totalPaye;
-  const pctPaye = total > 0 ? Math.round(totalPaye/total*100) : 0;
 
   // ── Hero banner ──
   const bhTotal = document.getElementById('bh-total');
