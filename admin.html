@@ -966,6 +966,16 @@ create policy "public delete events" on events for delete using (true);</pre>
         </p>
       </div>
 
+      <div class="info-card" style="border:2px solid var(--rose);background:var(--rose-bg);">
+        <h3>🔄 Migration des données locales → Supabase</h3>
+        <p style="font-size:0.84rem;color:var(--text2);line-height:1.7;margin-bottom:1rem;">
+          Si vous aviez des données (invités, dépenses) enregistrées localement avant la connexion Supabase, cliquez ici pour les importer automatiquement dans votre base de données.
+        </p>
+        <p style="font-size:0.75rem;color:var(--muted);margin-bottom:1rem;">⚠️ Cette migration ne peut être faite que depuis l'appareil qui contenait les données originales.</p>
+        <button id="btn-migrate" class="btn btn-rose" onclick="migrateLocalStorage()">🔄 Lancer la migration</button>
+        <div id="migrate-result" style="margin-top:0.8rem;font-size:0.8rem;line-height:1.7;font-weight:500;"></div>
+      </div>
+
       <div class="info-card">
         <h3>💾 Sauvegarde des données</h3>
         <p style="font-size:0.84rem;color:var(--muted);margin-bottom:1rem">Exportez ou restaurez invités + programme.</p>
@@ -2447,6 +2457,106 @@ async function renderBudget(){
 document.addEventListener('DOMContentLoaded', ()=>{
   // Budget inputs loaded via loadBudgetConfig() in renderBudget()
 });
+/* ═══ MIGRATION localStorage → Supabase ═══ */
+async function migrateLocalStorage(){
+  const btn = document.getElementById('btn-migrate');
+  if(btn){ btn.disabled=true; btn.textContent='Migration en cours…'; }
+  let imported = { guests:0, events:0, expenses:0 };
+  let errors = [];
+
+  try{
+    // ── Invités ──
+    const rawGuests = localStorage.getItem('mariage_guests');
+    if(rawGuests){
+      const guests = JSON.parse(rawGuests)||[];
+      for(const g of guests){
+        try{
+          const {id, ...rest} = g;
+          await saveG_insert({
+            prenom: rest.prenom||'',
+            nom: rest.nom||'',
+            genre: rest.genre||'',
+            type: rest.type||'',
+            presence: rest.presence||'pending',
+            cote: rest.cote||'',
+            via_lien: rest.via_lien||false
+          });
+          imported.guests++;
+        }catch(e){ errors.push('Invité '+g.prenom+': '+e.message); }
+      }
+    }
+
+    // ── Événements ──
+    const rawEvents = localStorage.getItem('mariage_events');
+    if(rawEvents){
+      const events = JSON.parse(rawEvents)||[];
+      for(const e of events){
+        try{
+          const {id, ...rest} = e;
+          await saveE_insert({
+            heure: rest.heure||'',
+            titre: rest.titre||'',
+            description: rest.description||rest.desc||''
+          });
+          imported.events++;
+        }catch(e2){ errors.push('Événement '+e.titre+': '+e2.message); }
+      }
+    }
+
+    // ── Dépenses budget ──
+    const rawBudget = localStorage.getItem('mariage_budget');
+    if(rawBudget){
+      const expenses = JSON.parse(rawBudget)||[];
+      for(const ex of expenses){
+        try{
+          const {id, ...rest} = ex;
+          await sbExpFetch('expenses',{
+            method:'POST',
+            body:JSON.stringify({
+              name: rest.name||'',
+              cat: rest.cat||'',
+              prevu: parseFloat(rest.prevu)||0,
+              effectue: parseFloat(rest.effectue)||0,
+              note: rest.note||'',
+              paiement: rest.paiement||'',
+              origine: rest.origine||'',
+              date: rest.date||new Date().toLocaleDateString('fr-FR')
+            })
+          });
+          imported.expenses++;
+        }catch(e){ errors.push('Dépense '+ex.name+': '+e.message); }
+      }
+    }
+
+    // ── Budget total ──
+    const budgetTotal = parseFloat(localStorage.getItem('mariage_budget_total'))||0;
+    if(budgetTotal>0){
+      try{
+        const existing = await sbExpFetch('budget_config?key=eq.total')||[];
+        if(existing.length>0){
+          await sbExpFetch('budget_config?key=eq.total',{method:'PATCH',body:JSON.stringify({value:budgetTotal}),prefer:'return=minimal'});
+        } else {
+          await sbExpFetch('budget_config',{method:'POST',body:JSON.stringify({key:'total',value:budgetTotal})});
+        }
+      }catch(e){ errors.push('Budget total: '+e.message); }
+    }
+
+    // Résultat
+    const msg = `Migration terminée ✅\n${imported.guests} invité(s)\n${imported.events} événement(s)\n${imported.expenses} dépense(s)${errors.length?' \n⚠️ '+errors.length+' erreur(s)':''}`;
+    document.getElementById('migrate-result').innerHTML = msg.replace(/\n/g,'<br>');
+    document.getElementById('migrate-result').style.color = errors.length ? 'var(--danger)' : 'var(--sage)';
+
+    await loadAll();
+    await renderBudget();
+
+  }catch(e){
+    document.getElementById('migrate-result').textContent = 'Erreur: '+e.message;
+    document.getElementById('migrate-result').style.color = 'var(--danger)';
+  }
+
+  if(btn){ btn.disabled=false; btn.textContent='🔄 Lancer la migration'; }
+}
+
 function checkPwd(){
   const val = document.getElementById('pwd-input').value.trim();
   if(val === 'aboudi'){
