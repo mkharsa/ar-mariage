@@ -2084,17 +2084,15 @@ function fmt(n){ return n.toLocaleString('fr-FR',{style:'currency',currency:'EUR
 async function renderBudget(){
   await loadBudgetConfig();
   const expenses = await getExpenses();
-  const total = getBudgetTotal();
   const filterCat = document.getElementById('bfilter-cat')?.value || '';
 
-  // Calculs globaux (nécessaires pour les enveloppes)
+  // Calculs globaux
   const totalPrevu = expenses.reduce((s,e)=>s+e.prevu, 0);
   const totalPaye  = expenses.reduce((s,e)=>s+e.effectue, 0);
-  const reste = total - totalPaye;
-  const pctPaye = budgetTotal > 0 ? Math.round(totalPaye/budgetTotal*100) : (totalPrevu>0 ? Math.round(totalPaye/totalPrevu*100) : 0);
-
-  // Budget total = somme des enveloppes
   const budgetTotal = _enveloppes.reduce((s,e)=>s+e.budget,0);
+  const total = budgetTotal; // alias pour compatibilité
+  const reste = totalPrevu - totalPaye;
+  const pctPaye = budgetTotal > 0 ? Math.round(totalPaye/budgetTotal*100) : (totalPrevu>0 ? Math.round(totalPaye/totalPrevu*100) : 0);
   const budgetRaoine = getBudgetRaoine();
   const budgetAboude = getBudgetAboude();
 
