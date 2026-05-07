@@ -806,6 +806,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
               <option value="Raoine">👰 Raoine</option>
               <option value="Aboudé">🤵 Aboudé</option>
               <option value="Ensemble">💑 Ensemble</option>
+              <option value="Maman">👩 Maman</option>
             </select>
           </div>
         </div>
@@ -2241,6 +2242,7 @@ async function renderBudget(){
     { key:'Raoine',  icon:'👰', color:'#E8849A', budget: budgetRaoine },
     { key:'Aboudé',  icon:'🤵', color:'#4A7AA8', budget: budgetAboude },
     { key:'Ensemble',icon:'💑', color:'#4A7A5A', budget: 0 },
+    { key:'Maman',   icon:'👩', color:'#C05A8A', budget: 0 },
   ];
   const personSection = document.getElementById('budget-person-section');
   const personCards   = document.getElementById('budget-person-cards');
@@ -2252,7 +2254,7 @@ async function renderBudget(){
       const prevu  = items.reduce((s,e)=>s+e.prevu,0);
       const paye   = items.reduce((s,e)=>s+e.effectue,0);
       const count  = items.length;
-      const pctBudget = p.budget>0 ? Math.min(Math.round(prevu/p.budget*100),999) : (prevu>0?100:0);
+      const pctBudget = p.budget>0 ? Math.min(Math.round(prevu/p.budget*100),999) : 0;
       const pctPaye   = prevu>0    ? Math.min(Math.round(paye/prevu*100),100)      : 0;
       const over      = p.budget>0 && prevu>p.budget;
       // Segments par moyen de paiement (sur les payés)
@@ -2291,7 +2293,7 @@ async function renderBudget(){
             <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">${p.key}</span>
           </div>
           <div style="font-family:'Playfair Display',serif;font-size:1.5rem;color:${over?'var(--danger)':'var(--text)'};line-height:1;margin-bottom:0.2rem">${fmt(prevu)}</div>
-          <div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.7rem">prévu${p.budget>0?' / '+fmt(p.budget):''}</div>
+          <div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.7rem">prévu${p.budget>0?' sur '+fmt(p.budget):' — budget non défini'}</div>
 
           <!-- Barre multi-couleurs par moyen de paiement -->
           <div style="background:var(--bg3);border-radius:4px;height:10px;overflow:hidden;margin-bottom:0.3rem;display:flex;">
@@ -2312,7 +2314,7 @@ async function renderBudget(){
       personConfig.forEach((p,pi)=>{
         const items = expenses.filter(e=>e.origine===p.key);
         const prevu = items.reduce((s,e)=>s+e.prevu,0);
-        const pctFill = p.budget>0 ? Math.min(prevu/p.budget,1) : (prevu>0?1:0);
+        const pctFill = p.budget>0 ? Math.min(prevu/p.budget,1) : 0;
         const over = p.budget>0 && prevu>p.budget;
         const cv = document.getElementById('pgauge-'+pi);
         if(!cv) return;
