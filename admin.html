@@ -841,24 +841,50 @@ transition:transform 0.2s,box-shadow 0.2s;
   </div>
 
   <div class="budget-form-card">
-    <h3 style="display:flex;justify-content:space-between;align-items:center">
-      <span>Toutes les dépenses</span>
-      <select id="bfilter-cat" onchange="renderBudget()" style="font-size:0.7rem;border:1px solid var(--border);border-radius:8px;padding:0.3rem 0.6rem;background:var(--bg);color:var(--text2);outline:none;">
-        <option value="">Toutes catégories</option>
-        <option value="Lieu">Lieu</option>
-        <option value="Traiteur">Traiteur</option>
-        <option value="Tenue">Tenues</option>
-        <option value="Photo">Photo</option>
-        <option value="Musique">Musique</option>
-        <option value="Fleurs">Fleurs</option>
-        <option value="Papeterie">Papeterie</option>
-        <option value="Transport">Transport</option>
-        <option value="Bijoux">Bijoux</option>
-        <option value="Voyage">Voyage</option>
-        <option value="Ameublement">Ameublement</option>
-        <option value="Autre">Autre</option>
+    <h3 style="margin-bottom:0.9rem;">Toutes les dépenses</h3>
+
+    <!-- Filtres -->
+    <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.7rem;">
+      <select id="bfilter-cat" onchange="applyExpenseFilters()" style="font-size:0.65rem;border:1px solid var(--border);border-radius:20px;padding:0.28rem 0.65rem;background:var(--bg);color:var(--text2);outline:none;cursor:pointer;">
+        <option value="">🗂 Catégorie</option>
+        <option value="Lieu">🏛 Lieu</option>
+        <option value="Traiteur">🍽 Traiteur</option>
+        <option value="Tenue">👗 Tenues</option>
+        <option value="Photo">📸 Photo</option>
+        <option value="Musique">🎵 Musique</option>
+        <option value="Fleurs">💐 Fleurs</option>
+        <option value="Papeterie">✉️ Papeterie</option>
+        <option value="Transport">🚗 Transport</option>
+        <option value="Bijoux">💍 Bijoux</option>
+        <option value="Voyage">✈️ Voyage</option>
+        <option value="Ameublement">🛋️ Ameublement</option>
+        <option value="Autre">📌 Autre</option>
       </select>
-    </h3>
+      <select id="bfilter-origine" onchange="applyExpenseFilters()" style="font-size:0.65rem;border:1px solid var(--border);border-radius:20px;padding:0.28rem 0.65rem;background:var(--bg);color:var(--text2);outline:none;cursor:pointer;">
+        <option value="">👤 Personne</option>
+        <option value="Raoine">👰 Raoine</option>
+        <option value="Aboudé">🤵 Aboudé</option>
+        <option value="Ensemble">💑 Ensemble</option>
+        <option value="Maman">👩 Maman</option>
+      </select>
+      <select id="bfilter-enveloppe" onchange="applyExpenseFilters()" style="font-size:0.65rem;border:1px solid var(--border);border-radius:20px;padding:0.28rem 0.65rem;background:var(--bg);color:var(--text2);outline:none;cursor:pointer;">
+        <option value="">📁 Enveloppe</option>
+      </select>
+      <select id="bfilter-paiement" onchange="applyExpenseFilters()" style="font-size:0.65rem;border:1px solid var(--border);border-radius:20px;padding:0.28rem 0.65rem;background:var(--bg);color:var(--text2);outline:none;cursor:pointer;">
+        <option value="">💳 Paiement</option>
+        <option value="Cash">💵 Cash</option>
+        <option value="Virement">🏦 Virement</option>
+        <option value="CB">💳 CB</option>
+        <option value="Chèque">📝 Chèque</option>
+      </select>
+      <select id="bfilter-statut" onchange="applyExpenseFilters()" style="font-size:0.65rem;border:1px solid var(--border);border-radius:20px;padding:0.28rem 0.65rem;background:var(--bg);color:var(--text2);outline:none;cursor:pointer;">
+        <option value="">🔘 Statut</option>
+        <option value="paye">✅ Payé</option>
+        <option value="nonpaye">⏳ Non payé</option>
+      </select>
+      <button onclick="resetExpenseFilters()" style="font-size:0.62rem;border:1px solid var(--border);border-radius:20px;padding:0.28rem 0.65rem;background:var(--bg3);color:var(--muted);cursor:pointer;font-family:inherit;">✕ Réinitialiser</button>
+    </div>
+    <div id="expense-filter-count" style="font-size:0.68rem;color:var(--muted);margin-bottom:0.5rem;"></div>
     <div id="expense-list"></div>
   </div>
 </div>
@@ -1238,7 +1264,7 @@ function goTo(id,el){
   if(id==='dashboard')renderDash();
   if(id==='guests')renderGuests();
   if(id==='programme')renderTimeline();
-  if(id==='budget')renderBudget();
+  if(id==='budget') renderBudget().catch(e=>{ console.error('renderBudget error:',e); showToast('Erreur budget: '+e.message, true); });
 }
 
 /* ═══ TOAST ═══ */
@@ -1975,7 +2001,7 @@ async function getExpenses(){
   try{
     const rows = await sbExpFetch('expenses?order=created_at.asc') || [];
     return rows.map(e=>({...e, prevu:parseFloat(e.prevu)||0, effectue:parseFloat(e.effectue)||0}));
-  }catch(e){ console.warn('getExpenses error:',e); return []; }
+  }catch(e){ console.error('getExpenses error:',e); showToast('Erreur chargement dépenses: '+e.message, true); return []; }
 }
 
 async function loadBudgetConfig(){
@@ -1987,7 +2013,7 @@ async function loadBudgetConfig(){
       id:r.id, name:r.key, budget:parseFloat(r.value)||0,
       color:r.color||'#D45C73', person:r.person||''
     }));
-  }catch(e){ console.warn('loadBudgetConfig error:',e); }
+  }catch(e){ console.error('loadBudgetConfig error:',e); showToast('Erreur chargement config: '+e.message, true); }
 }
 
 function getBudgetTotal(){ return _enveloppes.reduce((s,e)=>s+e.budget,0); }
@@ -2504,9 +2530,55 @@ async function renderBudget(){
   }
 
   // Liste dépenses filtrée
-  const filtered = filterCat ? expenses.filter(e=>e.cat===filterCat) : expenses;
+  // Peupler le select enveloppe dans les filtres
+  const envSelF = document.getElementById('bfilter-enveloppe');
+  if(envSelF){
+    const curF = envSelF.value;
+    envSelF.innerHTML = '<option value="">📁 Enveloppe</option>' +
+      _enveloppes.map(e=>`<option value="${e.name}" ${curF===e.name?'selected':''}>${e.name}</option>`).join('');
+  }
+
+  renderExpenseList(expenses);
+}
+
+function applyExpenseFilters(){
+  // Re-render list with current filters without full re-render
   const listEl = document.getElementById('expense-list');
-  if(!filtered.length){ listEl.innerHTML='<div class="budget-empty">Aucune dépense enregistrée.</div>'; return; }
+  if(!listEl) return;
+  // We need expenses from cache - re-call renderBudget is too heavy, use stored cache
+  renderBudget();
+}
+
+function resetExpenseFilters(){
+  ['bfilter-cat','bfilter-origine','bfilter-enveloppe','bfilter-paiement','bfilter-statut'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  renderBudget();
+}
+
+function renderExpenseList(expenses){
+  const filterCat      = document.getElementById('bfilter-cat')?.value || '';
+  const filterOrigine  = document.getElementById('bfilter-origine')?.value || '';
+  const filterEnv      = document.getElementById('bfilter-enveloppe')?.value || '';
+  const filterPaiement = document.getElementById('bfilter-paiement')?.value || '';
+  const filterStatut   = document.getElementById('bfilter-statut')?.value || '';
+
+  let filtered = [...expenses].reverse();
+  if(filterCat)      filtered = filtered.filter(e=>e.cat===filterCat);
+  if(filterOrigine)  filtered = filtered.filter(e=>e.origine===filterOrigine);
+  if(filterEnv)      filtered = filtered.filter(e=>e.enveloppe===filterEnv);
+  if(filterPaiement) filtered = filtered.filter(e=>e.paiement===filterPaiement);
+  if(filterStatut==='paye')    filtered = filtered.filter(e=>e.effectue>0);
+  if(filterStatut==='nonpaye') filtered = filtered.filter(e=>e.effectue===0||!e.effectue);
+
+  const countEl = document.getElementById('expense-filter-count');
+  const hasFilter = filterCat||filterOrigine||filterEnv||filterPaiement||filterStatut;
+  if(countEl) countEl.textContent = hasFilter ? `${filtered.length} dépense${filtered.length>1?'s':''} trouvée${filtered.length>1?'s':''}` : '';
+
+  const listEl = document.getElementById('expense-list');
+  if(!listEl) return;
+  if(!filtered.length){ listEl.innerHTML='<div class="budget-empty">Aucune dépense correspondante.</div>'; return; }
   listEl.innerHTML = [...filtered].reverse().map(e => {
     const color = CAT_COLORS[e.cat]||'#8C8078';
     return `<div class="expense-item">
