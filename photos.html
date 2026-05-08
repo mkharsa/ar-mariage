@@ -201,6 +201,7 @@ input:checked+.slider:before{transform:translateX(20px);}
     <button class="btn-submit" id="btn-submit" onclick="submitMedia()" style="display:none">
       💌 Envoyer mes souvenirs
     </button>
+    <div id="upload-error" style="display:none;margin-top:.8rem;background:#FEEAEA;border:1px solid var(--rose);border-radius:10px;padding:.8rem 1rem;font-size:.72rem;color:#C03050;line-height:1.6;"></div>
   </div>
 
   <!-- Success -->
@@ -294,6 +295,7 @@ async function submitMedia(){
 
   const btn = document.getElementById('btn-submit');
   btn.disabled = true;
+  const errEl = document.getElementById('upload-error'); if(errEl) errEl.style.display='none';
 
   const name = document.getElementById('uploader-name').value.trim() || 'Invité';
   let uploaded = 0, saved = 0;
@@ -307,21 +309,26 @@ async function submitMedia(){
     document.getElementById('progress-fill').style.width = pct+'%';
     document.getElementById('progress-text').textContent = `Traitement ${i+1}/${selectedFiles.length}…`;
 
-    // Save to device — iOS compatible
+    // Save to device — Web Share API pour iOS (partage natif → Photos)
     if(doSave){
       try{
-        const url = URL.createObjectURL(f);
-        // iOS: open in new tab so user can long-press to save
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if(isIOS){
+        if(isIOS && navigator.share && navigator.canShare && navigator.canShare({files:[f]})){
+          // iOS: Share API → l'utilisateur peut choisir "Enregistrer dans Photos"
+          await navigator.share({ files:[f], title:'Mariage Raoine & Aboudé' });
+        } else if(isIOS){
+          // Fallback iOS sans Share API
+          const url = URL.createObjectURL(f);
           window.open(url, '_blank');
         } else {
+          // Android/Desktop: téléchargement direct
+          const url = URL.createObjectURL(f);
           const a = document.createElement('a');
           a.href = url;
           a.download = f.name || `mariage_${Date.now()}.jpg`;
           document.body.appendChild(a);
           a.click();
-          document.body.removeChild(a);
+          setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
         }
         saved++;
       }catch(e){ console.warn('Save failed:', e); }
@@ -361,7 +368,9 @@ async function submitMedia(){
 
         if(!uploadRes.ok){
           const errText = await uploadRes.text();
-          throw new Error(`Storage: ${uploadRes.status} — ${errText}`);
+          const errEl = document.getElementById('upload-error');
+          if(errEl){ errEl.style.display='block'; errEl.innerHTML = `<strong>Erreur Storage (${uploadRes.status})</strong><br>${errText}<br><small>Vérifiez que le bucket "wedding-media" existe et que les policies sont configurées.</small>`; }
+          throw new Error(`Storage ${uploadRes.status}: ${errText}`);
         }
 
         // Sauvegarder les métadonnées en base
@@ -384,7 +393,9 @@ async function submitMedia(){
 
         if(!metaRes.ok){
           const errText = await metaRes.text();
-          throw new Error(`Metadata: ${metaRes.status} — ${errText}`);
+          const errEl = document.getElementById('upload-error');
+          if(errEl){ errEl.style.display='block'; errEl.innerHTML = `<strong>Erreur base de données (${metaRes.status})</strong><br>${errText}`; }
+          throw new Error(`Metadata ${metaRes.status}: ${errText}`);
         }
 
         uploaded++;
