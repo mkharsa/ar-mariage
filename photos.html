@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Raoine & Aboudé — Photos du Mariage</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --rose:#D45C73;--rose2:#E8849A;--rose-bg:#FFF0F3;
+  --sage:#4A7A5A;--sage-bg:#EEF5F1;
+  --gold:#C08A20;--gold-bg:#FEF9EE;
+  --text:#1E1A17;--text2:#4A4240;--muted:#8C8078;
+  --bg:#F7F4EF;--bg2:#fff;--border:#E8E0D8;
+  --r:16px;--shadow:0 2px 12px rgba(26,20,16,.07);--shadow2:0 8px 32px rgba(26,20,16,.12);
+}
+html,body{min-height:100vh;background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--text);}
+
+/* Grain texture */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity:.4;
+}
+
+/* HEADER */
+.header{
+  text-align:center;padding:2.5rem 1.5rem 2rem;position:relative;z-index:1;
+}
+.header-ornament{font-size:1.6rem;margin-bottom:.5rem;opacity:.7;}
+.header h1{font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-style:italic;font-weight:400;color:var(--text);line-height:1.2;}
+.header h1 span{color:var(--rose);}
+.header-sub{font-size:.78rem;color:var(--muted);margin-top:.5rem;letter-spacing:.08em;}
+.header-date{display:inline-flex;align-items:center;gap:.4rem;background:var(--rose-bg);border:1px solid var(--rose2);border-radius:50px;padding:.3rem .9rem;font-size:.68rem;font-weight:600;color:var(--rose);margin-top:.8rem;letter-spacing:.06em;}
+
+/* MAIN */
+.main{max-width:560px;margin:0 auto;padding:0 1rem 5rem;position:relative;z-index:1;}
+
+/* UPLOAD CARD */
+.upload-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:1.8rem;box-shadow:var(--shadow2);margin-bottom:1.2rem;
+}
+.upload-card h2{font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-style:italic;color:var(--text);margin-bottom:.3rem;}
+.upload-card p{font-size:.78rem;color:var(--muted);line-height:1.6;margin-bottom:1.2rem;}
+
+/* Drop zone */
+.drop-zone{
+  border:2px dashed var(--border);border-radius:12px;padding:2rem 1.5rem;
+  text-align:center;cursor:pointer;transition:all .25s;
+  background:var(--bg);position:relative;
+}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--rose2);background:var(--rose-bg);}
+.drop-icon{font-size:2rem;margin-bottom:.6rem;}
+.drop-text{font-size:.82rem;color:var(--text2);font-weight:500;}
+.drop-sub{font-size:.7rem;color:var(--muted);margin-top:.25rem;}
+#file-input{display:none;}
+
+/* Buttons */
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-top:1rem;}
+.btn{display:flex;align-items:center;justify-content:center;gap:.5rem;padding:.85rem 1rem;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border:none;transition:all .25s;white-space:nowrap;}
+.btn-camera{background:var(--text);color:#fff;}
+.btn-camera:hover{background:#3A3020;}
+.btn-gallery{background:var(--bg);color:var(--text2);border:1.5px solid var(--border);}
+.btn-gallery:hover{border-color:var(--rose2);color:var(--rose);}
+
+/* Name input */
+.name-group{margin-bottom:1.2rem;}
+.name-group label{font-size:.62rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:.4rem;}
+.name-input{width:100%;padding:.7rem 1rem;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--text);background:var(--bg);outline:none;transition:border-color .2s;}
+.name-input:focus{border-color:var(--rose2);}
+
+/* Preview grid */
+.preview-section{margin-top:1.2rem;display:none;}
+.preview-section h3{font-size:.72rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:.7rem;}
+.preview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;}
+.preview-item{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--bg3);}
+.preview-item img,.preview-item video{width:100%;height:100%;object-fit:cover;}
+.preview-rm{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(26,20,16,.7);color:#fff;border:none;cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center;}
+.video-badge{position:absolute;bottom:4px;left:4px;background:rgba(26,20,16,.6);color:#fff;font-size:.55rem;padding:2px 5px;border-radius:4px;font-weight:600;}
+
+/* Submit button */
+.btn-submit{
+  width:100%;padding:1rem;background:var(--rose);color:#fff;
+  border:none;border-radius:50px;font-family:'DM Sans',sans-serif;
+  font-size:.78rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  cursor:pointer;transition:all .25s;margin-top:1rem;
+  display:flex;align-items:center;justify-content:center;gap:.6rem;
+}
+.btn-submit:hover{background:var(--rose2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(212,92,115,.3);}
+.btn-submit:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+
+/* Options */
+.options-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.4rem 1.6rem;box-shadow:var(--shadow);margin-bottom:1.2rem;}
+.options-card h2{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-style:italic;color:var(--text);margin-bottom:1rem;}
+.option-item{display:flex;align-items:center;gap:1rem;padding:.7rem 0;border-bottom:1px solid var(--border);}
+.option-item:last-child{border-bottom:none;}
+.opt-icon{font-size:1.3rem;flex-shrink:0;}
+.opt-body{flex:1;}
+.opt-title{font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:1px;}
+.opt-desc{font-size:.68rem;color:var(--muted);line-height:1.5;}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.slider{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:24px;transition:.3s;}
+.slider:before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;}
+input:checked+.slider{background:var(--rose);}
+input:checked+.slider:before{transform:translateX(20px);}
+
+/* Progress */
+.upload-progress{margin-top:1rem;display:none;}
+.progress-bar-wrap{background:var(--border);border-radius:4px;height:6px;overflow:hidden;margin-bottom:.4rem;}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--rose),var(--rose2));border-radius:4px;width:0%;transition:width .3s;}
+.progress-text{font-size:.68rem;color:var(--muted);text-align:center;}
+
+/* Success */
+.success-card{
+  background:var(--sage-bg);border:1.5px solid var(--sage);border-radius:var(--r);
+  padding:2rem;text-align:center;display:none;
+}
+.success-icon{font-size:2.5rem;margin-bottom:.6rem;}
+.success-title{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-style:italic;color:var(--sage);margin-bottom:.4rem;}
+.success-text{font-size:.78rem;color:var(--text2);line-height:1.6;}
+.btn-more{margin-top:1rem;background:var(--sage);color:#fff;padding:.7rem 1.8rem;border-radius:50px;border:none;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;}
+
+/* Toast */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);background:#1E1A17;color:#fff;padding:.7rem 1.4rem;border-radius:50px;font-size:.75rem;font-weight:500;z-index:999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.error{background:var(--rose);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-ornament">📷</div>
+  <h1>Raoine <span>&</span> Aboudé</h1>
+  <div class="header-sub">Partagez vos plus beaux souvenirs de ce jour</div>
+  <div class="header-date">💍 14 Août 2026</div>
+</div>
+
+<div class="main">
+
+  <!-- Options -->
+  <div class="options-card">
+    <h2>Que faire avec mes photos ?</h2>
+    <div class="option-item">
+      <span class="opt-icon">☁️</span>
+      <div class="opt-body">
+        <div class="opt-title">Envoyer aux mariés</div>
+        <div class="opt-desc">Vos photos seront visibles dans la galerie des mariés</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="opt-upload" checked><span class="slider"></span></label>
+    </div>
+    <div class="option-item">
+      <span class="opt-icon">📱</span>
+      <div class="opt-body">
+        <div class="opt-title">Sauvegarder sur mon téléphone</div>
+        <div class="opt-desc">Télécharger les photos directement sur votre appareil</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="opt-save" checked><span class="slider"></span></label>
+    </div>
+  </div>
+
+  <!-- Upload card -->
+  <div class="upload-card" id="upload-card">
+    <h2>Vos photos & vidéos</h2>
+    <p>Capturez les meilleurs moments et partagez-les avec nous ✨</p>
+
+    <div class="name-group">
+      <label>Votre prénom (optionnel)</label>
+      <input type="text" id="uploader-name" class="name-input" placeholder="ex : Marie, Jean…">
+    </div>
+
+    <!-- Drop zone -->
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="drop-icon">🖼️</div>
+      <div class="drop-text">Appuyez pour choisir</div>
+      <div class="drop-sub">Photos & vidéos acceptées</div>
+    </div>
+    <input type="file" id="file-input" accept="image/*,video/*" multiple capture="environment">
+
+    <!-- Camera / Gallery buttons -->
+    <div class="btn-row">
+      <button class="btn btn-camera" onclick="openCamera()">📷 Appareil photo</button>
+      <button class="btn btn-gallery" onclick="document.getElementById('file-input').click()">🖼️ Galerie</button>
+    </div>
+    <input type="file" id="camera-input" accept="image/*,video/*" capture="environment" style="display:none">
+
+    <!-- Preview -->
+    <div class="preview-section" id="preview-section">
+      <h3 id="preview-count">0 fichier sélectionné</h3>
+      <div class="preview-grid" id="preview-grid"></div>
+    </div>
+
+    <!-- Progress -->
+    <div class="upload-progress" id="upload-progress">
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill"></div></div>
+      <div class="progress-text" id="progress-text">Envoi en cours…</div>
+    </div>
+
+    <button class="btn-submit" id="btn-submit" onclick="submitMedia()" style="display:none">
+      💌 Envoyer mes souvenirs
+    </button>
+  </div>
+
+  <!-- Success -->
+  <div class="success-card" id="success-card">
+    <div class="success-icon">💚</div>
+    <div class="success-title">Merci !</div>
+    <div class="success-text" id="success-text">Vos photos ont été partagées avec les mariés.<br>Vous faites partie de ce magnifique souvenir 🌸</div>
+    <button class="btn-more" onclick="resetForm()">+ Envoyer d'autres photos</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://xysemfyhtuvqrzffbnql.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5c2VtZnlodHV2cXJ6ZmZibnFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NjQ1NjAsImV4cCI6MjA5MTE0MDU2MH0.S5iBLIeEr4ULByAjMMdnkFsA7IwP0A4XbOfnOHT-dkU';
+
+let selectedFiles = [];
+
+// ── File input ──
+document.getElementById('file-input').addEventListener('change', e => addFiles(Array.from(e.target.files)));
+document.getElementById('camera-input').addEventListener('change', e => addFiles(Array.from(e.target.files)));
+
+// ── Drag & drop ──
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); addFiles(Array.from(e.dataTransfer.files)); });
+
+function openCamera(){
+  document.getElementById('camera-input').click();
+}
+
+function addFiles(files){
+  files = files.filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
+  selectedFiles = [...selectedFiles, ...files];
+  renderPreview();
+}
+
+function removeFile(idx){
+  selectedFiles.splice(idx, 1);
+  renderPreview();
+}
+
+function renderPreview(){
+  const section = document.getElementById('preview-section');
+  const grid = document.getElementById('preview-grid');
+  const count = document.getElementById('preview-count');
+  const btn = document.getElementById('btn-submit');
+
+  if(!selectedFiles.length){
+    section.style.display='none';
+    btn.style.display='none';
+    return;
+  }
+
+  section.style.display='block';
+  btn.style.display='flex';
+  count.textContent = `${selectedFiles.length} fichier${selectedFiles.length>1?'s':''} sélectionné${selectedFiles.length>1?'s':''}`;
+
+  grid.innerHTML = '';
+  selectedFiles.forEach((f, i) => {
+    const item = document.createElement('div');
+    item.className = 'preview-item';
+    const isVideo = f.type.startsWith('video/');
+    const url = URL.createObjectURL(f);
+    if(isVideo){
+      item.innerHTML = `<video src="${url}" muted></video><span class="video-badge">📹 Vidéo</span>`;
+    } else {
+      item.innerHTML = `<img src="${url}" alt="">`;
+    }
+    const rm = document.createElement('button');
+    rm.className = 'preview-rm';
+    rm.innerHTML = '✕';
+    rm.onclick = e => { e.stopPropagation(); removeFile(i); };
+    item.appendChild(rm);
+    grid.appendChild(item);
+  });
+}
+
+async function submitMedia(){
+  if(!selectedFiles.length){ toast('Sélectionnez au moins un fichier', true); return; }
+  const doUpload = document.getElementById('opt-upload').checked;
+  const doSave   = document.getElementById('opt-save').checked;
+  if(!doUpload && !doSave){ toast('Activez au moins une option', true); return; }
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+
+  const name = document.getElementById('uploader-name').value.trim() || 'Invité';
+  let uploaded = 0, saved = 0;
+
+  // Show progress
+  document.getElementById('upload-progress').style.display = 'block';
+
+  for(let i=0; i<selectedFiles.length; i++){
+    const f = selectedFiles[i];
+    const pct = Math.round((i/selectedFiles.length)*100);
+    document.getElementById('progress-fill').style.width = pct+'%';
+    document.getElementById('progress-text').textContent = `Traitement ${i+1}/${selectedFiles.length}…`;
+
+    // Save to device
+    if(doSave){
+      try{
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(f);
+        a.download = f.name || `mariage_${Date.now()}.jpg`;
+        a.click();
+        saved++;
+      }catch(e){ console.warn('Save failed:', e); }
+    }
+
+    // Upload to Supabase
+    if(doUpload){
+      try{
+        const ext = f.name.split('.').pop() || (f.type.startsWith('video')? 'mp4':'jpg');
+        const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/wedding-media/${path}`, {
+          method:'POST',
+          headers:{ 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY, 'Content-Type':f.type, 'x-upsert':'true' },
+          body: f
+        });
+        if(!uploadRes.ok) throw new Error(await uploadRes.text());
+
+        // Save metadata
+        await fetch(`${SUPABASE_URL}/rest/v1/media`, {
+          method:'POST',
+          headers:{ 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json', 'Prefer':'return=minimal' },
+          body: JSON.stringify({ filename:f.name||path, path, type:f.type.startsWith('video')?'video':'photo', uploader_name:name, size_bytes:f.size })
+        });
+        uploaded++;
+      }catch(e){ console.error('Upload error:', e); toast('Erreur upload: '+e.message, true); }
+    }
+  }
+
+  document.getElementById('progress-fill').style.width = '100%';
+  document.getElementById('progress-text').textContent = 'Terminé !';
+
+  // Show success
+  setTimeout(() => {
+    document.getElementById('upload-card').style.display = 'none';
+    const sc = document.getElementById('success-card');
+    sc.style.display = 'block';
+    let msg = '';
+    if(uploaded>0 && saved>0) msg = `${uploaded} fichier${uploaded>1?'s':''} envoyé${uploaded>1?'s':''} aux mariés et sauvegardé${uploaded>1?'s':''} sur votre téléphone 📱`;
+    else if(uploaded>0) msg = `${uploaded} fichier${uploaded>1?'s':''} envoyé${uploaded>1?'s':''} aux mariés avec amour 💌`;
+    else if(saved>0) msg = `${saved} fichier${saved>1?'s':''} sauvegardé${saved>1?'s':''} sur votre téléphone 📱`;
+    document.getElementById('success-text').innerHTML = msg + '<br><br>Merci de partager ce beau moment avec nous 🌸';
+  }, 800);
+}
+
+function resetForm(){
+  selectedFiles = [];
+  document.getElementById('uploader-name').value = '';
+  document.getElementById('file-input').value = '';
+  renderPreview();
+  document.getElementById('upload-progress').style.display='none';
+  document.getElementById('progress-fill').style.width='0%';
+  document.getElementById('btn-submit').disabled=false;
+  document.getElementById('upload-card').style.display='block';
+  document.getElementById('success-card').style.display='none';
+}
+
+function toast(msg, isErr=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast show'+(isErr?' error':'');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>
