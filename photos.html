@@ -172,17 +172,17 @@ input:checked+.slider:before{transform:translateX(20px);}
     </div>
 
     <!-- Drop zone -->
-    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+    <div class="drop-zone" id="drop-zone" onclick="openGallery()">
       <div class="drop-icon">🖼️</div>
       <div class="drop-text">Appuyez pour choisir</div>
-      <div class="drop-sub">Photos & vidéos acceptées</div>
+      <div class="drop-sub">📷 Photos &amp; 🎥 Vidéos — depuis votre galerie</div>
     </div>
-    <input type="file" id="file-input" accept="image/*,video/*" multiple capture="environment">
+    <input type="file" id="file-input" accept="image/*,video/*" multiple>
 
     <!-- Camera / Gallery buttons -->
     <div class="btn-row">
       <button class="btn btn-camera" onclick="openCamera()">📷 Appareil photo</button>
-      <button class="btn btn-gallery" onclick="document.getElementById('file-input').click()">🖼️ Galerie</button>
+      <button class="btn btn-gallery" onclick="openGallery()">🖼️ Galerie</button>
     </div>
     <input type="file" id="camera-input" accept="image/*,video/*" capture="environment" style="display:none">
 
@@ -231,6 +231,10 @@ dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dra
 dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
 dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); addFiles(Array.from(e.dataTransfer.files)); });
 
+function openGallery(){
+  document.getElementById('file-input').click();
+}
+
 function openCamera(){
   document.getElementById('camera-input').click();
 }
@@ -269,7 +273,7 @@ function renderPreview(){
     const isVideo = f.type.startsWith('video/');
     const url = URL.createObjectURL(f);
     if(isVideo){
-      item.innerHTML = `<video src="${url}" muted></video><span class="video-badge">📹 Vidéo</span>`;
+      item.innerHTML = `<video src="${url}" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video><span class="video-badge">📹 Vidéo</span>`;
     } else {
       item.innerHTML = `<img src="${url}" alt="">`;
     }
@@ -303,13 +307,22 @@ async function submitMedia(){
     document.getElementById('progress-fill').style.width = pct+'%';
     document.getElementById('progress-text').textContent = `Traitement ${i+1}/${selectedFiles.length}…`;
 
-    // Save to device
+    // Save to device — iOS compatible
     if(doSave){
       try{
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(f);
-        a.download = f.name || `mariage_${Date.now()}.jpg`;
-        a.click();
+        const url = URL.createObjectURL(f);
+        // iOS: open in new tab so user can long-press to save
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if(isIOS){
+          window.open(url, '_blank');
+        } else {
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = f.name || `mariage_${Date.now()}.jpg`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
         saved++;
       }catch(e){ console.warn('Save failed:', e); }
     }
@@ -317,23 +330,68 @@ async function submitMedia(){
     // Upload to Supabase
     if(doUpload){
       try{
-        const ext = f.name.split('.').pop() || (f.type.startsWith('video')? 'mp4':'jpg');
+        // Déterminer l'extension et le type MIME
+        let mimeType = f.type;
+        let ext = 'jpg';
+        if(f.name && f.name.includes('.')){
+          ext = f.name.split('.').pop().toLowerCase();
+        } else if(mimeType.startsWith('video/')){
+          ext = mimeType.includes('mp4')?'mp4':mimeType.includes('mov')?'mov':'mp4';
+        } else if(mimeType.startsWith('image/')){
+          ext = mimeType.includes('png')?'png':mimeType.includes('heic')?'heic':'jpg';
+        }
+        // HEIC/HEIF sur iPhone
+        if(!mimeType || mimeType==='application/octet-stream'){
+          mimeType = ext==='mp4'||ext==='mov' ? 'video/mp4' : 'image/jpeg';
+        }
+
         const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+        // Supabase Storage — PUT pour upload
         const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/wedding-media/${path}`, {
           method:'POST',
-          headers:{ 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY, 'Content-Type':f.type, 'x-upsert':'true' },
+          headers:{
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer '+SUPABASE_KEY,
+            'Content-Type': mimeType,
+            'x-upsert': 'true'
+          },
           body: f
         });
-        if(!uploadRes.ok) throw new Error(await uploadRes.text());
 
-        // Save metadata
-        await fetch(`${SUPABASE_URL}/rest/v1/media`, {
+        if(!uploadRes.ok){
+          const errText = await uploadRes.text();
+          throw new Error(`Storage: ${uploadRes.status} — ${errText}`);
+        }
+
+        // Sauvegarder les métadonnées en base
+        const metaRes = await fetch(`${SUPABASE_URL}/rest/v1/media`, {
           method:'POST',
-          headers:{ 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json', 'Prefer':'return=minimal' },
-          body: JSON.stringify({ filename:f.name||path, path, type:f.type.startsWith('video')?'video':'photo', uploader_name:name, size_bytes:f.size })
+          headers:{
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer '+SUPABASE_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            filename: f.name || path,
+            path,
+            type: mimeType.startsWith('video') ? 'video' : 'photo',
+            uploader_name: name,
+            size_bytes: f.size || 0
+          })
         });
+
+        if(!metaRes.ok){
+          const errText = await metaRes.text();
+          throw new Error(`Metadata: ${metaRes.status} — ${errText}`);
+        }
+
         uploaded++;
-      }catch(e){ console.error('Upload error:', e); toast('Erreur upload: '+e.message, true); }
+      }catch(e){
+        console.error('Upload error:', e);
+        toast('Erreur: '+e.message, true);
+      }
     }
   }
 
@@ -346,9 +404,17 @@ async function submitMedia(){
     const sc = document.getElementById('success-card');
     sc.style.display = 'block';
     let msg = '';
-    if(uploaded>0 && saved>0) msg = `${uploaded} fichier${uploaded>1?'s':''} envoyé${uploaded>1?'s':''} aux mariés et sauvegardé${uploaded>1?'s':''} sur votre téléphone 📱`;
+    const isIOS2 = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if(uploaded>0 && saved>0) msg = isIOS2
+      ? `${uploaded} fichier${uploaded>1?'s':''} envoyé${uploaded>1?'s':''} aux mariés ✅ — appuyez longuement sur les images ouvertes pour les sauvegarder 📱`
+      : `${uploaded} fichier${uploaded>1?'s':''} envoyé${uploaded>1?'s':''} aux mariés et sauvegardé${uploaded>1?'s':''} 📱`;
     else if(uploaded>0) msg = `${uploaded} fichier${uploaded>1?'s':''} envoyé${uploaded>1?'s':''} aux mariés avec amour 💌`;
-    else if(saved>0) msg = `${saved} fichier${saved>1?'s':''} sauvegardé${saved>1?'s':''} sur votre téléphone 📱`;
+    else if(saved>0){
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      msg = isIOS
+        ? `${saved} fichier${saved>1?'s':''} ouvert${saved>1?'s':''} — appuyez longuement sur l'image pour sauvegarder 📱`
+        : `${saved} fichier${saved>1?'s':''} sauvegardé${saved>1?'s':''} sur votre téléphone 📱`;
+    }
     document.getElementById('success-text').innerHTML = msg + '<br><br>Merci de partager ce beau moment avec nous 🌸';
   }, 800);
 }
