@@ -422,24 +422,8 @@ async function submitMedia(){
 
         const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
 
-        // Upload — direct si < 50MB, chunked si plus lourd
-        if(f.size <= 50 * 1024 * 1024){
-          // Upload direct
-          const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/wedding-media/${path}`, {
-            method:'POST',
-            headers:{ 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY, 'Content-Type':mimeType, 'x-upsert':'true' },
-            body: f
-          });
-          if(!uploadRes.ok){
-            const errText = await uploadRes.text();
-            const errEl = document.getElementById('upload-error');
-            if(errEl){ errEl.style.display='block'; errEl.innerHTML = `<strong>Erreur Storage (${uploadRes.status})</strong><br>${errText}<br><small>Vérifiez que le bucket "wedding-media" existe et que les policies sont configurées.</small>`; }
-            throw new Error(`Storage ${uploadRes.status}: ${errText}`);
-          }
-        } else {
-          // Upload TUS (chunked) pour les gros fichiers
-          await uploadChunked(f, path, mimeType, i, selectedFiles.length);
-        }
+        // Toujours utiliser le chunked upload (TUS) — contourne la limite de taille
+        await uploadChunked(f, path, mimeType, i, selectedFiles.length);
 
         // Sauvegarder les métadonnées en base
         const metaRes = await fetch(`${SUPABASE_URL}/rest/v1/media`, {
