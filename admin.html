@@ -2235,11 +2235,21 @@ async function renderBudget(){
           <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--text);line-height:1;">${fmt(e.budget)}</div>
           <div style="font-size:0.62rem;color:var(--muted);margin-bottom:0.6rem;margin-top:0.1rem">Budget alloué</div>
           ${envItems.length>0?`<div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:0.4rem;"><span style="color:var(--text2)">Prévu : <strong>${fmt(envPrevu)}</strong></span><span style="color:${envPaye>0?'var(--sage)':'var(--muted)'}">Payé : <strong>${fmt(envPaye)}</strong></span></div>`:''}
+          <!-- Frise double : prévu (fond) + payé par moyen de paiement (dessus) -->
+          <div style="margin-bottom:2px;display:flex;justify-content:space-between;font-size:0.58rem;color:var(--muted);">
+            <span>Prévu</span><span>${e.budget>0?pct+'% du budget':fmt(envPrevu)}</span>
+          </div>
+          <div style="background:var(--bg3);border-radius:3px;height:6px;overflow:hidden;margin-bottom:5px;position:relative;">
+            <div style="position:absolute;top:0;left:0;height:100%;width:${pct}%;background:${over?'rgba(200,64,64,0.2)':e.color+'33'};border-radius:3px;"></div>
+          </div>
+          <div style="margin-bottom:2px;display:flex;justify-content:space-between;font-size:0.58rem;color:var(--muted);">
+            <span>Payé</span><span style="color:${envPaye>0?'var(--sage)':'var(--muted)'}">${pctP}%${e.budget>0?' du budget':' de l\'objectif'}</span>
+          </div>
           <div style="background:var(--bg3);border-radius:3px;height:8px;overflow:hidden;margin-bottom:4px;display:flex;">${envSegBar}</div>
           ${envLeg?`<div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:4px;">${envLeg}</div>`:''}
           <div style="display:flex;justify-content:space-between;font-size:0.6rem;color:var(--muted);">
-            <span style="${over?'color:var(--danger);font-weight:700':''}">${pct}% prévu${over?' ⚠️':''}</span>
-            <span style="color:${pctP>0?'var(--sage)':'var(--muted)'}">${pctP}% payé · ${envItems.length} dép.</span>
+            <span style="${over?'color:var(--danger);font-weight:700':''}">${envItems.length} dép.${over?' ⚠️ dépassé':''}</span>
+            <span>${fmt(envPaye)} / ${fmt(envPrevu)}</span>
           </div>
         </div>`;
       }).join('');
