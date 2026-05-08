@@ -2208,12 +2208,24 @@ async function renderBudget(){
         const pct  = e.budget>0 ? Math.min(Math.round(envPrevu/e.budget*100),100) : 0;
         const pctP = e.budget>0 ? Math.min(Math.round(envPaye/e.budget*100),100)  : 0;
         const over = e.budget>0 && envPrevu>e.budget;
+
+        // Segments par moyen de paiement
+        const envPaySegs = ['Cash','Virement','CB','Chèque','Autre',''].map(pk=>({
+          pk, color: PAY_COLORS_MAP[pk]||'#C8BDB5',
+          val: envItems.filter(x=>x.paiement===pk).reduce((s,x)=>s+x.effectue,0)
+        })).filter(s=>s.val>0);
+        const envTotalPaid = envPaySegs.reduce((s,x)=>s+x.val,0)||1;
+        const envSegBar = envPaySegs.length>0
+          ? envPaySegs.map(s=>`<div style="height:100%;width:${Math.round(s.val/envTotalPaid*100)}%;background:${s.color};flex-shrink:0;transition:width 1s ease;" title="${s.pk||'?'}: ${fmt(s.val)}"></div>`).join('')
+          : `<div style="height:100%;width:${pctP}%;background:${over?'var(--danger)':e.color};flex-shrink:0;border-radius:3px;transition:width 1s ease;"></div>`;
+        const envLeg = envPaySegs.map(s=>`<span style="display:inline-flex;align-items:center;gap:3px;font-size:0.55rem;color:var(--muted);"><span style="width:6px;height:6px;border-radius:50%;background:${s.color};flex-shrink:0;"></span>${s.pk||'?'} ${fmt(s.val)}</span>`).join('');
+
         return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.2rem;box-shadow:var(--shadow);position:relative;overflow:hidden;">
           <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${e.color}"></div>
           <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0.7rem;">
             <div>
               <div style="font-size:0.8rem;font-weight:600;color:var(--text)">${e.name}</div>
-              ${e.person?`<div style="font-size:0.62rem;color:var(--muted);margin-top:1px">${e.person==='Raoine'?'👰':e.person==='Aboudé'?'🤵':'💑'} ${e.person}</div>`:''}
+              ${e.person?`<div style="font-size:0.62rem;color:var(--muted);margin-top:1px">${e.person==='Raoine'?'👰':e.person==='Aboudé'?'🤵':e.person==='Maman'?'👩':'💑'} ${e.person}</div>`:''}
             </div>
             <div style="display:flex;gap:0.3rem;">
               <button class="btn btn-ghost" style="font-size:0.55rem;padding:0.2rem 0.5rem" onclick="openEnveloppeModal('${e.id}')">✏️</button>
@@ -2222,15 +2234,9 @@ async function renderBudget(){
           </div>
           <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--text);line-height:1;">${fmt(e.budget)}</div>
           <div style="font-size:0.62rem;color:var(--muted);margin-bottom:0.6rem;margin-top:0.1rem">Budget alloué</div>
-          ${envItems.length>0?`
-          <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:0.4rem;">
-            <span style="color:var(--text2)">Prévu : <strong>${fmt(envPrevu)}</strong></span>
-            <span style="color:${envPaye>0?'var(--sage)':'var(--muted)'}">Payé : <strong>${fmt(envPaye)}</strong></span>
-          </div>`:''}
-          <div style="background:var(--bg3);border-radius:3px;height:6px;overflow:hidden;margin-bottom:3px;display:flex;">
-            <div style="height:100%;background:${over?'var(--danger)':e.color};width:${pct}%;transition:width 1s ease;border-radius:3px;flex-shrink:0;"></div>
-            ${pctP>0&&!over?`<div style="height:100%;background:${e.color}55;width:${Math.max(0,pctP-pct)}%;transition:width 1s ease;flex-shrink:0;"></div>`:''}
-          </div>
+          ${envItems.length>0?`<div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:0.4rem;"><span style="color:var(--text2)">Prévu : <strong>${fmt(envPrevu)}</strong></span><span style="color:${envPaye>0?'var(--sage)':'var(--muted)'}">Payé : <strong>${fmt(envPaye)}</strong></span></div>`:''}
+          <div style="background:var(--bg3);border-radius:3px;height:8px;overflow:hidden;margin-bottom:4px;display:flex;">${envSegBar}</div>
+          ${envLeg?`<div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:4px;">${envLeg}</div>`:''}
           <div style="display:flex;justify-content:space-between;font-size:0.6rem;color:var(--muted);">
             <span style="${over?'color:var(--danger);font-weight:700':''}">${pct}% prévu${over?' ⚠️':''}</span>
             <span style="color:${pctP>0?'var(--sage)':'var(--muted)'}">${pctP}% payé · ${envItems.length} dép.</span>
