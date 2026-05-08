@@ -2235,12 +2235,30 @@ async function renderBudget(){
           <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--text);line-height:1;">${fmt(e.budget)}</div>
           <div style="font-size:0.62rem;color:var(--muted);margin-bottom:0.6rem;margin-top:0.1rem">Budget alloué</div>
           ${envItems.length>0?`<div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:0.4rem;"><span style="color:var(--text2)">Prévu : <strong>${fmt(envPrevu)}</strong></span><span style="color:${envPaye>0?'var(--sage)':'var(--muted)'}">Payé : <strong>${fmt(envPaye)}</strong></span></div>`:''}
-          <!-- Frise double : prévu (fond) + payé par moyen de paiement (dessus) -->
+          <!-- Frise prévu : segments par moyen de paiement prévu -->
           <div style="margin-bottom:2px;display:flex;justify-content:space-between;font-size:0.58rem;color:var(--muted);">
             <span>Prévu</span><span>${e.budget>0?pct+'% du budget':fmt(envPrevu)}</span>
           </div>
-          <div style="background:var(--bg3);border-radius:3px;height:6px;overflow:hidden;margin-bottom:5px;position:relative;">
-            <div style="position:absolute;top:0;left:0;height:100%;width:${pct}%;background:${over?'rgba(200,64,64,0.2)':e.color+'33'};border-radius:3px;"></div>
+          <div style="background:var(--bg3);border-radius:3px;height:6px;overflow:hidden;margin-bottom:2px;display:flex;">
+            ${(()=>{
+              const prevuSegs = ['Cash','Virement','CB','Chèque','Autre',''].map(pk=>({
+                pk, color: PAY_COLORS_MAP[pk]||'#C8BDB5',
+                val: envItems.filter(x=>x.paiement===pk).reduce((s,x)=>s+x.prevu,0)
+              })).filter(s=>s.val>0);
+              const totalPrevuSeg = prevuSegs.reduce((s,x)=>s+x.val,0)||1;
+              return prevuSegs.length>0
+                ? prevuSegs.map(s=>`<div style="height:100%;width:${Math.round(s.val/totalPrevuSeg*100)}%;background:${s.color}88;flex-shrink:0;transition:width 1s ease;" title="${s.pk||'?'}: ${fmt(s.val)}"></div>`).join('')
+                : `<div style="height:100%;width:${pct}%;background:${over?'rgba(200,64,64,0.25)':e.color+'44'};flex-shrink:0;border-radius:3px;"></div>`;
+            })()}
+          </div>
+          <div style="margin-bottom:5px;display:flex;flex-wrap:wrap;gap:0.3rem;">
+            ${(()=>{
+              const prevuSegs2 = ['Cash','Virement','CB','Chèque','Autre',''].map(pk=>({
+                pk, color: PAY_COLORS_MAP[pk]||'#C8BDB5',
+                val: envItems.filter(x=>x.paiement===pk).reduce((s,x)=>s+x.prevu,0)
+              })).filter(s=>s.val>0);
+              return prevuSegs2.map(s=>`<span style="display:inline-flex;align-items:center;gap:3px;font-size:0.52rem;color:var(--muted);opacity:0.8;"><span style="width:6px;height:6px;border-radius:50%;background:${s.color}88;flex-shrink:0;"></span>${s.pk||'?'} ${fmt(s.val)}</span>`).join('');
+            })()}
           </div>
           <div style="margin-bottom:2px;display:flex;justify-content:space-between;font-size:0.58rem;color:var(--muted);">
             <span>Payé</span><span style="color:${envPaye>0?'var(--sage)':'var(--muted)'}">${pctP}%${e.budget>0?' du budget':' de l\'objectif'}</span>
