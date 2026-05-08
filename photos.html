@@ -299,60 +299,32 @@ function renderPreview(){
   });
 }
 
-// ── Upload chunked TUS protocol pour fichiers > 50MB ──
+// ── Upload direct Supabase Storage ──
 async function uploadChunked(file, path, mimeType, fileIdx, total){
-  const fileSize = file.size;
+  document.getElementById('progress-text').textContent = `Envoi ${fileIdx+1}/${total}…`;
 
-  // 1. Créer la session TUS
-  const createRes = await fetch(`${SUPABASE_URL}/storage/v1/upload/resumable`, {
+  const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/wedding-media/${path}`, {
     method: 'POST',
     headers:{
       'apikey': SUPABASE_KEY,
       'Authorization': 'Bearer '+SUPABASE_KEY,
-      'Content-Type': 'application/offset+octet-stream',
-      'x-upsert': 'true',
-      'Upload-Length': fileSize,
-      'Upload-Metadata': `filename ${btoa(path)},content-type ${btoa(mimeType)},bucketName ${btoa('wedding-media')},objectName ${btoa(path)}`,
-      'Tus-Resumable': '1.0.0'
-    }
+      'Content-Type': mimeType || 'application/octet-stream',
+      'x-upsert': 'true'
+    },
+    body: file
   });
 
-  if(!createRes.ok){
-    const err = await createRes.text();
+  if(!uploadRes.ok){
+    const errText = await uploadRes.text();
     const errEl = document.getElementById('upload-error');
-    if(errEl){ errEl.style.display='block'; errEl.textContent = `Erreur création session: ${createRes.status} — ${err}`; }
-    throw new Error(`TUS create: ${createRes.status}`);
-  }
-
-  const uploadUrl = createRes.headers.get('Location');
-  if(!uploadUrl) throw new Error('Pas de location TUS');
-
-  // 2. Envoyer les morceaux
-  let offset = 0;
-  while(offset < fileSize){
-    const chunk = file.slice(offset, offset + CHUNK_SIZE);
-    const pct = Math.round((offset / fileSize) * 100);
-    document.getElementById('progress-fill').style.width = pct + '%';
-    document.getElementById('progress-text').textContent = `Envoi ${fileIdx+1}/${total} — ${pct}%…`;
-
-    const chunkRes = await fetch(uploadUrl, {
-      method: 'PATCH',
-      headers:{
-        'apikey': SUPABASE_KEY,
-        'Authorization': 'Bearer '+SUPABASE_KEY,
-        'Content-Type': 'application/offset+octet-stream',
-        'Upload-Offset': offset,
-        'Tus-Resumable': '1.0.0'
-      },
-      body: chunk
-    });
-
-    if(!chunkRes.ok){
-      const err = await chunkRes.text();
-      throw new Error(`TUS chunk ${chunkRes.status}: ${err}`);
+    if(errEl){
+      errEl.style.display='block';
+      errEl.innerHTML = `<strong>Erreur upload (${uploadRes.status})</strong><br>${errText}`;
     }
-    offset += CHUNK_SIZE;
+    throw new Error(`Upload ${uploadRes.status}: ${errText}`);
   }
+
+  document.getElementById('progress-fill').style.width = '100%';
 }
 
 async function submitMedia(){
