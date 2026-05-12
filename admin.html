@@ -773,6 +773,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
     </div>
 
+    <!-- DASHBOARD ROW 3 : Paiement par personne -->
+    <div class="bdash-card" style="margin-bottom:1.4rem;">
+      <h4>👤 Moyens de paiement par personne</h4>
+      <div id="budget-pay-by-person"></div>
+    </div>
+
     <!-- Formulaire + Liste -->
     <div class="budget-layout">
       <div class="budget-form-card">
@@ -2269,6 +2275,43 @@ async function renderBudget(){
             <span style="${over?'color:var(--danger);font-weight:700':''}">${envItems.length} dép.${over?' ⚠️ dépassé':''}</span>
             <span>${fmt(envPaye)} / ${fmt(envPrevu)}</span>
           </div>
+
+          <!-- Enveloppes associées -->
+          ${(()=>{
+            const personEnvs = _enveloppes.filter(env=>env.person===p.key);
+            if(!personEnvs.length) return '';
+            return `<div style="margin-top:0.9rem;border-top:1px solid var(--border);padding-top:0.7rem;">
+              <div style="font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:0.5rem;">Enveloppes</div>
+              <div style="display:flex;flex-direction:column;gap:0.4rem;">
+                ${personEnvs.map(env=>{
+                  const envExp = expenses.filter(x=>x.enveloppe===env.name);
+                  const envP  = envExp.reduce((s,x)=>s+x.prevu,0);
+                  const envPy = envExp.reduce((s,x)=>s+x.effectue,0);
+                  const envPct  = env.budget>0 ? Math.min(Math.round(envP/env.budget*100),100) : 0;
+                  const envPyPct= env.budget>0 ? Math.min(Math.round(envPy/env.budget*100),100) : 0;
+                  const envOver = env.budget>0 && envP>env.budget;
+                  return `<div style="background:var(--bg3);border-radius:8px;padding:0.5rem 0.7rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">
+                      <span style="font-size:0.72rem;font-weight:600;color:var(--text);display:flex;align-items:center;gap:0.3rem;">
+                        <span style="width:7px;height:7px;border-radius:50%;background:${env.color};flex-shrink:0;"></span>${env.name}
+                      </span>
+                      <span style="font-size:0.62rem;color:${envOver?'var(--danger)':'var(--muted)'};">${fmt(env.budget)}</span>
+                    </div>
+                    <div style="background:var(--bg2);border-radius:3px;height:4px;overflow:hidden;margin-bottom:2px;display:flex;">
+                      <div style="height:100%;width:${envPct}%;background:${env.color}55;flex-shrink:0;border-radius:3px;" title="Prévu ${envPct}%"></div>
+                    </div>
+                    <div style="background:var(--bg2);border-radius:3px;height:4px;overflow:hidden;margin-bottom:3px;display:flex;">
+                      <div style="height:100%;width:${envPyPct}%;background:${env.color};flex-shrink:0;border-radius:3px;" title="Payé ${envPyPct}%"></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.58rem;color:var(--muted);">
+                      <span>Prévu ${fmt(envP)}${envOver?` <span style="color:var(--danger);font-weight:700">⚠️</span>`:''}  </span>
+                      <span style="color:${envPy>0?'var(--sage)':'var(--muted)'}">Payé ${fmt(envPy)}</span>
+                    </div>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>`;
+          })()}
         </div>`;
       }).join('');
     }
@@ -2555,7 +2598,70 @@ async function renderBudget(){
       }).join('');
     }
   }
-  const catsBars = [...new Set(expenses.map(e=>e.cat))];
+
+  // ── Moyens de paiement par personne ──
+  const payByPersonEl = document.getElementById('budget-pay-by-person');
+  if(payByPersonEl){
+    const personKeys = ['Raoine','Aboudé','Ensemble','Maman'];
+    const personIcons = {'Raoine':'👰','Aboudé':'🤵','Ensemble':'💑','Maman':'👩'};
+    const personColors = {'Raoine':'#E8849A','Aboudé':'#4A7AA8','Ensemble':'#4A7A5A','Maman':'#C05A8A'};
+
+    const rows = personKeys.map(pk => {
+      const items = expenses.filter(e=>e.origine===pk);
+      if(!items.length) return null;
+
+      const prevu = items.reduce((s,e)=>s+e.prevu,0);
+      const paye  = items.reduce((s,e)=>s+e.effectue,0);
+
+      // Grouper par moyen de paiement — prévu et payé
+      const payMethods = ['Cash','Virement','CB','Chèque','Autre',''];
+      const methods = payMethods.map(m=>({
+        m,
+        label: m||'Non défini',
+        color: PAY_COLORS_MAP[m]||'#C8BDB5',
+        prevu: items.filter(e=>e.paiement===m).reduce((s,e)=>s+e.prevu,0),
+        paye:  items.filter(e=>e.paiement===m).reduce((s,e)=>s+e.effectue,0),
+      })).filter(x=>x.prevu>0||x.paye>0);
+
+      const maxVal = Math.max(prevu, 1);
+
+      return `<div style="margin-bottom:1.4rem;padding-bottom:1.4rem;border-bottom:1px solid var(--border);">
+        <!-- Header personne -->
+        <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem;">
+          <span style="font-size:1.1rem">${personIcons[pk]||'👤'}</span>
+          <span style="font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)">${pk}</span>
+          <span style="margin-left:auto;font-size:.72rem;color:var(--muted)">Prévu <strong style="color:var(--text)">${fmt(prevu)}</strong> · Payé <strong style="color:var(--sage)">${fmt(paye)}</strong></span>
+        </div>
+        <!-- Lignes par moyen de paiement -->
+        ${methods.map(x=>`
+          <div style="display:grid;grid-template-columns:80px 1fr 1fr;align-items:center;gap:.7rem;margin-bottom:.6rem;">
+            <!-- Label -->
+            <div style="display:flex;align-items:center;gap:.4rem;font-size:.7rem;color:var(--text2);font-weight:500;">
+              <span style="width:8px;height:8px;border-radius:50%;background:${x.color};flex-shrink:0;"></span>
+              ${x.label}
+            </div>
+            <!-- Barre prévu -->
+            <div>
+              <div style="font-size:.58rem;color:var(--muted);margin-bottom:2px;">Prévu ${fmt(x.prevu)}</div>
+              <div style="background:var(--bg3);border-radius:3px;height:6px;overflow:hidden;">
+                <div style="height:100%;width:${Math.round(x.prevu/maxVal*100)}%;background:${x.color}66;border-radius:3px;transition:width .9s ease;"></div>
+              </div>
+            </div>
+            <!-- Barre payé -->
+            <div>
+              <div style="font-size:.58rem;color:${x.paye>0?'var(--sage)':'var(--muted)'};margin-bottom:2px;">Payé ${fmt(x.paye)}</div>
+              <div style="background:var(--bg3);border-radius:3px;height:6px;overflow:hidden;">
+                <div style="height:100%;width:${Math.round(x.paye/maxVal*100)}%;background:${x.color};border-radius:3px;transition:width .9s ease;"></div>
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>`;
+    }).filter(Boolean);
+
+    payByPersonEl.innerHTML = rows.length
+      ? rows.join('')
+      : '<p style="font-size:.82rem;color:var(--muted);">Aucune dépense avec personne attribuée.</p>';
+  }
   const barsEl = document.getElementById('budget-cat-bars');
   if(!cats.length){ barsEl.innerHTML='<p style="font-size:0.82rem;color:var(--muted)">Aucune dépense enregistrée.</p>'; }
   else {

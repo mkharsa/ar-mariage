@@ -241,19 +241,62 @@ function openCamera(){
   document.getElementById('camera-input').click();
 }
 
-const MAX_SIZE = 500 * 1024 * 1024; // 500MB max
-const CHUNK_SIZE = 6 * 1024 * 1024; // 6MB par morceau pour les gros fichiers
+const MAX_SIZE = 50 * 1024 * 1024; // 50MB max par fichier
 
 function addFiles(files){
   files = files.filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
-  const tooLarge = files.filter(f => f.size > MAX_SIZE);
-  const ok = files.filter(f => f.size <= MAX_SIZE);
-  if(tooLarge.length){
-    toast(`${tooLarge.length} fichier${tooLarge.length>1?'s':''} ignoré${tooLarge.length>1?'s':''} (> 100MB)`, true);
+  const ok = [];
+  const rejected = [];
+
+  files.forEach(f => {
+    if(f.size > MAX_SIZE){
+      rejected.push(f);
+    } else {
+      ok.push(f);
+    }
+  });
+
+  if(rejected.length){
+    const names = rejected.map(f => {
+      const mb = (f.size/1024/1024).toFixed(1);
+      const isVideo = f.type.startsWith('video/');
+      return `• ${f.name || (isVideo?'Vidéo':'Photo')} (${mb} MB)`;
+    }).join('\n');
+    showRejectModal(rejected.length, names);
   }
-  // Fichiers acceptés — aucune compression, qualité originale préservée
+
   selectedFiles = [...selectedFiles, ...ok];
   renderPreview();
+}
+
+function showRejectModal(count, names){
+  // Create or update reject modal
+  let modal = document.getElementById('reject-modal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'reject-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(26,20,16,.6);z-index:999;display:flex;align-items:center;justify-content:center;padding:1.5rem;';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:1.8rem;max-width:360px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+      <div style="font-size:2rem;text-align:center;margin-bottom:.8rem;">⚠️</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-style:italic;text-align:center;color:#1E1A17;margin-bottom:.6rem;">
+        Fichier${count>1?'s':''} trop volumineux${count>1?'s':''}
+      </div>
+      <p style="font-size:.78rem;color:#8C8078;text-align:center;line-height:1.6;margin-bottom:1rem;">
+        ${count>1?'Ces fichiers dépassent':'Ce fichier dépasse'} la limite de <strong>50 MB</strong> et ${count>1?'n'ont pas pu être ajoutés':'n'a pas pu être ajouté'}.
+      </p>
+      <div style="background:#FFF8F0;border:1px solid #F0D0B0;border-radius:8px;padding:.8rem;font-size:.72rem;color:#7A4000;white-space:pre-line;margin-bottom:1rem;line-height:1.8;">${names}</div>
+      <div style="background:#F0F8FF;border:1px solid #B0D0F0;border-radius:8px;padding:.8rem;font-size:.72rem;color:#1A4A7A;margin-bottom:1.2rem;line-height:1.6;">
+        💡 <strong>Astuce pour les vidéos :</strong><br>
+        Sur iPhone → Réglages → Appareil photo → Enregistrer la vidéo → choisir <strong>720p HD à 30 i/s</strong> pour des fichiers plus légers.
+      </div>
+      <button onclick="document.getElementById('reject-modal').style.display='none'" style="width:100%;padding:.85rem;background:#1E1A17;color:#fff;border:none;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;">
+        Compris
+      </button>
+    </div>`;
+  modal.style.display = 'flex';
 }
 
 function removeFile(idx){
