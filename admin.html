@@ -877,6 +877,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <option value="paye">✅ Payé</option>
             <option value="nonpaye">⏳ Non payé</option>
             <option value="over">🔴 En dépassement</option>
+            <option value="noenv">📭 Sans enveloppe</option>
           </select>
           <button onclick="resetExpenseFilters()" style="font-size:0.62rem;border:1px solid var(--border);border-radius:20px;padding:0.28rem 0.65rem;background:var(--bg3);color:var(--muted);cursor:pointer;font-family:inherit;">✕ Réinitialiser</button>
         </div>
@@ -2925,6 +2926,7 @@ function renderExpenseList(expenses){
   if(filterStatut==='paye')    filtered = filtered.filter(e=>e.effectue>0);
   if(filterStatut==='nonpaye') filtered = filtered.filter(e=>e.effectue===0||!e.effectue);
   if(filterStatut==='over')    filtered = filtered.filter(e=>overExpenseIds.has(e.id));
+  if(filterStatut==='noenv')   filtered = filtered.filter(e=>!e.enveloppe||e.enveloppe==='');
 
   const countEl = document.getElementById('expense-filter-count');
   const hasFilter = filterCat||filterOrigine||filterEnv||filterPaiement||filterStatut;
@@ -2937,12 +2939,15 @@ function renderExpenseList(expenses){
   listEl.innerHTML = [...filtered].reverse().map(e => {
     const color = CAT_COLORS[e.cat]||'#8C8078';
     const isOver = overExpenseIds.has(e.id);
+    const hasNoEnv = !e.enveloppe || e.enveloppe==='';
     const env = _enveloppes.find(x=>x.name===e.enveloppe);
     const envTotal = env ? expenses.filter(x=>x.enveloppe===env.name).reduce((s,x)=>s+x.prevu,0) : 0;
     const envOverAmt = env && env.budget > 0 ? envTotal - env.budget : 0;
     const overBadge = isOver && env
       ? `<div style="font-size:0.58rem;font-weight:700;color:var(--danger);margin-top:2px;">⚠️ Enveloppe ${env.name} dépassée de ${fmt(envOverAmt)}</div>`
-      : '';
+      : hasNoEnv && e.prevu>0
+        ? `<div style="font-size:0.58rem;color:var(--muted);margin-top:2px;">📭 Non rattachée à une enveloppe</div>`
+        : '';
     return `<div class="expense-item" style="${isOver?'border-color:var(--danger);border-left:3px solid var(--danger);background:#FFFAFA;':''}">
       <div class="expense-cat-dot" style="background:${isOver?'var(--danger)':color}"></div>
       <div class="expense-body">
