@@ -2342,7 +2342,9 @@ async function renderBudget(){
         // Footer
         const foot=document.createElement('div');
         foot.style.cssText='display:flex;justify-content:space-between;font-size:0.6rem;color:var(--muted);';
-        foot.innerHTML='<span style="'+(over?'color:var(--danger);font-weight:700':'')+'">'+envItems.length+' dép.'+(over?' ⚠️ dépassé':'')+'</span>'
+        foot.innerHTML='<span style="'+(over?'color:var(--danger);font-weight:700':'')+'">'
+          +envItems.length+' dép.'+(over?' ⚠️ dépassé':'')+'</span>'
+          +(over?'<span style="font-size:0.58rem;color:var(--danger);text-decoration:underline;cursor:pointer;" onclick="filterByEnveloppe(\''+env.name+'\')">Voir →</span>':'')
           +'<span>'+fmt(envPaye)+' / '+fmt(envPrevu)+'</span>';
         card.appendChild(foot);
 
@@ -2543,8 +2545,24 @@ async function renderBudget(){
       // Over/available badge
       if(over){
         const badge=document.createElement('div');
-        badge.style.cssText='margin-top:0.6rem;font-size:0.65rem;font-weight:700;color:var(--danger);background:#FEEAEA;border-radius:6px;padding:0.3rem 0.6rem;';
-        badge.textContent='⚠️ +'+fmt(prevu-p.budget);
+        badge.style.cssText='margin-top:0.6rem;font-size:0.65rem;font-weight:700;color:var(--danger);background:#FEEAEA;border-radius:6px;padding:0.4rem 0.8rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(200,64,64,0.2);transition:all .2s;';
+        badge.innerHTML='<span>⚠️ Dépassement : +'+fmt(prevu-p.budget)+'</span><span style="font-size:0.6rem;font-weight:500;text-decoration:underline;opacity:0.8;">Voir les dépenses →</span>';
+        badge.title='Cliquez pour filtrer les dépenses de '+p.key;
+        badge.onmouseenter=()=>badge.style.background='#FDDCDC';
+        badge.onmouseleave=()=>badge.style.background='#FEEAEA';
+        badge.onclick=()=>{
+          // Scroll vers la liste des dépenses
+          document.querySelector('#page-budget .budget-form-card:last-child')?.scrollIntoView({behavior:'smooth',block:'start'});
+          // Appliquer le filtre par personne
+          const sel=document.getElementById('bfilter-origine');
+          if(sel){ sel.value=p.key; }
+          // Petite animation pour attirer l'attention
+          setTimeout(()=>{
+            const listEl=document.getElementById('expense-list');
+            if(listEl){ listEl.style.outline='2px solid var(--danger)'; setTimeout(()=>listEl.style.outline='',1200); }
+            renderBudget();
+          },400);
+        };
         div.appendChild(badge);
       } else if(p.budget>0){
         const badge=document.createElement('div');
@@ -2601,7 +2619,7 @@ async function renderBudget(){
         h += '<div style="height:100%;width:'+pctPy+'%;background:'+env.color+';border-radius:3px;transition:width 1s ease;"></div></div>';
         // Footer
         h += '<div style="display:flex;justify-content:space-between;font-size:0.6rem;color:var(--muted);">';
-        h += '<span>Prévu '+fmt(envP)+(over?' <span style="color:var(--danger)">⚠️</span>':'')+'</span>';
+        h += '<span>Prévu '+fmt(envP)+(over?' <span style="color:var(--danger)">⚠️ +'+fmt(envP-env.budget)+'</span>':'')+'</span>';
         h += '<span style="color:'+(envPy>0?'var(--sage)':'var(--muted)')+'">Payé '+fmt(envPy)+'</span>';
         h += '</div>';
         h += '</div>';
@@ -3132,6 +3150,17 @@ function formatSize(bytes){
 
 // Close lightbox on backdrop click
 document.addEventListener('click', e=>{ if(e.target.id==='lightbox') closeLightbox(); });
+
+function filterByEnveloppe(name){
+  const sel = document.getElementById('bfilter-enveloppe');
+  if(sel){ sel.value = name; }
+  document.querySelector('#page-budget .budget-form-card:last-child')?.scrollIntoView({behavior:'smooth', block:'start'});
+  setTimeout(()=>{
+    renderBudget();
+    const listEl = document.getElementById('expense-list');
+    if(listEl){ listEl.style.outline='2px solid var(--danger)'; setTimeout(()=>listEl.style.outline='',1200); }
+  }, 400);
+}
 
 function checkPwd(){
   const val = document.getElementById('pwd-input').value.trim();
