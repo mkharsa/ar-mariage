@@ -2767,61 +2767,74 @@ async function renderBudget(){
     const personIcons = {'Raoine':'👰','Aboudé':'🤵','Ensemble':'💑','Maman':'👩'};
     const personColors = {'Raoine':'#E8849A','Aboudé':'#4A7AA8','Ensemble':'#4A7A5A','Maman':'#C05A8A'};
 
-    const rows = personKeys.map(pk => {
+    payByPersonEl.innerHTML = '';
+    personKeys.forEach(pk => {
       const items = expenses.filter(e=>e.origine===pk);
-      if(!items.length) return null;
-
+      if(!items.length) return;
       const prevu = items.reduce((s,e)=>s+e.prevu,0);
       const paye  = items.reduce((s,e)=>s+e.effectue,0);
+      const personBudget = _enveloppes.filter(e=>e.person===pk).reduce((s,e)=>s+e.budget,0);
+      const overPerson = personBudget>0 && prevu>personBudget;
 
-      // Grouper par moyen de paiement — prévu et payé
-      const payMethods = ['Cash','Virement','CB','Chèque','Autre',''];
-      const methods = payMethods.map(m=>({
-        m,
-        label: m||'Non défini',
-        color: PAY_COLORS_MAP[m]||'#C8BDB5',
+      const section = document.createElement('div');
+      section.style.cssText = 'margin-bottom:1.4rem;padding-bottom:1.4rem;border-bottom:1px solid var(--border);';
+
+      // Header
+      const hdr = document.createElement('div');
+      hdr.style.cssText = 'display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem;flex-wrap:wrap;';
+      hdr.innerHTML = '<span style="font-size:1.1rem">'+(personIcons[pk]||'👤')+'</span>'
+        +'<span style="font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)">'+pk+'</span>'
+        +(personBudget>0?'<span style="font-size:.68rem;color:var(--muted);background:var(--bg3);border-radius:10px;padding:1px 7px;">Budget : '+fmt(personBudget)+'</span>':'')
+        +'<span style="margin-left:auto;font-size:.72rem;color:var(--muted)">Prévu <strong style="color:'+(overPerson?'var(--danger)':'var(--text)')+'">'+fmt(prevu)+'</strong> · Payé <strong style="color:var(--sage)">'+fmt(paye)+'</strong></span>';
+      section.appendChild(hdr);
+
+      // Alerte dépassement
+      if(overPerson){
+        const alert = document.createElement('div');
+        alert.style.cssText = 'background:#FEEAEA;border:1px solid rgba(200,64,64,0.2);border-radius:8px;padding:.5rem .8rem;margin-bottom:.8rem;font-size:.68rem;font-weight:600;color:var(--danger);display:flex;justify-content:space-between;align-items:center;cursor:pointer;';
+        alert.innerHTML = '<span>⚠️ Dépassement de '+fmt(prevu-personBudget)+'</span><span style="text-decoration:underline;font-weight:400;">Voir les dépenses →</span>';
+        alert.onclick = ()=>{ const s=document.getElementById('bfilter-origine'); if(s){s.value=pk;} document.querySelector('#page-budget .budget-form-card:last-child')?.scrollIntoView({behavior:'smooth'}); setTimeout(()=>renderBudget(),400); };
+        section.appendChild(alert);
+      }
+
+      // Enveloppes chips
+      const personEnvs = _enveloppes.filter(e=>e.person===pk);
+      if(personEnvs.length){
+        const envDiv = document.createElement('div');
+        envDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.8rem;';
+        personEnvs.forEach(env=>{
+          const envP  = expenses.filter(x=>x.enveloppe===env.name).reduce((s,x)=>s+x.prevu,0);
+          const envOver = env.budget>0 && envP>env.budget;
+          const chip = document.createElement('div');
+          chip.style.cssText = 'display:inline-flex;align-items:center;gap:.35rem;font-size:.65rem;padding:.28rem .65rem;border-radius:20px;border:1px solid '+(envOver?'var(--danger)':env.color+'55')+';background:'+(envOver?'#FEEAEA':env.color+'11')+';color:'+(envOver?'var(--danger)':'var(--text2)')+';cursor:'+(envOver?'pointer':'default')+';';
+          chip.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:'+env.color+';flex-shrink:0;"></span>'
+            +env.name+' — Prévu '+fmt(envP)+' / '+fmt(env.budget)+(envOver?' ⚠️':'');
+          if(envOver) chip.onclick=()=>filterByEnveloppe(env.name);
+          envDiv.appendChild(chip);
+        });
+        section.appendChild(envDiv);
+      }
+
+      // Lignes par moyen de paiement
+      const methods = ['Cash','Virement','CB','Chèque','Autre',''].map(m=>({
+        m, label:m||'Non défini', color:PAY_COLORS_MAP[m]||'#C8BDB5',
         prevu: items.filter(e=>e.paiement===m).reduce((s,e)=>s+e.prevu,0),
         paye:  items.filter(e=>e.paiement===m).reduce((s,e)=>s+e.effectue,0),
       })).filter(x=>x.prevu>0||x.paye>0);
 
-      const maxVal = Math.max(prevu, 1);
-
-      return `<div style="margin-bottom:1.4rem;padding-bottom:1.4rem;border-bottom:1px solid var(--border);">
-        <!-- Header personne -->
-        <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem;">
-          <span style="font-size:1.1rem">${personIcons[pk]||'👤'}</span>
-          <span style="font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)">${pk}</span>
-          <span style="margin-left:auto;font-size:.72rem;color:var(--muted)">Prévu <strong style="color:var(--text)">${fmt(prevu)}</strong> · Payé <strong style="color:var(--sage)">${fmt(paye)}</strong></span>
-        </div>
-        <!-- Lignes par moyen de paiement -->
-        ${methods.map(x=>`
-          <div style="display:grid;grid-template-columns:80px 1fr 1fr;align-items:center;gap:.7rem;margin-bottom:.6rem;">
-            <!-- Label -->
-            <div style="display:flex;align-items:center;gap:.4rem;font-size:.7rem;color:var(--text2);font-weight:500;">
-              <span style="width:8px;height:8px;border-radius:50%;background:${x.color};flex-shrink:0;"></span>
-              ${x.label}
-            </div>
-            <!-- Barre prévu -->
-            <div>
-              <div style="font-size:.58rem;color:var(--muted);margin-bottom:2px;">Prévu ${fmt(x.prevu)}</div>
-              <div style="background:var(--bg3);border-radius:3px;height:6px;overflow:hidden;">
-                <div style="height:100%;width:${Math.round(x.prevu/maxVal*100)}%;background:${x.color}66;border-radius:3px;transition:width .9s ease;"></div>
-              </div>
-            </div>
-            <!-- Barre payé -->
-            <div>
-              <div style="font-size:.58rem;color:${x.paye>0?'var(--sage)':'var(--muted)'};margin-bottom:2px;">Payé ${fmt(x.paye)}</div>
-              <div style="background:var(--bg3);border-radius:3px;height:6px;overflow:hidden;">
-                <div style="height:100%;width:${Math.round(x.paye/maxVal*100)}%;background:${x.color};border-radius:3px;transition:width .9s ease;"></div>
-              </div>
-            </div>
-          </div>`).join('')}
-      </div>`;
-    }).filter(Boolean);
-
-    payByPersonEl.innerHTML = rows.length
-      ? rows.join('')
-      : '<p style="font-size:.82rem;color:var(--muted);">Aucune dépense avec personne attribuée.</p>';
+      const maxVal = Math.max(prevu,1);
+      methods.forEach(x=>{
+        const row = document.createElement('div');
+        row.style.cssText = 'display:grid;grid-template-columns:80px 1fr 1fr;align-items:center;gap:.7rem;margin-bottom:.6rem;';
+        row.innerHTML = '<div style="display:flex;align-items:center;gap:.4rem;font-size:.7rem;color:var(--text2);font-weight:500;"><span style="width:8px;height:8px;border-radius:50%;background:'+x.color+';flex-shrink:0;"></span>'+x.label+'</div>'
+          +'<div><div style="font-size:.58rem;color:var(--muted);margin-bottom:2px;">Prévu '+fmt(x.prevu)+'</div><div style="background:var(--bg3);border-radius:3px;height:6px;overflow:hidden;"><div style="height:100%;width:'+Math.round(x.prevu/maxVal*100)+'%;background:'+x.color+'66;border-radius:3px;transition:width .9s ease;"></div></div></div>'
+          +'<div><div style="font-size:.58rem;color:'+(x.paye>0?'var(--sage)':'var(--muted)')+';margin-bottom:2px;">Payé '+fmt(x.paye)+'</div><div style="background:var(--bg3);border-radius:3px;height:6px;overflow:hidden;"><div style="height:100%;width:'+Math.round(x.paye/maxVal*100)+'%;background:'+x.color+';border-radius:3px;transition:width .9s ease;"></div></div></div>';
+        section.appendChild(row);
+      });
+      payByPersonEl.appendChild(section);
+    });
+    if(!payByPersonEl.children.length)
+      payByPersonEl.innerHTML = '<p style="font-size:.82rem;color:var(--muted);">Aucune dépense avec personne attribuée.</p>';
   }
   const barsEl = document.getElementById('budget-cat-bars');
   if(!cats.length){ barsEl.innerHTML='<p style="font-size:0.82rem;color:var(--muted)">Aucune dépense enregistrée.</p>'; }
