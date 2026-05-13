@@ -2893,15 +2893,25 @@ function renderExpenseList(expenses){
   const filterCat      = document.getElementById('bfilter-cat')?.value || '';
   const filterOrigine  = document.getElementById('bfilter-origine')?.value || '';
 
-  // Calculer les dépenses en dépassement (avant filtres pour le filtre "over")
+  // Dépenses en dépassement = dépenses dans une enveloppe dont le total prévu > budget
   const overExpenseIds = new Set();
+  const overEnveloppeNames = new Set();
   _enveloppes.forEach(env=>{
     if(!env.budget) return;
-    const envExps = [...expenses]
-      .filter(x=>x.enveloppe===env.name)
-      .sort((a,b)=>new Date(a.created_at||0)-new Date(b.created_at||0));
-    let cumul = 0;
-    envExps.forEach(x=>{ cumul += x.prevu; if(cumul > env.budget) overExpenseIds.add(x.id); });
+    const envExps = expenses.filter(x=>x.enveloppe===env.name);
+    const total = envExps.reduce((s,x)=>s+x.prevu,0);
+    if(total > env.budget){
+      overEnveloppeNames.add(env.name);
+      // Trier par montant décroissant — les plus grosses dépenses sont "responsables"
+      const sorted = [...envExps].sort((a,b)=>b.prevu-a.prevu);
+      let cumul = 0;
+      sorted.forEach(x=>{
+        cumul += x.prevu;
+        if(cumul > env.budget) overExpenseIds.add(x.id);
+      });
+      // Si aucune dépense isolée ne dépasse, marquer la dernière ajoutée
+      if(!overExpenseIds.size) envExps.forEach(x=>overExpenseIds.add(x.id));
+    }
   });
   const filterEnv      = document.getElementById('bfilter-enveloppe')?.value || '';
   const filterPaiement = document.getElementById('bfilter-paiement')?.value || '';
@@ -2928,8 +2938,10 @@ function renderExpenseList(expenses){
     const color = CAT_COLORS[e.cat]||'#8C8078';
     const isOver = overExpenseIds.has(e.id);
     const env = _enveloppes.find(x=>x.name===e.enveloppe);
+    const envTotal = env ? expenses.filter(x=>x.enveloppe===env.name).reduce((s,x)=>s+x.prevu,0) : 0;
+    const envOverAmt = env && env.budget > 0 ? envTotal - env.budget : 0;
     const overBadge = isOver && env
-      ? `<div style="font-size:0.58rem;font-weight:700;color:var(--danger);margin-top:2px;">⚠️ Dépasse le budget ${env.name}</div>`
+      ? `<div style="font-size:0.58rem;font-weight:700;color:var(--danger);margin-top:2px;">⚠️ Enveloppe ${env.name} dépassée de ${fmt(envOverAmt)}</div>`
       : '';
     return `<div class="expense-item" style="${isOver?'border-color:var(--danger);border-left:3px solid var(--danger);background:#FFFAFA;':''}">
       <div class="expense-cat-dot" style="background:${isOver?'var(--danger)':color}"></div>
