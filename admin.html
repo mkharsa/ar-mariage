@@ -876,6 +876,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <option value="">🔘 Statut</option>
             <option value="paye">✅ Payé</option>
             <option value="nonpaye">⏳ Non payé</option>
+            <option value="over">🔴 En dépassement</option>
           </select>
           <button onclick="resetExpenseFilters()" style="font-size:0.62rem;border:1px solid var(--border);border-radius:20px;padding:0.28rem 0.65rem;background:var(--bg3);color:var(--muted);cursor:pointer;font-family:inherit;">✕ Réinitialiser</button>
         </div>
@@ -2891,6 +2892,17 @@ function resetExpenseFilters(){
 function renderExpenseList(expenses){
   const filterCat      = document.getElementById('bfilter-cat')?.value || '';
   const filterOrigine  = document.getElementById('bfilter-origine')?.value || '';
+
+  // Calculer les dépenses en dépassement (avant filtres pour le filtre "over")
+  const overExpenseIds = new Set();
+  _enveloppes.forEach(env=>{
+    if(!env.budget) return;
+    const envExps = [...expenses]
+      .filter(x=>x.enveloppe===env.name)
+      .sort((a,b)=>new Date(a.created_at||0)-new Date(b.created_at||0));
+    let cumul = 0;
+    envExps.forEach(x=>{ cumul += x.prevu; if(cumul > env.budget) overExpenseIds.add(x.id); });
+  });
   const filterEnv      = document.getElementById('bfilter-enveloppe')?.value || '';
   const filterPaiement = document.getElementById('bfilter-paiement')?.value || '';
   const filterStatut   = document.getElementById('bfilter-statut')?.value || '';
@@ -2902,6 +2914,7 @@ function renderExpenseList(expenses){
   if(filterPaiement) filtered = filtered.filter(e=>e.paiement===filterPaiement);
   if(filterStatut==='paye')    filtered = filtered.filter(e=>e.effectue>0);
   if(filterStatut==='nonpaye') filtered = filtered.filter(e=>e.effectue===0||!e.effectue);
+  if(filterStatut==='over')    filtered = filtered.filter(e=>overExpenseIds.has(e.id));
 
   const countEl = document.getElementById('expense-filter-count');
   const hasFilter = filterCat||filterOrigine||filterEnv||filterPaiement||filterStatut;
@@ -2910,16 +2923,23 @@ function renderExpenseList(expenses){
   const listEl = document.getElementById('expense-list');
   if(!listEl) return;
   if(!filtered.length){ listEl.innerHTML='<div class="budget-empty">Aucune dépense correspondante.</div>'; return; }
+
   listEl.innerHTML = [...filtered].reverse().map(e => {
     const color = CAT_COLORS[e.cat]||'#8C8078';
-    return `<div class="expense-item">
-      <div class="expense-cat-dot" style="background:${color}"></div>
+    const isOver = overExpenseIds.has(e.id);
+    const env = _enveloppes.find(x=>x.name===e.enveloppe);
+    const overBadge = isOver && env
+      ? `<div style="font-size:0.58rem;font-weight:700;color:var(--danger);margin-top:2px;">⚠️ Dépasse le budget ${env.name}</div>`
+      : '';
+    return `<div class="expense-item" style="${isOver?'border-color:var(--danger);border-left:3px solid var(--danger);background:#FFFAFA;':''}">
+      <div class="expense-cat-dot" style="background:${isOver?'var(--danger)':color}"></div>
       <div class="expense-body">
-        <div class="expense-name">${e.name}</div>
+        <div class="expense-name" style="${isOver?'color:var(--danger);font-weight:600;':''}">${e.name}</div>
         <div class="expense-meta">${e.cat}${e.enveloppe?' · 📁 '+e.enveloppe:''}${e.origine?' · '+e.origine:''}${e.paiement?' · '+e.paiement:''}${e.note?' · '+e.note:''} · ${e.date}</div>
+        ${overBadge}
       </div>
       <div class="expense-amounts">
-        <div class="expense-prevu">Prévu : ${fmt(e.prevu)}</div>
+        <div class="expense-prevu" style="${isOver?'color:var(--danger);':''}">Prévu : ${fmt(e.prevu)}</div>
         <div class="expense-effectue ${e.effectue>0?'paid':''}">${e.effectue>0?'✓ '+fmt(e.effectue):'Non payé'}</div>
       </div>
       <button class="btn btn-outline" onclick="editExpense('${e.id}')" style="margin-left:0.4rem;font-size:0.6rem;padding:0.3rem 0.6rem">✏️</button>
