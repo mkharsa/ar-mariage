@@ -2276,42 +2276,8 @@ async function renderBudget(){
             <span>${fmt(envPaye)} / ${fmt(envPrevu)}</span>
           </div>
 
-          <!-- Enveloppes associées -->
-          ${(()=>{
-            const personEnvs = _enveloppes.filter(env=>env.person===p.key);
-            if(!personEnvs.length) return '';
-            return `<div style="margin-top:0.9rem;border-top:1px solid var(--border);padding-top:0.7rem;">
-              <div style="font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:0.5rem;">Enveloppes</div>
-              <div style="display:flex;flex-direction:column;gap:0.4rem;">
-                ${personEnvs.map(env=>{
-                  const envExp = expenses.filter(x=>x.enveloppe===env.name);
-                  const envP  = envExp.reduce((s,x)=>s+x.prevu,0);
-                  const envPy = envExp.reduce((s,x)=>s+x.effectue,0);
-                  const envPct  = env.budget>0 ? Math.min(Math.round(envP/env.budget*100),100) : 0;
-                  const envPyPct= env.budget>0 ? Math.min(Math.round(envPy/env.budget*100),100) : 0;
-                  const envOver = env.budget>0 && envP>env.budget;
-                  return `<div style="background:var(--bg3);border-radius:8px;padding:0.5rem 0.7rem;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">
-                      <span style="font-size:0.72rem;font-weight:600;color:var(--text);display:flex;align-items:center;gap:0.3rem;">
-                        <span style="width:7px;height:7px;border-radius:50%;background:${env.color};flex-shrink:0;"></span>${env.name}
-                      </span>
-                      <span style="font-size:0.62rem;color:${envOver?'var(--danger)':'var(--muted)'};">${fmt(env.budget)}</span>
-                    </div>
-                    <div style="background:var(--bg2);border-radius:3px;height:4px;overflow:hidden;margin-bottom:2px;display:flex;">
-                      <div style="height:100%;width:${envPct}%;background:${env.color}55;flex-shrink:0;border-radius:3px;" title="Prévu ${envPct}%"></div>
-                    </div>
-                    <div style="background:var(--bg2);border-radius:3px;height:4px;overflow:hidden;margin-bottom:3px;display:flex;">
-                      <div style="height:100%;width:${envPyPct}%;background:${env.color};flex-shrink:0;border-radius:3px;" title="Payé ${envPyPct}%"></div>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;font-size:0.58rem;color:var(--muted);">
-                      <span>Prévu ${fmt(envP)}${envOver?` <span style="color:var(--danger);font-weight:700">⚠️</span>`:''}  </span>
-                      <span style="color:${envPy>0?'var(--sage)':'var(--muted)'}">Payé ${fmt(envPy)}</span>
-                    </div>
-                  </div>`;
-                }).join('')}
-              </div>
-            </div>`;
-          })()}
+          <!-- Enveloppes associées — généré séparément pour éviter les backticks imbriqués -->
+          <span id="penv-${pi}"></span>
         </div>`;
       }).join('');
     }
@@ -2467,6 +2433,38 @@ async function renderBudget(){
           <div style="font-size:0.6rem;color:var(--muted2);margin-top:0.5rem">${count} dépense${count>1?'s':''}</div>
         </div>`;
     }).join('');
+
+    // Rendre les enveloppes par personne (hors template literal pour éviter les conflits backtick)
+    personConfig.forEach((p,pi)=>{
+      const envSlot = document.getElementById('penv-'+pi);
+      if(!envSlot) return;
+      const personEnvs = _enveloppes.filter(env=>env.person===p.key);
+      if(!personEnvs.length){ envSlot.innerHTML=''; return; }
+      let envHtml = '<div style="margin-top:0.9rem;border-top:1px solid var(--border);padding-top:0.7rem;">';
+      envHtml += '<div style="font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:0.5rem;">Enveloppes</div>';
+      envHtml += '<div style="display:flex;flex-direction:column;gap:0.4rem;">';
+      personEnvs.forEach(env=>{
+        const envExp = expenses.filter(x=>x.enveloppe===env.name);
+        const envP   = envExp.reduce((s,x)=>s+x.prevu,0);
+        const envPy  = envExp.reduce((s,x)=>s+x.effectue,0);
+        const envPct   = env.budget>0 ? Math.min(Math.round(envP/env.budget*100),100) : 0;
+        const envPyPct = env.budget>0 ? Math.min(Math.round(envPy/env.budget*100),100) : 0;
+        const envOver  = env.budget>0 && envP>env.budget;
+        envHtml += '<div style="background:var(--bg3);border-radius:8px;padding:0.5rem 0.7rem;">';
+        envHtml += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">';
+        envHtml += '<span style="font-size:0.72rem;font-weight:600;color:var(--text);display:flex;align-items:center;gap:0.3rem;">';
+        envHtml += '<span style="width:7px;height:7px;border-radius:50%;background:'+env.color+';flex-shrink:0;"></span>'+env.name+'</span>';
+        envHtml += '<span style="font-size:0.62rem;color:'+(envOver?'var(--danger)':'var(--muted)')+';">'+fmt(env.budget)+'</span></div>';
+        envHtml += '<div style="background:var(--bg2);border-radius:3px;height:4px;overflow:hidden;margin-bottom:2px;display:flex;"><div style="height:100%;width:'+envPct+'%;background:'+env.color+'55;flex-shrink:0;border-radius:3px;"></div></div>';
+        envHtml += '<div style="background:var(--bg2);border-radius:3px;height:4px;overflow:hidden;margin-bottom:3px;display:flex;"><div style="height:100%;width:'+envPyPct+'%;background:'+env.color+';flex-shrink:0;border-radius:3px;"></div></div>';
+        envHtml += '<div style="display:flex;justify-content:space-between;font-size:0.58rem;color:var(--muted);">';
+        envHtml += '<span>Prévu '+fmt(envP)+(envOver?' ⚠️':'')+'</span>';
+        envHtml += '<span style="color:'+(envPy>0?'var(--sage)':'var(--muted)')+'">Payé '+fmt(envPy)+'</span></div>';
+        envHtml += '</div>';
+      });
+      envHtml += '</div></div>';
+      envSlot.innerHTML = envHtml;
+    });
 
     setTimeout(()=>{
       personConfig.forEach((p,pi)=>{
