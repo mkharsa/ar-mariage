@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Connected ChronoTrack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg:        #040f1a;
+    --bg2:       #071828;
+    --bg3:       #0a2035;
+    --border:    rgba(0,180,216,0.15);
+    --blue:      #00b4d8;
+    --blue-dim:  rgba(0,180,216,0.12);
+    --cyan:      #48cae4;
+    --red:       #ef476f;
+    --red-dim:   rgba(239,71,111,0.12);
+    --yellow:    #ffd166;
+    --yellow-dim:rgba(255,209,102,0.12);
+    --green:     #06d6a0;
+    --white:     #e8f4f8;
+    --muted:     rgba(232,244,248,0.35);
+    --faint:     rgba(232,244,248,0.1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overscroll-behavior: none;
+  }
+
+  /* ── BACKGROUND GRID ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(0,180,216,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,180,216,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(4,15,26,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--blue-dim);
+    border: 1px solid var(--blue);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text {
+    flex: 1;
+  }
+  .logo-text .sub { font-size: 10px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
+  .logo-text .main { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 1px; color: var(--white); }
+
+  .ble-badge {
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    border: 1px solid;
+    font-size: 11px; font-weight: 500;
+    transition: all .3s;
+  }
+  .ble-badge.connected    { color: var(--blue); border-color: var(--blue); background: var(--blue-dim); }
+  .ble-badge.disconnected { color: var(--red);  border-color: var(--red);  background: var(--red-dim); }
+  .ble-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .ble-dot.pulse { animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── FIREBASE CONFIG BANNER ── */
+  #firebase-banner {
+    background: linear-gradient(135deg, rgba(255,209,102,0.08), rgba(255,209,102,0.03));
+    border: 1px solid rgba(255,209,102,0.3);
+    border-radius: 12px;
+    margin: 16px;
+    padding: 14px 16px;
+  }
+  #firebase-banner h3 { font-family: 'Rajdhani', sans-serif; font-size: 15px; color: var(--yellow); margin-bottom: 8px; }
+  #firebase-banner p  { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  #firebase-banner code {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    background: rgba(255,209,102,0.1);
+    color: var(--yellow);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  #firebase-banner .steps { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+  #firebase-banner .step  { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--muted); }
+  #firebase-banner .step-num {
+    min-width: 18px; height: 18px;
+    background: rgba(255,209,102,0.15);
+    border: 1px solid rgba(255,209,102,0.3);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: var(--yellow);
+  }
+
+  /* ── SESSION BAR ── */
+  .session-bar {
+    margin: 0 16px 12px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .session-bar input {
+    flex: 1;
+    background: transparent;
+    border: none; outline: none;
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+  }
+  .session-bar input::placeholder { color: var(--muted); }
+  .session-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  /* ── SELECTION BAR ── */
+  .sel-bar {
+    margin: 0 16px 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sel-count { font-size: 12px; color: var(--muted); flex: 1; }
+  .sel-btn {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .sel-btn:hover, .sel-btn:active { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
+
+  /* ── PARTICIPANTS LIST ── */
+  #participants-list {
+    padding: 0 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    padding-bottom: 160px;
+  }
+
+  /* ── PARTICIPANT CARD ── */
+  .p-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color .2s, background .2s;
+    cursor: pointer;
+    position: relative;
+  }
+  .p-card.selected { background: var(--bg3); border-color: var(--blue); }
+  .p-card.running  { border-color: rgba(0,180,216,0.5); }
+
+  .p-card-main { padding: 14px; display: flex; align-items: center; gap: 12px; }
+
+  .p-checkbox {
+    width: 20px; height: 20px;
+    border-radius: 6px;
+    border: 1.5px solid rgba(232,244,248,0.25);
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all .2s;
+  }
+  .p-card.selected .p-checkbox { background: var(--blue); border-color: var(--blue); }
+  .p-checkbox svg { display: none; width: 12px; height: 12px; }
+  .p-card.selected .p-checkbox svg { display: block; }
+
+  .p-avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(232,244,248,0.2);
+    background: rgba(232,244,248,0.05);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px; font-weight: 700;
+    flex-shrink: 0;
+    transition: all .3s;
+  }
+  .p-card.running .p-avatar { border-color: var(--blue); background: var(--blue-dim); color: var(--blue); }
+
+  .p-info { flex: 1; min-width: 0; }
+  .p-name { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .p-status { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+  .p-status .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--blue); animation: pulse 1.2s infinite; }
+
+  .p-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 22px; font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 1px;
+    flex-shrink: 0;
+    transition: color .3s;
+  }
+  .p-card.running .p-time { color: var(--blue); }
+
+  /* Card actions */
+  .p-actions {
+    border-top: 1px solid rgba(232,244,248,0.05);
+    padding: 8px 14px;
+    display: flex; justify-content: space-between;
+    display: none;
+  }
+  .p-card.show-actions .p-actions { display: flex; }
+
+  .p-action-btn {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 12px; font-weight: 500;
+    background: none; border: none;
+    cursor: pointer; padding: 4px 8px;
+    border-radius: 6px;
+    transition: background .2s;
+  }
+  .p-action-btn:active { background: rgba(255,255,255,0.05); }
+  .p-action-btn.lap   { color: var(--blue); }
+  .p-action-btn.reset { color: var(--muted); }
+
+  /* Laps */
+  .p-laps {
+    border-top: 1px solid rgba(232,244,248,0.05);
+    padding: 8px 14px;
+    display: none;
+  }
+  .p-card.has-laps .p-laps { display: block; }
+  .lap-row {
+    display: flex; align-items: center;
+    padding: 3px 0;
+    font-size: 12px;
+  }
+  .lap-num  { color: var(--muted); width: 45px; }
+  .lap-time { color: var(--cyan); font-family: 'DM Mono', monospace; font-weight: 500; }
+  .lap-total{ color: rgba(232,244,248,0.2); font-family: 'DM Mono', monospace; font-size: 11px; margin-left: auto; }
+
+  /* ── EMPTY STATE ── */
+  #empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 60px 20px;
+    gap: 10px;
+    color: var(--faint);
+    display: none;
+  }
+  #empty-state .icon { font-size: 48px; }
+  #empty-state p { font-size: 14px; }
+
+  /* ── ADD PARTICIPANT BTN ── */
+  .fab {
+    position: fixed;
+    right: 20px; bottom: 130px;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--blue);
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,180,216,0.4);
+    z-index: 50;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .fab:active { transform: scale(0.93); box-shadow: 0 2px 10px rgba(0,180,216,0.3); }
+
+  /* ── IOT PANEL ── */
+  .iot-panel {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(7,24,40,0.97);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px 28px;
+    z-index: 60;
+  }
+
+  .iot-label {
+    font-size: 11px; color: var(--muted);
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .iot-btns { display: flex; gap: 8px; }
+
+  .iot-btn {
+    flex: 1;
+    border: 1.5px solid;
+    border-radius: 12px;
+    background: transparent;
+    cursor: pointer;
+    padding: 10px 4px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    transition: opacity .2s, transform .1s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .iot-btn:active { transform: scale(0.95); }
+  .iot-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+  .iot-btn .btn-icon { font-size: 20px; }
+  .iot-btn .btn-label { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; }
+
+  .iot-btn.start { color: var(--blue);   border-color: rgba(0,180,216,0.4);   background: var(--blue-dim);   flex: 3; }
+  .iot-btn.stop  { color: var(--red);    border-color: rgba(239,71,111,0.4);   background: var(--red-dim);    flex: 3; }
+  .iot-btn.lap   { color: var(--yellow); border-color: rgba(255,209,102,0.4); background: var(--yellow-dim); flex: 2; }
+  .iot-btn.reset { color: var(--muted);  border-color: rgba(232,244,248,0.1); flex: 2; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(4,15,26,0.85);
+    backdrop-filter: blur(8px);
+    display: flex; align-items: flex-end;
+    opacity: 0; pointer-events: none;
+    transition: opacity .25s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+    transform: translateY(100%);
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal h3 { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 14px; }
+  .modal input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    outline: none;
+    margin-bottom: 12px;
+    transition: border-color .2s;
+  }
+  .modal input:focus { border-color: var(--blue); }
+  .modal input::placeholder { color: var(--muted); }
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-btn {
+    flex: 1; padding: 12px;
+    border-radius: 10px;
+    border: 1px solid;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 500;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  .modal-btn:active { opacity: 0.7; }
+  .modal-btn.cancel { background: transparent; border-color: var(--border); color: var(--muted); }
+  .modal-btn.confirm { background: var(--blue); border-color: var(--blue); color: white; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-20px);
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 16px;
+    font-size: 13px; color: var(--white);
+    white-space: nowrap;
+    opacity: 0; transition: all .3s;
+    z-index: 300;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-icon">⏱</div>
+  <div class="logo-text">
+    <div class="sub">Connected</div>
+    <div class="main">ChronoTrack</div>
+  </div>
+  <div class="ble-badge disconnected" id="ble-badge">
+    <div class="ble-dot" id="ble-dot"></div>
+    <span id="ble-label">Hors ligne</span>
+  </div>
+</header>
+
+<!-- FIREBASE CONFIG BANNER -->
+<div id="firebase-banner">
+  <h3>⚡ Configuration Firebase requise</h3>
+  <p>Pour activer la synchronisation en temps réel, remplace les valeurs dans le code JavaScript :</p>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><span>Va sur <code>console.firebase.google.com</code> → Créer un projet</span></div>
+    <div class="step"><div class="step-num">2</div><span>Ajoute une app Web → copie la config <code>firebaseConfig</code></span></div>
+    <div class="step"><div class="step-num">3</div><span>Active <code>Firestore Database</code> en mode test</span></div>
+    <div class="step"><div class="step-num">4</div><span>Remplace <code>YOUR_API_KEY</code> etc. dans ce fichier</span></div>
+  </div>
+</div>
+
+<!-- SESSION BAR -->
+<div class="session-bar">
+  <span class="session-label">Session :</span>
+  <input type="text" id="session-name" placeholder="Ex : Entraînement lundi matin" value="Session 1">
+</div>
+
+<!-- SELECTION BAR -->
+<div class="sel-bar">
+  <span class="sel-count" id="sel-count">0 sélectionné(s)</span>
+  <button class="sel-btn" onclick="selectAll()">Tous</button>
+  <button class="sel-btn" onclick="deselectAll()">Aucun</button>
+</div>
+
+<!-- PARTICIPANTS LIST -->
+<div id="participants-list"></div>
+<div id="empty-state">
+  <div class="icon">👥</div>
+  <p>Aucun participant — appuie sur +</p>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="openModal()">+</button>
+
+<!-- IOT PANEL -->
+<div class="iot-panel">
+  <div class="iot-label">
+    <span>🔵</span>
+    <span id="iot-label-text">Boîtier IoT non connecté — contrôle manuel</span>
+  </div>
+  <div class="iot-btns">
+    <button class="iot-btn start" id="btn-start" onclick="startSelected()" disabled>
+      <span class="btn-icon">▶</span>
+      <span class="btn-label">START</span>
+    </button>
+    <button class="iot-btn stop" id="btn-stop" onclick="stopSelected()" disabled>
+      <span class="btn-icon">⏹</span>
+      <span class="btn-label">STOP</span>
+    </button>
+    <button class="iot-btn lap" id="btn-lap" onclick="lapAll()" disabled>
+      <span class="btn-icon">🚩</span>
+      <span class="btn-label">LAP</span>
+    </button>
+    <button class="iot-btn reset" onclick="resetAll()">
+      <span class="btn-icon">↺</span>
+      <span class="btn-label">RESET</span>
+    </button>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>Ajouter un participant</h3>
+    <input type="text" id="new-name" placeholder="Nom du participant" maxlength="40">
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeModal()">Annuler</button>
+      <button class="modal-btn confirm" onclick="addParticipant()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- FIREBASE SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ──────────────────────────────────────────────────────────────
+  // 🔧 REMPLACE ICI avec ta config Firebase
+  // ──────────────────────────────────────────────────────────────
+  const firebaseConfig = {
+    apiKey:            "AIzaSyASeqLubTgHZxmzvCkNg7nwTFIZOh4sMCA",
+    authDomain:        "chronotrack-8c563.firebaseapp.com",
+    projectId:         "chronotrack-8c563",
+    storageBucket:     "chronotrack-8c563.firebasestorage.app",
+    messagingSenderId: "515465540862",
+    appId:             "1:515465540862:web:1723c4fc0f87e04e87e1af",
+    measurementId:     "G-9ZPXNQWL2J"
+  };
+  // ──────────────────────────────────────────────────────────────
+
+  let db = null;
+  let firebaseOk = false;
+
+  try {
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    firebaseOk = true;
+
+    // Masquer le banner si Firebase est configuré
+    if (true) {
+      document.getElementById('firebase-banner').style.display = 'none';
+      document.getElementById('ble-badge').className = 'ble-badge connected';
+      document.getElementById('ble-dot').classList.add('pulse');
+      document.getElementById('ble-label').textContent = 'Firebase connecté';
+      document.getElementById('iot-label-text').textContent = 'Synchronisation Firebase active';
+    }
+  } catch(e) {
+    console.warn('Firebase non configuré — mode local activé');
+  }
+
+  // ── STATE ──────────────────────────────────────────────────────
+  window._participants = [];
+  window._ticker = null;
+
+  // ── FIREBASE SYNC ──────────────────────────────────────────────
+  function getSessionId() {
+    return document.getElementById('session-name').value.trim().replace(/\s+/g, '_') || 'session_1';
+  }
+
+  function syncToFirebase(participant) {
+    if (!db || !firebaseOk) return;
+    const sid = getSessionId();
+    const ref = doc(db, 'sessions', sid, 'participants', participant.id);
+    setDoc(ref, {
+      name: participant.name,
+      elapsed: participant.elapsed,
+      isRunning: participant.isRunning,
+      startTime: participant.startTime,
+      laps: participant.laps,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  }
+
+  function listenFirebase() {
+    if (!db || !firebaseOk) return;
+    const sid = getSessionId();
+    onSnapshot(collection(db, 'sessions', sid, 'participants'), (snap) => {
+      snap.docChanges().forEach(change => {
+        const data = change.doc.data();
+        const id   = change.doc.id;
+        if (change.type === 'removed') {
+          window._participants = window._participants.filter(p => p.id !== id);
+        } else {
+          const existing = window._participants.find(p => p.id === id);
+          if (existing) {
+            existing.name      = data.name;
+            existing.elapsed   = data.elapsed   || 0;
+            existing.isRunning = data.isRunning || false;
+            existing.laps      = data.laps      || [];
+          } else {
+            window._participants.push({
+              id, name: data.name,
+              elapsed: data.elapsed || 0,
+              isRunning: data.isRunning || false,
+              startTime: data.startTime || null,
+              laps: data.laps || [],
+              isSelected: false,
+            });
+          }
+        }
+      });
+      renderAll();
+    });
+  }
+
+  window.syncToFirebase = syncToFirebase;
+  window.listenFirebase = listenFirebase;
+
+  // Auto-listen on session change
+  document.getElementById('session-name').addEventListener('change', () => {
+    window._participants = [];
+    listenFirebase();
+    renderAll();
+  });
+
+  listenFirebase();
+</script>
+
+<script>
+// ── CHRONO LOGIC ───────────────────────────────────────────────
+
+function now() { return Date.now(); }
+
+function formatMs(ms) {
+  if (ms < 0) ms = 0;
+  const m  = Math.floor(ms / 60000);
+  const s  = Math.floor((ms % 60000) / 1000);
+  const cs = Math.floor((ms % 1000) / 10);
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;
+}
+
+function currentTotal(p) {
+  if (p.isRunning && p.startTime) return p.elapsed + (now() - p.startTime);
+  return p.elapsed;
+}
+
+// ── PARTICIPANTS CRUD ──────────────────────────────────────────
+
+function addParticipant() {
+  const input = document.getElementById('new-name');
+  const name  = input.value.trim();
+  if (!name) return;
+
+  const p = {
+    id: Date.now().toString(),
+    name,
+    elapsed: 0,
+    isRunning: false,
+    startTime: null,
+    laps: [],
+    isSelected: false,
+  };
+
+  window._participants.push(p);
+  syncToFirebase(p);
+  closeModal();
+  renderAll();
+  showToast(`${name} ajouté ✓`);
+}
+
+// ── ACTIONS ────────────────────────────────────────────────────
+
+function startSelected() {
+  const t = now();
+  let count = 0;
+  window._participants.forEach(p => {
+    if (p.isSelected && !p.isRunning) {
+      p.isRunning  = true;
+      p.startTime  = t;
+      syncToFirebase(p);
+      count++;
+    }
+  });
+  startTicker();
+  renderAll();
+  if (count) showToast(`${count} chrono(s) démarré(s) ▶`);
+}
+
+function stopSelected() {
+  let count = 0;
+  window._participants.forEach(p => {
+    if (p.isSelected && p.isRunning) {
+      p.elapsed   = currentTotal(p);
+      p.isRunning = false;
+      p.startTime = null;
+      syncToFirebase(p);
+      count++;
+    }
+  });
+  checkTicker();
+  renderAll();
+  if (count) showToast(`${count} chrono(s) arrêté(s) ⏹`);
+}
+
+function lapAll() {
+  let count = 0;
+  window._participants.forEach(p => {
+    if (p.isRunning) {
+      const total = currentTotal(p);
+      const prev  = p.laps.length ? p.laps[p.laps.length-1].total : 0;
+      p.laps.push({ lap: total - prev, total });
+      syncToFirebase(p);
+      count++;
+    }
+  });
+  renderAll();
+  if (count) showToast(`Lap enregistré pour ${count} participant(s) 🚩`);
+}
+
+function lapOne(id) {
+  const p = window._participants.find(p => p.id === id);
+  if (!p || !p.isRunning) return;
+  const total = currentTotal(p);
+  const prev  = p.laps.length ? p.laps[p.laps.length-1].total : 0;
+  p.laps.push({ lap: total - prev, total });
+  syncToFirebase(p);
+  renderAll();
+  showToast(`Lap — ${p.name} 🚩`);
+}
+
+function resetOne(id) {
+  const p = window._participants.find(p => p.id === id);
+  if (!p) return;
+  p.elapsed = 0; p.isRunning = false; p.startTime = null; p.laps = [];
+  syncToFirebase(p);
+  checkTicker();
+  renderAll();
+}
+
+function resetAll() {
+  window._participants.forEach(p => {
+    p.elapsed = 0; p.isRunning = false; p.startTime = null; p.laps = [];
+    syncToFirebase(p);
+  });
+  stopTicker();
+  renderAll();
+  showToast('Tout réinitialisé ↺');
+}
+
+function toggleSelect(id) {
+  const p = window._participants.find(p => p.id === id);
+  if (p) { p.isSelected = !p.isSelected; renderAll(); }
+}
+
+function selectAll()   { window._participants.forEach(p => p.isSelected = true);  renderAll(); }
+function deselectAll() { window._participants.forEach(p => p.isSelected = false); renderAll(); }
+
+// ── TICKER ─────────────────────────────────────────────────────
+
+function startTicker() {
+  if (window._ticker) return;
+  window._ticker = setInterval(() => {
+    document.querySelectorAll('.p-card.running .p-time').forEach(el => {
+      const id = el.closest('.p-card').dataset.id;
+      const p  = window._participants.find(p => p.id === id);
+      if (p) el.textContent = formatMs(currentTotal(p));
+    });
+  }, 33);
+}
+
+function stopTicker()  { clearInterval(window._ticker); window._ticker = null; }
+
+function checkTicker() {
+  if (!window._participants.some(p => p.isRunning)) stopTicker();
+}
+
+// ── RENDER ─────────────────────────────────────────────────────
+
+function renderAll() {
+  const list     = document.getElementById('participants-list');
+  const empty    = document.getElementById('empty-state');
+  const selCount = document.getElementById('sel-count');
+  const ps       = window._participants;
+
+  if (ps.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = 'flex';
+  } else {
+    empty.style.display = 'none';
+    list.innerHTML = ps.map(p => cardHTML(p)).join('');
+  }
+
+  const sel     = ps.filter(p => p.isSelected).length;
+  const running = ps.filter(p => p.isRunning).length;
+
+  selCount.textContent = `${sel}/${ps.length} sélectionné(s)`;
+
+  document.getElementById('btn-start').disabled = !(sel > 0 && ps.some(p => p.isSelected && !p.isRunning));
+  document.getElementById('btn-stop').disabled  = !(sel > 0 && ps.some(p => p.isSelected && p.isRunning));
+  document.getElementById('btn-lap').disabled   = running === 0;
+
+  if (window._ticker === null && ps.some(p => p.isRunning)) startTicker();
+}
+
+function cardHTML(p) {
+  const t       = formatMs(currentTotal(p));
+  const initial = p.name.charAt(0).toUpperCase();
+  const hasLaps = p.laps.length > 0;
+  const showAct = p.isRunning || p.elapsed > 0;
+
+  let classes = 'p-card';
+  if (p.isSelected) classes += ' selected';
+  if (p.isRunning)  classes += ' running';
+  if (showAct)      classes += ' show-actions';
+  if (hasLaps)      classes += ' has-laps';
+
+  const statusHTML = p.isRunning
+    ? `<div class="p-status"><div class="dot"></div> En cours</div>`
+    : hasLaps
+    ? `<div class="p-status">${p.laps.length} lap(s)</div>`
+    : `<div class="p-status">En attente</div>`;
+
+  const lapsHTML = hasLaps ? p.laps.map((l, i) => `
+    <div class="lap-row">
+      <span class="lap-num">Lap ${i+1}</span>
+      <span class="lap-time">${formatMs(l.lap)}</span>
+      <span class="lap-total">Total ${formatMs(l.total)}</span>
+    </div>`).join('') : '';
+
+  return `
+  <div class="p-card ${classes}" data-id="${p.id}" onclick="toggleSelect('${p.id}')">
+    <div class="p-card-main">
+      <div class="p-checkbox">
+        <svg viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2">
+          <polyline points="2,6 5,9 10,3"/>
+        </svg>
+      </div>
+      <div class="p-avatar">${initial}</div>
+      <div class="p-info">
+        <div class="p-name">${p.name}</div>
+        ${statusHTML}
+      </div>
+      <div class="p-time">${t}</div>
+    </div>
+    ${showAct ? `
+    <div class="p-actions">
+      ${p.isRunning ? `<button class="p-action-btn lap" onclick="event.stopPropagation();lapOne('${p.id}')">🚩 Lap</button>` : '<span></span>'}
+      <button class="p-action-btn reset" onclick="event.stopPropagation();resetOne('${p.id}')">↺ Reset</button>
+    </div>` : ''}
+    ${hasLaps ? `<div class="p-laps">${lapsHTML}</div>` : ''}
+  </div>`;
+}
+
+// ── MODAL ──────────────────────────────────────────────────────
+
+function openModal() {
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('new-name').focus(), 300);
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.getElementById('new-name').value = '';
+}
+
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal')) closeModal();
+});
+
+document.getElementById('new-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addParticipant();
+});
+
+// ── TOAST ──────────────────────────────────────────────────────
+
+let _toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── INIT ───────────────────────────────────────────────────────
+
+renderAll();
+</script>
+</body>
+</html>
