@@ -2845,8 +2845,8 @@ async function renderBudget(){
       payByPersonEl.innerHTML = '<p style="font-size:.82rem;color:var(--muted);">Aucune dépense avec personne attribuée.</p>';
   }
 
-  // Trésorerie
-  await renderTresorerie(expenses);
+  // Trésorerie (fail-safe si table pas encore créée)
+  try{ await renderTresorerie(expenses); }catch(e){ console.warn('renderTresorerie:', e.message); }
   const barsEl = document.getElementById('budget-cat-bars');
   if(!cats.length){ barsEl.innerHTML='<p style="font-size:0.82rem;color:var(--muted)">Aucune dépense enregistrée.</p>'; }
   else {
@@ -3228,7 +3228,10 @@ async function loadTresorerie(){
   try{
     const rows = await sbFetch('tresorerie?order=person.asc') || [];
     _tresorerie = rows;
-  }catch(e){ console.warn('tresorerie load error:', e); _tresorerie = []; }
+  }catch(e){ 
+    console.warn('Table tresorerie inexistante ou erreur:', e.message);
+    _tresorerie = []; 
+  }
 }
 
 async function saveTresorerieEntry(person, type, montant){
