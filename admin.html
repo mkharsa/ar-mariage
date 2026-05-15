@@ -779,6 +779,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div id="budget-pay-by-person"></div>
     </div>
 
+    <!-- TRÉSORERIE -->
+    <div class="bdash-card" style="margin-bottom:1.4rem;" id="tresorerie-card">
+      <h4>💰 Trésorerie & soldes</h4>
+      <div id="tresorerie-content"></div>
+    </div>
+
     <!-- Formulaire + Liste -->
     <div class="budget-layout">
       <div class="budget-form-card">
@@ -2838,6 +2844,9 @@ async function renderBudget(){
     if(!payByPersonEl.children.length)
       payByPersonEl.innerHTML = '<p style="font-size:.82rem;color:var(--muted);">Aucune dépense avec personne attribuée.</p>';
   }
+
+  // Trésorerie
+  await renderTresorerie(expenses);
   const barsEl = document.getElementById('budget-cat-bars');
   if(!cats.length){ barsEl.innerHTML='<p style="font-size:0.82rem;color:var(--muted)">Aucune dépense enregistrée.</p>'; }
   else {
@@ -3210,6 +3219,154 @@ function filterByEnveloppe(name){
     const listEl = document.getElementById('expense-list');
     if(listEl){ listEl.style.outline='2px solid var(--danger)'; setTimeout(()=>listEl.style.outline='',1200); }
   }, 400);
+}
+
+/* ═══ TRÉSORERIE ═══ */
+let _tresorerie = []; // cache
+
+async function loadTresorerie(){
+  try{
+    const rows = await sbFetch('tresorerie?order=person.asc') || [];
+    _tresorerie = rows;
+  }catch(e){ console.warn('tresorerie load error:', e); _tresorerie = []; }
+}
+
+async function saveTresorerieEntry(person, type, montant){
+  try{
+    const existing = _tresorerie.find(r=>r.person===person && r.type===type);
+    if(existing){
+      await sbFetch('tresorerie?id=eq.'+existing.id, {
+        method:'PATCH',
+        body: JSON.stringify({ montant, updated_at: new Date().toISOString() }),
+        prefer:'return=minimal'
+      });
+    } else {
+      await sbFetch('tresorerie', {
+        method:'POST',
+        body: JSON.stringify({ person, type, montant }),
+        prefer:'return=minimal'
+      });
+    }
+    await loadTresorerie();
+    await renderTresorerie(window._lastExpenses||[]);
+    showToast('Solde mis à jour ✅');
+  }catch(e){ showToast('Erreur: '+e.message, true); }
+}
+
+async function renderTresorerie(expenses){
+  window._lastExpenses = expenses;
+  await loadTresorerie();
+  const el = document.getElementById('tresorerie-content');
+  if(!el) return;
+
+  const persons = [
+    { key:'Aboudé',  icon:'🤵', color:'#4A7AA8' },
+    { key:'Raoine',  icon:'👰', color:'#E8849A' },
+    { key:'Maman',   icon:'👩', color:'#C05A8A' },
+  ];
+
+  el.innerHTML = '';
+
+  // Grille des personnes
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:1.2rem;';
+
+  persons.forEach(p=>{
+    const cash   = _tresorerie.find(r=>r.person===p.key && r.type==='cash')?.montant || 0;
+    const banque = _tresorerie.find(r=>r.person===p.key && r.type==='banque')?.montant || 0;
+    const totalDispo = cash + banque;
+
+    // Dépenses restantes à payer (prévu - payé) pour cette personne
+    const items = expenses.filter(e=>e.origine===p.key);
+    const resteAPayer = items.reduce((s,e)=>s+Math.max(0, e.prevu-e.effectue), 0);
+    const apresDepenses = totalDispo - resteAPayer;
+
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;position:relative;overflow:hidden;';
+
+    // Barre colorée
+    const bar = document.createElement('div');
+    bar.style.cssText = 'position:absolute;top:0;left:0;right:0;height:3px;background:'+p.color;
+    card.appendChild(bar);
+
+    // Header
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;';
+    hdr.innerHTML = '<span style="font-size:1.1rem">'+p.icon+'</span>'
+      +'<span style="font-size:0.78rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">'+p.key+'</span>'
+      +'<span style="margin-left:auto;font-family:serif;font-size:1.1rem;color:'+(apresDepenses<0?'var(--danger)':'var(--sage)')+';font-weight:600;">'+fmt(totalDispo)+'</span>';
+    card.appendChild(hdr);
+
+    // Inputs cash + banque
+    ['cash','banque'].forEach(type=>{
+      const val = type==='cash' ? cash : banque;
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:0.6rem;margin-bottom:0.6rem;';
+      row.innerHTML = '<span style="font-size:0.75rem;color:var(--muted);width:60px;flex-shrink:0;">'+(type==='cash'?'💵 Cash':'🏦 Banque')+'</span>'
+        +'<div style="flex:1;position:relative;">'
+        +'<input type="number" value="'+val+'" min="0" step="100" '
+        +'style="width:100%;padding:0.45rem 2rem 0.45rem 0.7rem;border:1.5px solid var(--border);border-radius:8px;font-family:\'DM Sans\',sans-serif;font-size:0.82rem;color:var(--text);background:var(--bg);outline:none;" '
+        +'onchange="saveTresorerieEntry(\''+p.key+'\',\''+type+'\',parseFloat(this.value)||0)" '
+        +'onblur="saveTresorerieEntry(\''+p.key+'\',\''+type+'\',parseFloat(this.value)||0)">'
+        +'<span style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);font-size:0.7rem;color:var(--muted);">€</span>'
+        +'</div>';
+      card.appendChild(row);
+    });
+
+    // Séparateur
+    const sep = document.createElement('div');
+    sep.style.cssText = 'border-top:1px solid var(--border);margin:0.8rem 0;';
+    card.appendChild(sep);
+
+    // Résumé
+    const summary = document.createElement('div');
+    summary.style.cssText = 'display:flex;flex-direction:column;gap:0.3rem;';
+    summary.innerHTML =
+      '<div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);">'
+        +'<span>Disponible total</span><span style="color:var(--text);font-weight:600;">'+fmt(totalDispo)+'</span></div>'
+      +'<div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);">'
+        +'<span>Reste à payer</span><span style="color:var(--danger);">− '+fmt(resteAPayer)+'</span></div>'
+      +'<div style="border-top:1px dashed var(--border);margin:0.3rem 0;"></div>'
+      +'<div style="display:flex;justify-content:space-between;font-size:0.8rem;font-weight:700;">'
+        +'<span>Après dépenses</span>'
+        +'<span style="color:'+(apresDepenses<0?'var(--danger)':'var(--sage')+');">'+fmt(apresDepenses)+'</span></div>';
+    card.appendChild(summary);
+
+    // Barre de progression
+    if(totalDispo>0){
+      const pct = Math.min(Math.round(resteAPayer/totalDispo*100),100);
+      const barWrap = document.createElement('div');
+      barWrap.style.cssText='background:var(--bg3);border-radius:4px;height:6px;overflow:hidden;margin-top:0.7rem;';
+      const barFill = document.createElement('div');
+      barFill.style.cssText='height:100%;width:'+pct+'%;background:'+(apresDepenses<0?'var(--danger)':p.color)+';border-radius:4px;transition:width 1s ease;';
+      barWrap.appendChild(barFill);
+      card.appendChild(barWrap);
+      const barLbl = document.createElement('div');
+      barLbl.style.cssText='font-size:0.58rem;color:var(--muted);margin-top:3px;text-align:right;';
+      barLbl.textContent = pct+'% du disponible engagé';
+      card.appendChild(barLbl);
+    }
+
+    grid.appendChild(card);
+  });
+  el.appendChild(grid);
+
+  // Total global
+  const totalCash   = _tresorerie.filter(r=>r.type==='cash').reduce((s,r)=>s+r.montant,0);
+  const totalBanque = _tresorerie.filter(r=>r.type==='banque').reduce((s,r)=>s+r.montant,0);
+  const totalDispo  = totalCash + totalBanque;
+  const totalReste  = expenses.reduce((s,e)=>s+Math.max(0,e.prevu-e.effectue),0);
+  const totalApres  = totalDispo - totalReste;
+
+  const globalDiv = document.createElement('div');
+  globalDiv.style.cssText='background:var(--text);color:#fff;border-radius:var(--r);padding:1rem 1.4rem;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between;';
+  globalDiv.innerHTML='<div style="font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;opacity:0.6;">Bilan global</div>'
+    +'<div style="display:flex;gap:1.5rem;flex-wrap:wrap;">'
+    +'<div style="text-align:center;"><div style="font-family:serif;font-size:1.3rem;">'+fmt(totalDispo)+'</div><div style="font-size:0.58rem;opacity:0.5;">Disponible</div></div>'
+    +'<div style="text-align:center;"><div style="font-family:serif;font-size:1.3rem;color:#F48080;">− '+fmt(totalReste)+'</div><div style="font-size:0.58rem;opacity:0.5;">Reste à payer</div></div>'
+    +'<div style="text-align:center;"><div style="font-family:serif;font-size:1.3rem;color:'+(totalApres<0?'#F48080':'#7AD28C')+';">'+fmt(totalApres)+'</div><div style="font-size:0.58rem;opacity:0.5;">Après dépenses</div></div>'
+    +'</div>';
+  el.appendChild(globalDiv);
 }
 
 function checkPwd(){
