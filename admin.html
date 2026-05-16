@@ -2352,7 +2352,7 @@ async function renderBudget(){
         foot.style.cssText='display:flex;justify-content:space-between;font-size:0.6rem;color:var(--muted);';
         foot.innerHTML='<span style="'+(over?'color:var(--danger);font-weight:700':'')+'">'
           +envItems.length+' dép.'+(over?' ⚠️ dépassé':'')+'</span>'
-          +(over?'<span style="font-size:0.58rem;color:var(--danger);text-decoration:underline;cursor:pointer;" onclick="filterByEnveloppe(\''+env.name+'\')">Voir →</span>':'')
+          +(over?'<span style="font-size:0.58rem;color:var(--danger);text-decoration:underline;cursor:pointer;" onclick="filterByEnveloppe(\''+e.name+'\')">Voir →</span>':'')
           +'<span>'+fmt(envPaye)+' / '+fmt(envPrevu)+'</span>';
         card.appendChild(foot);
 
@@ -2817,7 +2817,7 @@ async function renderBudget(){
           chip.style.cssText = 'display:inline-flex;align-items:center;gap:.35rem;font-size:.65rem;padding:.28rem .65rem;border-radius:20px;border:1px solid '+(envOver?'var(--danger)':env.color+'55')+';background:'+(envOver?'#FEEAEA':env.color+'11')+';color:'+(envOver?'var(--danger)':'var(--text2)')+';cursor:'+(envOver?'pointer':'default')+';';
           chip.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:'+env.color+';flex-shrink:0;"></span>'
             +env.name+' — Prévu '+fmt(envP)+' / '+fmt(env.budget)+(envOver?' ⚠️':'');
-          if(envOver) chip.onclick=()=>filterByEnveloppe(env.name);
+          if(envOver) chip.onclick=()=>filterByEnveloppe(e.name);
           envDiv.appendChild(chip);
         });
         section.appendChild(envDiv);
