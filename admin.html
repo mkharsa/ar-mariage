@@ -2845,8 +2845,8 @@ async function renderBudget(){
       payByPersonEl.innerHTML = '<p style="font-size:.82rem;color:var(--muted);">Aucune dépense avec personne attribuée.</p>';
   }
 
-  // Trésorerie (fail-safe si table pas encore créée)
-  try{ await renderTresorerie(expenses); }catch(e){ console.warn('renderTresorerie:', e.message); }
+  // Trésorerie (fail-safe)
+  renderTresorerie(expenses).catch(e=>console.warn('tresorerie:', e.message));
   const barsEl = document.getElementById('budget-cat-bars');
   if(!cats.length){ barsEl.innerHTML='<p style="font-size:0.82rem;color:var(--muted)">Aucune dépense enregistrée.</p>'; }
   else {
@@ -3258,9 +3258,10 @@ async function saveTresorerieEntry(person, type, montant){
 
 async function renderTresorerie(expenses){
   window._lastExpenses = expenses;
-  await loadTresorerie();
   const el = document.getElementById('tresorerie-content');
   if(!el) return;
+  try{
+  await loadTresorerie();
 
   const persons = [
     { key:'Aboudé',  icon:'🤵', color:'#4A7AA8' },
@@ -3370,6 +3371,10 @@ async function renderTresorerie(expenses){
     +'<div style="text-align:center;"><div style="font-family:serif;font-size:1.3rem;color:'+(totalApres<0?'#F48080':'#7AD28C')+';">'+fmt(totalApres)+'</div><div style="font-size:0.58rem;opacity:0.5;">Après dépenses</div></div>'
     +'</div>';
   el.appendChild(globalDiv);
+  } catch(err){
+    console.warn('renderTresorerie error (table manquante ?):', err.message);
+    el.innerHTML = '<p style="font-size:0.78rem;color:var(--muted);padding:0.5rem;">💡 Créez la table <code>tresorerie</code> dans Supabase pour activer cette section.</p>';
+  }
 }
 
 function checkPwd(){
