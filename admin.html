@@ -2966,7 +2966,7 @@ function renderExpenseList(expenses){
       </div>
       <div class="expense-amounts">
         <div class="expense-prevu" style="${isOver?'color:var(--danger);':''}">Prévu : ${fmt(e.prevu)}</div>
-        <div class="expense-effectue ${e.effectue>0?'paid':''}">${e.effectue>0?'✓ '+fmt(e.effectue):'Non payé'}</div>
+        <div class="expense-effectue ${e.effectue>0?'paid':''}" style="color:${e.effectue>0?'var(--sage)':'var(--text)'}">${e.effectue>0?'✓ '+fmt(e.effectue):'Non payé'}</div>
       </div>
       <button class="btn btn-outline" onclick="editExpense('${e.id}')" style="margin-left:0.4rem;font-size:0.6rem;padding:0.3rem 0.6rem">✏️</button>
       <button class="btn btn-danger" onclick="deleteExpense('${e.id}')" style="margin-left:0.2rem">✕</button>
