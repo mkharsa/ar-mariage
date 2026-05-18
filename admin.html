@@ -2947,7 +2947,7 @@ function renderExpenseList(expenses){
 
   listEl.innerHTML = [...filtered].reverse().map(e => {
     const color = CAT_COLORS[e.cat]||'#8C8078';
-    const isOver = overExpenseIds.has(e.id);
+    const isOver = overExpenseIds.has(e.id) && !(e.effectue > 0);
     const hasNoEnv = !e.enveloppe || e.enveloppe==='';
     const env = _enveloppes.find(x=>x.name===e.enveloppe);
     const envTotal = env ? expenses.filter(x=>x.enveloppe===env.name).reduce((s,x)=>s+x.prevu,0) : 0;
