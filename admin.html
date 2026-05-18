@@ -2957,7 +2957,7 @@ function renderExpenseList(expenses){
       : hasNoEnv && e.prevu>0
         ? `<div style="font-size:0.58rem;color:var(--muted);margin-top:2px;">📭 Non rattachée à une enveloppe</div>`
         : '';
-    return `<div class="expense-item" style="${isOver?'border-color:var(--danger);border-left:3px solid var(--danger);background:#FFFAFA;':''}">
+    return `<div class="expense-item" style="${isOver?'border-left:3px solid var(--danger);':''}">
       <div class="expense-cat-dot" style="background:${isOver?'var(--danger)':color}"></div>
       <div class="expense-body">
         <div class="expense-name" style="${isOver?'color:var(--danger);font-weight:600;':''}">${e.name}</div>
@@ -2965,7 +2965,7 @@ function renderExpenseList(expenses){
         ${overBadge}
       </div>
       <div class="expense-amounts">
-        <div class="expense-prevu" style="${isOver?'color:var(--danger);':''}">Prévu : ${fmt(e.prevu)}</div>
+        <div class="expense-prevu" style="">Prévu : ${fmt(e.prevu)}</div>
         <div class="expense-effectue ${e.effectue>0?'paid':''}" style="color:${e.effectue>0?'var(--sage)':'var(--text)'}">${e.effectue>0?'✓ '+fmt(e.effectue):'Non payé'}</div>
       </div>
       <button class="btn btn-outline" onclick="editExpense('${e.id}')" style="margin-left:0.4rem;font-size:0.6rem;padding:0.3rem 0.6rem">✏️</button>
