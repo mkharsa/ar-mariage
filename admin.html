@@ -3322,14 +3322,37 @@ async function renderTresorerie(expenses){
     sep.style.cssText = 'border-top:1px solid var(--border);margin:0.8rem 0;';
     card.appendChild(sep);
 
+    // Détail reste à payer par moyen de paiement
+    const MOYEN_STYLE = {
+      'Cash':     { icon:'💵', bg:'#F0FAF2', color:'#2E8B57' },
+      'CB':       { icon:'💳', bg:'#EFF4FF', color:'#3A60C0' },
+      'Virement': { icon:'🏦', bg:'#F5F0FF', color:'#6A3FC0' },
+      'Chèque':   { icon:'📝', bg:'#FFF8E8', color:'#A07010' },
+    };
+    const resteParMoyen = {};
+    items.forEach(e=>{
+      const reste = Math.max(0, e.prevu - e.effectue);
+      if(reste > 0){
+        const m = e.paiement || '—';
+        resteParMoyen[m] = (resteParMoyen[m] || 0) + reste;
+      }
+    });
+    const moyenChips = Object.entries(resteParMoyen).map(([m, v])=>{
+      const s = MOYEN_STYLE[m] || { icon:'💰', bg:'#F5F5F5', color:'#666' };
+      return '<span style="display:inline-flex;align-items:center;gap:0.25rem;font-size:0.62rem;font-weight:600;'
+        +'padding:0.2rem 0.55rem;border-radius:20px;background:'+s.bg+';color:'+s.color+';">'
+        +s.icon+' '+m+' − '+fmt(v)+'</span>';
+    }).join('');
+
     // Résumé
     const summary = document.createElement('div');
     summary.style.cssText = 'display:flex;flex-direction:column;gap:0.3rem;';
     summary.innerHTML =
       '<div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);">'
         +'<span>Disponible total</span><span style="color:var(--text);font-weight:600;">'+fmt(totalDispo)+'</span></div>'
-      +'<div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);">'
-        +'<span>Reste à payer</span><span style="color:var(--danger);">− '+fmt(resteAPayer)+'</span></div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;font-size:0.72rem;color:var(--muted);">'
+        +'<span>Reste à payer</span><span style="color:var(--danger);font-weight:600;">− '+fmt(resteAPayer)+'</span></div>'
+      +(moyenChips ? '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.15rem;padding-left:0.1rem;">'+moyenChips+'</div>' : '')
       +'<div style="border-top:1px dashed var(--border);margin:0.3rem 0;"></div>'
       +'<div style="display:flex;justify-content:space-between;font-size:0.8rem;font-weight:700;">'
         +'<span>Après dépenses</span>'
@@ -3362,12 +3385,38 @@ async function renderTresorerie(expenses){
   const totalReste  = expenses.reduce((s,e)=>s+Math.max(0,e.prevu-e.effectue),0);
   const totalApres  = totalDispo - totalReste;
 
+  // Détail global reste à payer par moyen de paiement
+  const MOYEN_STYLE_G = {
+    'Cash':     { icon:'💵', color:'#7AD28C' },
+    'CB':       { icon:'💳', color:'#90B8FF' },
+    'Virement': { icon:'🏦', color:'#C0A0FF' },
+    'Chèque':   { icon:'📝', color:'#FFD080' },
+  };
+  const globalParMoyen = {};
+  expenses.forEach(e=>{
+    const reste = Math.max(0, e.prevu - e.effectue);
+    if(reste > 0){
+      const m = e.paiement || '—';
+      globalParMoyen[m] = (globalParMoyen[m] || 0) + reste;
+    }
+  });
+  const globalChips = Object.entries(globalParMoyen).map(([m, v])=>{
+    const s = MOYEN_STYLE_G[m] || { icon:'💰', color:'#ccc' };
+    return '<span style="display:inline-flex;align-items:center;gap:0.25rem;font-size:0.62rem;font-weight:600;'
+      +'padding:0.18rem 0.55rem;border-radius:20px;background:rgba(255,255,255,0.1);color:'+s.color+';">'
+      +s.icon+' '+m+' − '+fmt(v)+'</span>';
+  }).join('');
+
   const globalDiv = document.createElement('div');
   globalDiv.style.cssText='background:var(--text);color:#fff;border-radius:var(--r);padding:1rem 1.4rem;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between;';
   globalDiv.innerHTML='<div style="font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;opacity:0.6;">Bilan global</div>'
-    +'<div style="display:flex;gap:1.5rem;flex-wrap:wrap;">'
+    +'<div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center;">'
     +'<div style="text-align:center;"><div style="font-family:serif;font-size:1.3rem;">'+fmt(totalDispo)+'</div><div style="font-size:0.58rem;opacity:0.5;">Disponible</div></div>'
-    +'<div style="text-align:center;"><div style="font-family:serif;font-size:1.3rem;color:#F48080;">− '+fmt(totalReste)+'</div><div style="font-size:0.58rem;opacity:0.5;">Reste à payer</div></div>'
+    +'<div style="text-align:center;">'
+      +'<div style="font-family:serif;font-size:1.3rem;color:#F48080;">− '+fmt(totalReste)+'</div>'
+      +'<div style="font-size:0.58rem;opacity:0.5;">Reste à payer</div>'
+      +(globalChips ? '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.35rem;justify-content:center;">'+globalChips+'</div>' : '')
+    +'</div>'
     +'<div style="text-align:center;"><div style="font-family:serif;font-size:1.3rem;color:'+(totalApres<0?'#F48080':'#7AD28C')+';">'+fmt(totalApres)+'</div><div style="font-size:0.58rem;opacity:0.5;">Après dépenses</div></div>'
     +'</div>';
   el.appendChild(globalDiv);
