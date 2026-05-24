@@ -54,15 +54,23 @@ body::before{
 .char-count{font-size:.62rem;color:var(--muted);text-align:right;margin-top:.3rem;}
 
 /* RECORDER */
-.rec-area{display:flex;flex-direction:column;align-items:center;gap:1rem;padding:1.5rem;background:var(--bg);border:1.5px dashed var(--border);border-radius:12px;}
-.btn-rec{display:flex;align-items:center;gap:.6rem;padding:.85rem 2rem;border:none;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .25s;letter-spacing:.04em;}
-.btn-rec.idle{background:var(--rose);color:#fff;box-shadow:0 4px 20px rgba(212,92,115,.35);}
-.btn-rec.idle:hover{background:var(--rose2);transform:translateY(-1px);box-shadow:0 6px 24px rgba(212,92,115,.45);}
-.btn-rec.recording{background:#C03040;color:#fff;box-shadow:0 4px 20px rgba(192,48,64,.4);animation:pulse-rec 1.2s ease-in-out infinite;}
-@keyframes pulse-rec{0%,100%{box-shadow:0 4px 20px rgba(192,48,64,.4);}50%{box-shadow:0 4px 28px rgba(192,48,64,.7);}}
-.rec-dot{width:8px;height:8px;border-radius:50%;background:#fff;flex-shrink:0;}
-.btn-rec.recording .rec-dot{animation:blink 1s step-end infinite;}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+.rec-area{display:flex;flex-direction:column;align-items:center;gap:.9rem;padding:2rem 1.5rem;background:var(--bg);border:1.5px dashed var(--border);border-radius:16px;}
+/* Bouton dictaphone circulaire */
+.btn-mic{width:80px;height:80px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .25s;position:relative;flex-shrink:0;}
+.btn-mic.idle{background:var(--rose);box-shadow:0 6px 24px rgba(212,92,115,.4);}
+.btn-mic.idle:hover{background:var(--rose2);transform:scale(1.06);box-shadow:0 8px 32px rgba(212,92,115,.5);}
+.btn-mic.idle:active{transform:scale(.96);}
+.btn-mic.recording{background:#C03040;box-shadow:0 6px 24px rgba(192,48,64,.5);}
+/* Anneau de pulsation pendant l'enregistrement */
+.btn-mic.recording::before{content:'';position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(192,48,64,.4);animation:ring-pulse 1.4s ease-out infinite;}
+.btn-mic.recording::after{content:'';position:absolute;inset:-16px;border-radius:50%;border:2px solid rgba(192,48,64,.2);animation:ring-pulse 1.4s ease-out .4s infinite;}
+@keyframes ring-pulse{0%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(1.15);}}
+.btn-mic svg{width:34px;height:34px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+/* Carré d'arrêt quand recording */
+.btn-mic.recording .mic-icon{display:none;}
+.btn-mic.recording .stop-icon{display:block;}
+.btn-mic.idle .stop-icon{display:none;}
+.stop-icon rect{fill:#fff;rx:4;}
 
 .rec-timer{font-family:monospace;font-size:1.1rem;font-weight:600;color:var(--text);letter-spacing:.08em;display:none;}
 .rec-timer.active{display:block;}
@@ -137,7 +145,7 @@ audio.rec-preview{width:100%;border-radius:8px;outline:none;min-height:44px;disp
     <h2 class="card-title">Un mot pour les mariés</h2>
     <p class="card-desc">Vos vœux, un souvenir, une pensée… (optionnel)</p>
     <label class="flabel" for="msg-text">Votre message</label>
-    <textarea id="msg-text" class="msg-textarea" placeholder="Cher Raoine et Aboudé, je vous souhaite…" maxlength="1000" oninput="updateCharCount()"></textarea>
+    <textarea id="msg-text" class="msg-textarea" placeholder="Tu peux écrire ton message ici…" maxlength="1000" oninput="updateCharCount()"></textarea>
     <div class="char-count"><span id="char-count">0</span> / 1000</div>
 
     <div class="section-divider" style="margin-top:1.8rem;"><span>Message vocal</span></div>
@@ -147,11 +155,21 @@ audio.rec-preview{width:100%;border-radius:8px;outline:none;min-height:44px;disp
     <p class="card-desc">Enregistrez jusqu'à 2 minutes. Ils pourront l'écouter ensemble. (optionnel)</p>
 
     <div class="rec-area" id="rec-area">
-      <button class="btn-rec idle" id="rec-btn" onclick="toggleRecord()">
-        <span>🎙</span>
-        <span id="rec-btn-label">Commencer l'enregistrement</span>
+      <!-- Bouton dictaphone -->
+      <button class="btn-mic idle" id="rec-btn" onclick="toggleRecord()" aria-label="Enregistrer">
+        <!-- Icône micro -->
+        <svg class="mic-icon" viewBox="0 0 24 24">
+          <rect x="9" y="2" width="6" height="12" rx="3"/>
+          <path d="M5 10a7 7 0 0 0 14 0"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+        <!-- Icône stop (carré) -->
+        <svg class="stop-icon" viewBox="0 0 24 24">
+          <rect x="6" y="6" width="12" height="12" rx="2" fill="#fff" stroke="none"/>
+        </svg>
       </button>
-      <div class="rec-timer" id="rec-timer">00:00</div>
+      <div class="rec-timer" id="rec-timer" style="display:none;">00:00</div>
       <div class="waves" id="rec-waves" style="display:none">
         <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
         <div class="wave-bar"></div><div class="wave-bar"></div>
@@ -266,11 +284,10 @@ async function startRecord(){
 
     // UI
     const btn = document.getElementById('rec-btn');
-    btn.className = 'btn-rec recording';
-    document.getElementById('rec-btn-label').textContent = 'Arrêter';
-    document.getElementById('rec-timer').classList.add('active');
+    btn.className = 'btn-mic recording';
+    document.getElementById('rec-timer').style.display = 'block';
     document.getElementById('rec-waves').style.display = 'flex';
-    document.getElementById('rec-tip').textContent = 'Parlez maintenant…';
+    document.getElementById('rec-tip').textContent = 'Parlez maintenant… appuyez pour arrêter';
 
     recSeconds = 0;
     updateTimer();
@@ -290,9 +307,8 @@ function stopRecord(){
   clearInterval(recInterval);
   // UI
   const btn = document.getElementById('rec-btn');
-  btn.className = 'btn-rec idle';
-  btn.style.display = 'none'; // Hide record button once done
-  document.getElementById('rec-timer').classList.remove('active');
+  btn.style.display = 'none'; // Cacher le bouton une fois enregistré
+  document.getElementById('rec-timer').style.display = 'none';
   document.getElementById('rec-waves').style.display = 'none';
 }
 
@@ -310,9 +326,8 @@ function clearRecording(){
   document.getElementById('rec-preview-wrap').classList.remove('show');
   const btn = document.getElementById('rec-btn');
   btn.style.display = 'flex';
-  btn.className = 'btn-rec idle';
-  document.getElementById('rec-btn-label').textContent = 'Commencer l\'enregistrement';
-  document.getElementById('rec-timer').classList.remove('active');
+  btn.className = 'btn-mic idle';
+  document.getElementById('rec-timer').style.display = 'none';
   document.getElementById('rec-timer').textContent = '00:00';
   document.getElementById('rec-tip').textContent = 'Appuyez pour commencer · max 2 min';
 }
