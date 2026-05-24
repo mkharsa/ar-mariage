@@ -244,10 +244,11 @@ async function startRecord(){
     mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
     audioChunks = [];
     audioBlob = null;
-    mediaRecorder.ondataavailable = e => { if(e.data.size>0) audioChunks.push(e.data); };
+    mediaRecorder.ondataavailable = e => { if(e.data && e.data.size > 0) audioChunks.push(e.data); };
     mediaRecorder.onstop = () => {
       const mime = mediaRecorder.mimeType || 'audio/webm';
       audioBlob = new Blob(audioChunks, { type: mime });
+      console.log('Audio blob size:', audioBlob.size, 'type:', audioBlob.type);
       const url = URL.createObjectURL(audioBlob);
       const prev = document.getElementById('rec-preview');
       prev.src = url;
@@ -255,7 +256,8 @@ async function startRecord(){
       document.getElementById('rec-tip').textContent = 'Écoutez votre message avant d\'envoyer';
       stream.getTracks().forEach(t=>t.stop());
     };
-    mediaRecorder.start(200);
+    // Sans timeslice : toute la donnée arrive en un seul bloc à l'arrêt (plus fiable)
+    mediaRecorder.start();
 
     // UI
     const btn = document.getElementById('rec-btn');
