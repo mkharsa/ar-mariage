@@ -3537,7 +3537,7 @@ async function renderMessages(){
     const initials = (m.guest_name||'?').slice(0,2).toUpperCase();
     const date = m.created_at ? new Date(m.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
     const audioUrl = m.audio_path
-      ? `${SUPABASE_URL}/storage/v1/object/public/${m.audio_path.startsWith('wedding-messages') ? '' : 'wedding-messages/'}${m.audio_path}`
+      ? `${SUPABASE_URL}/storage/v1/object/public/wedding-messages/${m.audio_path}`
       : null;
     const badges = [
       m.audio_path   ? '<span class="msg-badge audio">🎙 Vocal</span>' : '',
@@ -3547,7 +3547,11 @@ async function renderMessages(){
       ? `<div class="msg-text-body">${m.message_text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`
       : '';
     const audioBlock = audioUrl
-      ? `<div class="msg-audio-wrap"><audio controls src="${audioUrl}" preload="none"></audio></div>`
+      ? `<div class="msg-audio-wrap">
+           <audio controls src="${audioUrl}" preload="metadata" style="width:100%;border-radius:8px;height:36px;"
+             onerror="this.parentElement.innerHTML='<a href=&quot;${audioUrl}&quot; target=&quot;_blank&quot; style=&quot;font-size:.72rem;color:var(--rose);&quot;>⬇️ Télécharger le vocal</a>'">
+           </audio>
+         </div>`
       : '';
     return `<div class="msg-card">
       <div class="msg-header">
