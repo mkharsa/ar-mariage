@@ -512,6 +512,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .expense-effectue{font-size:0.85rem;font-weight:600;color:var(--text);}
 .expense-effectue.paid{color:var(--sage);}
 .budget-empty{text-align:center;padding:2.5rem;background:var(--bg2);border:1.5px dashed var(--border2);border-radius:var(--r);font-size:0.85rem;color:var(--muted);}
+/* ── MESSAGES ── */
+.msg-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.3rem;box-shadow:var(--shadow);animation:fadeIn .3s ease;transition:all .2s;}
+.msg-card:hover{border-color:var(--rose2);transform:translateY(-1px);box-shadow:var(--shadow2);}
+.msg-header{display:flex;align-items:center;gap:0.7rem;margin-bottom:0.8rem;}
+.msg-avatar{width:36px;height:36px;border-radius:50%;background:var(--rose-bg);color:var(--rose);display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;flex-shrink:0;}
+.msg-name{font-size:0.88rem;font-weight:600;color:var(--text);}
+.msg-date{font-size:0.62rem;color:var(--muted);margin-top:1px;}
+.msg-badges{margin-left:auto;display:flex;gap:0.35rem;}
+.msg-badge{font-size:0.58rem;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:0.06em;text-transform:uppercase;}
+.msg-badge.audio{background:var(--rose-bg);color:var(--rose);}
+.msg-badge.text{background:var(--sage-bg);color:var(--sage);}
+.msg-text-body{font-size:0.83rem;color:var(--text2);line-height:1.65;background:var(--bg);border-radius:8px;padding:0.7rem 0.9rem;margin-bottom:0.7rem;border-left:3px solid var(--rose2);}
+.msg-audio-wrap{margin-bottom:0.4rem;}
+.msg-audio-wrap audio{width:100%;border-radius:8px;height:36px;}
+.msg-empty{text-align:center;padding:3rem;background:var(--bg2);border:1.5px dashed var(--border2);border-radius:var(--r);font-size:0.85rem;color:var(--muted);}
+.msg-grid{display:flex;flex-direction:column;gap:0.8rem;}
 
 @media(max-width:768px){
   .budget-kpis{grid-template-columns:1fr 1fr;}
@@ -565,6 +581,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('programme',this);closeSidebar()"><span class="ni-icon">◆</span><span>Programme</span></div>
     <div class="ni" onclick="goTo('budget',this);closeSidebar()"><span class="ni-icon">◈</span><span>Budget</span></div>
     <div class="ni" onclick="goTo('galerie',this);closeSidebar()"><span class="ni-icon">🖼</span><span>Galerie photos</span></div>
+    <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
   <div class="sb-foot">Administration privée</div>
@@ -930,6 +947,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
   </div>
 
+  <!-- MESSAGES INVITÉS -->
+  <div id="page-messages" class="page">
+
+    <!-- Stats -->
+    <div id="msg-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.9rem;margin-bottom:1.6rem;"></div>
+
+    <!-- Filtres -->
+    <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.2rem;align-items:center;">
+      <select id="mfilter-type" onchange="renderMessages()" style="font-size:0.65rem;border:1px solid var(--border);border-radius:20px;padding:0.28rem 0.7rem;background:#F7F4EF;color:var(--text2);outline:none;cursor:pointer;">
+        <option value="">💌 Tous les messages</option>
+        <option value="audio">🎙 Avec vocal</option>
+        <option value="text">✍️ Avec texte</option>
+      </select>
+      <input type="text" id="mfilter-name" oninput="renderMessages()" placeholder="🔍 Rechercher par invité…"
+        style="font-size:0.65rem;border:1px solid var(--border);border-radius:20px;padding:0.28rem 0.7rem;background:#F7F4EF;color:var(--text2);outline:none;flex:1;min-width:140px;">
+    </div>
+
+    <!-- Liste -->
+    <div id="msg-list"></div>
+
+  </div>
+
   <!-- LIEN & HEBERGEMENT -->
   <div id="page-lien" class="page">
     <div style="max-width:720px">
@@ -1175,6 +1214,9 @@ create policy "public delete events" on events for delete using (true);</pre>
     <button class="bn-item" id="bn-galerie" onclick="goTo('galerie',this);closeSidebar()">
       <span class="bn-icon">🖼</span>Galerie
     </button>
+    <button class="bn-item" id="bn-messages" onclick="goTo('messages',this);closeSidebar()">
+      <span class="bn-icon">💌</span>Messages
+    </button>
     <button class="bn-item" id="bn-lien" onclick="goTo('lien',this);closeSidebar()">
       <span class="bn-icon">⊙</span>Lien
     </button>
@@ -1289,13 +1331,14 @@ function goTo(id,el){
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
   const bnTarget=document.getElementById('bn-'+id);
   if(bnTarget)bnTarget.classList.add('active');
-  const titles={dashboard:'Tableau de bord',guests:'Invités',programme:'Programme',budget:'Budget',galerie:'Galerie photos',lien:'Hébergement & Lien'};
+  const titles={dashboard:'Tableau de bord',guests:'Invités',programme:'Programme',budget:'Budget',galerie:'Galerie photos',messages:'Messages invités',lien:'Hébergement & Lien'};
   document.getElementById('topbar-title').textContent=titles[id]||id;
   if(id==='dashboard')renderDash();
   if(id==='guests')renderGuests();
   if(id==='programme')renderTimeline();
   if(id==='budget') renderBudget().catch(e=>{ console.error('renderBudget error:',e); showToast('Erreur budget: '+e.message, true); });
   if(id==='galerie') renderGalerie();
+  if(id==='messages') renderMessages();
 }
 
 /* ═══ TOAST ═══ */
@@ -3437,6 +3480,107 @@ function checkPwd(){
     document.getElementById('pwd-input').focus();
   }
 }
+/* ═══ MESSAGES INVITÉS ═══ */
+let _messagesCache = [];
+
+async function renderMessages(){
+  const listEl  = document.getElementById('msg-list');
+  const statsEl = document.getElementById('msg-stats');
+  if(!listEl) return;
+  listEl.innerHTML = '<div style="text-align:center;padding:2rem;font-size:.8rem;color:var(--muted);">Chargement…</div>';
+
+  try{
+    const rows = await sbFetch('guest_messages?order=created_at.desc') || [];
+    _messagesCache = rows;
+  } catch(e){
+    listEl.innerHTML = '<div class="msg-empty">⚠️ Impossible de charger les messages.<br><small>'+e.message+'</small></div>';
+    return;
+  }
+
+  // Mise à jour badge nav
+  const badgeEl = document.getElementById('sb-msg-count');
+  if(badgeEl){
+    badgeEl.textContent = _messagesCache.length;
+    badgeEl.style.display = _messagesCache.length ? '' : 'none';
+  }
+
+  // Stats
+  const total   = _messagesCache.length;
+  const withAudio = _messagesCache.filter(m=>m.audio_path).length;
+  const withText  = _messagesCache.filter(m=>m.message_text).length;
+  const guests  = [...new Set(_messagesCache.map(m=>m.guest_name).filter(Boolean))].length;
+  if(statsEl) statsEl.innerHTML = [
+    {icon:'💌', lbl:'Messages', val:total, color:'#D45C73'},
+    {icon:'🎙', lbl:'Vocaux',   val:withAudio, color:'#7A60C0'},
+    {icon:'✍️', lbl:'Écrits',   val:withText,  color:'#4A7A5A'},
+    {icon:'👤', lbl:'Invités',  val:guests,    color:'#4A7AA8'},
+  ].map(k=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1rem;box-shadow:var(--shadow);">
+    <div style="font-size:1.3rem;margin-bottom:.3rem">${k.icon}</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.5rem;color:${k.color}">${k.val}</div>
+    <div style="font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">${k.lbl}</div>
+  </div>`).join('');
+
+  // Filtres
+  const typeFilter = document.getElementById('mfilter-type')?.value || '';
+  const nameFilter = (document.getElementById('mfilter-name')?.value || '').toLowerCase();
+  let items = [..._messagesCache];
+  if(typeFilter === 'audio') items = items.filter(m=>m.audio_path);
+  if(typeFilter === 'text')  items = items.filter(m=>m.message_text);
+  if(nameFilter) items = items.filter(m=>(m.guest_name||'').toLowerCase().includes(nameFilter));
+
+  if(!items.length){
+    listEl.innerHTML = '<div class="msg-empty">💌 Aucun message pour l\'instant.<br><small>Les invités peuvent en envoyer via <strong>messages.html</strong></small></div>';
+    return;
+  }
+
+  listEl.innerHTML = '<div class="msg-grid">'+items.map(m=>{
+    const initials = (m.guest_name||'?').slice(0,2).toUpperCase();
+    const date = m.created_at ? new Date(m.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    const audioUrl = m.audio_path
+      ? `${SUPABASE_URL}/storage/v1/object/public/${m.audio_path.startsWith('wedding-messages') ? '' : 'wedding-messages/'}${m.audio_path}`
+      : null;
+    const badges = [
+      m.audio_path   ? '<span class="msg-badge audio">🎙 Vocal</span>' : '',
+      m.message_text ? '<span class="msg-badge text">✍️ Écrit</span>'  : '',
+    ].join('');
+    const textBlock = m.message_text
+      ? `<div class="msg-text-body">${m.message_text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`
+      : '';
+    const audioBlock = audioUrl
+      ? `<div class="msg-audio-wrap"><audio controls src="${audioUrl}" preload="none"></audio></div>`
+      : '';
+    return `<div class="msg-card">
+      <div class="msg-header">
+        <div class="msg-avatar">${initials}</div>
+        <div>
+          <div class="msg-name">${m.guest_name||'Invité'}</div>
+          <div class="msg-date">${date}</div>
+        </div>
+        <div class="msg-badges">${badges}</div>
+        <button class="btn btn-danger" onclick="deleteMessage('${m.id}')" style="margin-left:0.5rem;font-size:0.55rem;padding:0.25rem 0.55rem;">✕</button>
+      </div>
+      ${textBlock}${audioBlock}
+    </div>`;
+  }).join('')+'</div>';
+}
+
+async function deleteMessage(id){
+  if(!confirm('Supprimer ce message ?')) return;
+  try{
+    // Trouver le message dans le cache pour supprimer l'audio si besoin
+    const msg = _messagesCache.find(m=>m.id===id);
+    if(msg?.audio_path){
+      await fetch(`${SUPABASE_URL}/storage/v1/object/wedding-messages/${msg.audio_path}`, {
+        method:'DELETE',
+        headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}
+      });
+    }
+    await sbFetch(`guest_messages?id=eq.${id}`, {method:'DELETE', prefer:'return=minimal'});
+    showToast('Message supprimé');
+    await renderMessages();
+  } catch(e){ showToast('Erreur: '+e.message, true); }
+}
+
 // Gate init — après chargement du DOM
 document.addEventListener('DOMContentLoaded', ()=>{
   if(sessionStorage.getItem('admin_auth')==='1'){
