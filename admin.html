@@ -2390,9 +2390,47 @@ async function renderBudget(){
           card.appendChild(leg);
         }
 
+        // ── Reste à payer par moyen de paiement ──
+        const PAY_ICONS_ENV = {'Cash':'💵','CB':'💳','Virement':'🏦','Chèque':'📝'};
+        const resteParMoyen = {};
+        envItems.forEach(x=>{
+          const r = Math.max(0, x.prevu - x.effectue);
+          if(r > 0){
+            const m = x.paiement || '—';
+            resteParMoyen[m] = (resteParMoyen[m]||0) + r;
+          }
+        });
+        const resteEnvTotal = Object.values(resteParMoyen).reduce((s,v)=>s+v, 0);
+
+        if(resteEnvTotal > 0){
+          const resteDiv = document.createElement('div');
+          resteDiv.style.cssText = 'margin-top:0.65rem;padding:0.55rem 0.7rem;background:var(--rose-bg);border:1px solid rgba(212,92,115,0.18);border-radius:8px;';
+
+          const titleRow = document.createElement('div');
+          titleRow.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;';
+          titleRow.innerHTML = '<span style="font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--rose);font-weight:700;">⏳ Reste à payer</span>'
+            +'<span style="font-family:\'Playfair Display\',serif;font-size:0.95rem;color:var(--rose);font-weight:600;">'+fmt(resteEnvTotal)+'</span>';
+          resteDiv.appendChild(titleRow);
+
+          const chipsWrap = document.createElement('div');
+          chipsWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.3rem;';
+          Object.entries(resteParMoyen).forEach(([m, v])=>{
+            const icon  = PAY_ICONS_ENV[m] || '💰';
+            const color = PAY_COLORS_MAP[m] || '#8C8078';
+            const chip  = document.createElement('span');
+            chip.style.cssText = 'display:inline-flex;align-items:center;gap:0.22rem;font-size:0.62rem;font-weight:600;'
+              +'padding:0.18rem 0.55rem;border-radius:20px;background:var(--bg2);'
+              +'border:1px solid '+color+'55;color:'+color+';';
+            chip.textContent = icon+' '+m+' − '+fmt(v);
+            chipsWrap.appendChild(chip);
+          });
+          resteDiv.appendChild(chipsWrap);
+          card.appendChild(resteDiv);
+        }
+
         // Footer
         const foot=document.createElement('div');
-        foot.style.cssText='display:flex;justify-content:space-between;font-size:0.6rem;color:var(--muted);';
+        foot.style.cssText='display:flex;justify-content:space-between;font-size:0.6rem;color:var(--muted);margin-top:0.5rem;';
         foot.innerHTML='<span style="'+(over?'color:var(--danger);font-weight:700':'')+'">'
           +envItems.length+' dép.'+(over?' ⚠️ dépassé':'')+'</span>'
           +(over?'<span style="font-size:0.58rem;color:var(--danger);text-decoration:underline;cursor:pointer;" onclick="filterByEnveloppe(\''+e.name+'\')">Voir →</span>':'')
