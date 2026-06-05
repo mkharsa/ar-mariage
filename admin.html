@@ -580,7 +580,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('guests',this);closeSidebar()"><span class="ni-icon">◇</span><span>Invités</span><span class="ni-badge" id="sb-count">0</span></div>
     <div class="ni" onclick="goTo('programme',this);closeSidebar()"><span class="ni-icon">◆</span><span>Programme</span></div>
     <div class="ni" onclick="goTo('budget',this);closeSidebar()"><span class="ni-icon">◈</span><span>Budget</span></div>
-    <div class="ni" onclick="goTo('galerie',this);closeSidebar()"><span class="ni-icon">🖼</span><span>Galerie photos</span></div>
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
@@ -911,42 +910,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
   </div>
 
-  <!-- GALERIE PHOTOS -->
-  <div id="page-galerie" class="page">
-
-    <!-- Stats bar -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.9rem;margin-bottom:1.6rem;" id="galerie-stats"></div>
-
-    <!-- Filtres -->
-    <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.2rem;align-items:center;">
-      <select id="gfilter-type" onchange="renderGalerie()" style="font-size:0.65rem;border:1px solid var(--border);border-radius:20px;padding:0.28rem 0.7rem;background:#F7F4EF;color:var(--text2);outline:none;cursor:pointer;">
-        <option value="">📁 Tous types</option>
-        <option value="photo">📷 Photos</option>
-        <option value="video">🎥 Vidéos</option>
-      </select>
-      <input type="text" id="gfilter-name" oninput="renderGalerie()" placeholder="🔍 Rechercher par invité…"
-        style="font-size:0.65rem;border:1px solid var(--border);border-radius:20px;padding:0.28rem 0.7rem;background:#F7F4EF;color:var(--text2);outline:none;flex:1;min-width:140px;">
-      <button onclick="downloadAll()" class="btn btn-outline" style="font-size:0.62rem;padding:0.3rem 0.8rem;border-radius:20px;">⬇️ Tout télécharger</button>
-    </div>
-
-    <!-- Grid -->
-    <div id="galerie-grid" style="columns:3 180px;gap:0.6rem;"></div>
-    <div id="galerie-empty" style="display:none;text-align:center;padding:3rem;font-size:0.85rem;color:var(--muted);">
-      📷 Aucune photo partagée pour l'instant.<br>
-      <span style="font-size:0.75rem;">Les invités peuvent envoyer leurs photos via <strong>photos.html</strong></span>
-    </div>
-
-    <!-- Lightbox -->
-    <div id="lightbox" style="display:none;position:fixed;inset:0;background:rgba(26,20,16,0.95);z-index:9999;align-items:center;justify-content:center;flex-direction:column;">
-      <button onclick="closeLightbox()" style="position:absolute;top:1.2rem;right:1.2rem;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:1.2rem;width:36px;height:36px;border-radius:50%;cursor:pointer;">✕</button>
-      <img id="lb-img" src="" style="max-width:90vw;max-height:80vh;border-radius:8px;display:none;">
-      <video id="lb-vid" src="" controls style="max-width:90vw;max-height:80vh;border-radius:8px;display:none;"></video>
-      <div id="lb-info" style="color:rgba(255,255,255,0.6);font-size:0.72rem;margin-top:0.8rem;text-align:center;"></div>
-      <button id="lb-download" onclick="downloadMedia()" style="margin-top:0.6rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:0.4rem 1rem;border-radius:20px;cursor:pointer;font-size:0.68rem;">⬇️ Télécharger</button>
-    </div>
-
-  </div>
-
   <!-- MESSAGES INVITÉS -->
   <div id="page-messages" class="page">
 
@@ -1211,9 +1174,6 @@ create policy "public delete events" on events for delete using (true);</pre>
     <button class="bn-item" id="bn-budget" onclick="goTo('budget',this);closeSidebar()">
       <span class="bn-icon">◈</span>Budget
     </button>
-    <button class="bn-item" id="bn-galerie" onclick="goTo('galerie',this);closeSidebar()">
-      <span class="bn-icon">🖼</span>Galerie
-    </button>
     <button class="bn-item" id="bn-messages" onclick="goTo('messages',this);closeSidebar()">
       <span class="bn-icon">💌</span>Messages
     </button>
@@ -1331,13 +1291,12 @@ function goTo(id,el){
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
   const bnTarget=document.getElementById('bn-'+id);
   if(bnTarget)bnTarget.classList.add('active');
-  const titles={dashboard:'Tableau de bord',guests:'Invités',programme:'Programme',budget:'Budget',galerie:'Galerie photos',messages:'Messages invités',lien:'Hébergement & Lien'};
+  const titles={dashboard:'Tableau de bord',guests:'Invités',programme:'Programme',budget:'Budget',messages:'Messages invités',lien:'Hébergement & Lien'};
   document.getElementById('topbar-title').textContent=titles[id]||id;
   if(id==='dashboard')renderDash();
   if(id==='guests')renderGuests();
   if(id==='programme')renderTimeline();
   if(id==='budget') renderBudget().catch(e=>{ console.error('renderBudget error:',e); showToast('Erreur budget: '+e.message, true); });
-  if(id==='galerie') renderGalerie();
   if(id==='messages') renderMessages();
 }
 
@@ -3160,136 +3119,6 @@ async function migrateLocalStorage(){
 }
 
 /* ═══ GALERIE PHOTOS ═══ */
-let _mediaCache = [];
-let _lbCurrent = null;
-
-async function renderGalerie(){
-  try{
-    // Essayer la table media d'abord
-    let rows = await sbFetch('media?order=created_at.desc') || [];
-
-    // Si vide → lire directement depuis le Storage
-    if(!rows.length){
-      const listRes = await fetch(`${SUPABASE_URL}/storage/v1/object/list/wedding-media`, {
-        method:'POST',
-        headers:{ 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' },
-        body: JSON.stringify({ limit:200, offset:0, sortBy:{ column:'created_at', order:'desc' } })
-      });
-      if(listRes.ok){
-        const files = await listRes.json();
-        rows = (files||[]).filter(f=>f.name).map(f=>({
-          id: f.id || f.name,
-          filename: f.name,
-          path: f.name,
-          type: f.metadata?.mimetype?.startsWith('video') ? 'video' : 'photo',
-          uploader_name: '',
-          size_bytes: f.metadata?.size || 0,
-          created_at: f.created_at || f.updated_at
-        }));
-      }
-    }
-    _mediaCache = rows;
-  }catch(e){ showToast('Erreur galerie: '+e.message, true); return; }
-
-  const typeFilter = document.getElementById('gfilter-type')?.value||'';
-  const nameFilter = (document.getElementById('gfilter-name')?.value||'').toLowerCase();
-
-  let items = _mediaCache;
-  if(typeFilter) items = items.filter(m=>m.type===typeFilter);
-  if(nameFilter) items = items.filter(m=>(m.uploader_name||'').toLowerCase().includes(nameFilter));
-
-  // Stats
-  const photos = _mediaCache.filter(m=>m.type!=='video').length;
-  const videos = _mediaCache.filter(m=>m.type==='video').length;
-  const uploaders = [...new Set(_mediaCache.map(m=>m.uploader_name).filter(Boolean))].length;
-  const totalSize = _mediaCache.reduce((s,m)=>s+(m.size_bytes||0),0);
-  const statsEl = document.getElementById('galerie-stats');
-  if(statsEl) statsEl.innerHTML = [
-    {icon:'📷', label:'Photos', val:photos, color:'#D45C73'},
-    {icon:'🎥', label:'Vidéos', val:videos, color:'#4A7AA8'},
-    {icon:'👤', label:'Invités', val:uploaders, color:'#4A7A5A'},
-    {icon:'💾', label:'Taille', val:formatSize(totalSize), color:'#C08A20'},
-  ].map(k=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1rem;box-shadow:var(--shadow);">
-    <div style="font-size:1.3rem;margin-bottom:0.3rem">${k.icon}</div>
-    <div style="font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--text)">${k.val}</div>
-    <div style="font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted)">${k.label}</div>
-  </div>`).join('');
-
-  const grid = document.getElementById('galerie-grid');
-  const empty = document.getElementById('galerie-empty');
-  if(!items.length){ grid.style.display='none'; empty.style.display='block'; return; }
-  grid.style.display='block'; empty.style.display='none';
-
-  grid.innerHTML = items.map((m,i)=>{
-    const url = `${SUPABASE_URL}/storage/v1/object/public/wedding-media/${m.path}`;
-    const isVideo = m.type==='video';
-    const date = m.created_at ? new Date(m.created_at).toLocaleDateString('fr-FR') : '';
-    return `<div style="break-inside:avoid;margin-bottom:0.6rem;cursor:pointer;position:relative;border-radius:10px;overflow:hidden;background:var(--bg3);" onclick="openLightbox(${i})">
-      ${isVideo
-        ? `<video src="${url}" style="width:100%;display:block;border-radius:10px;" preload="metadata"></video><div style="position:absolute;top:6px;left:6px;background:rgba(26,20,16,.7);color:#fff;font-size:0.55rem;padding:2px 6px;border-radius:4px;font-weight:600;">📹</div>`
-        : `<img src="${url}" style="width:100%;display:block;border-radius:10px;loading:lazy;" loading="lazy">`
-      }
-      <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(26,20,16,.7),transparent);padding:0.5rem 0.6rem 0.4rem;display:flex;justify-content:space-between;align-items:flex-end;">
-        <span style="font-size:0.6rem;color:rgba(255,255,255,.85)">${m.uploader_name||'Invité'}</span>
-        <span style="font-size:0.55rem;color:rgba(255,255,255,.55)">${date}</span>
-      </div>
-      <button onclick="event.stopPropagation();deleteMedia('${m.id}','${m.path}')" style="position:absolute;top:5px;right:5px;background:rgba(26,20,16,.6);border:none;color:#fff;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:0.6rem;">✕</button>
-    </div>`;
-  }).join('');
-}
-
-function openLightbox(idx){
-  const m = _mediaCache[idx];
-  if(!m) return;
-  _lbCurrent = m;
-  const url = `${SUPABASE_URL}/storage/v1/object/public/wedding-media/${m.path}`;
-  const lb = document.getElementById('lightbox');
-  const img = document.getElementById('lb-img');
-  const vid = document.getElementById('lb-vid');
-  const info = document.getElementById('lb-info');
-  const isVideo = m.type==='video';
-  img.style.display = isVideo?'none':'block';
-  vid.style.display = isVideo?'block':'none';
-  if(isVideo){ vid.src=url; } else { img.src=url; }
-  info.textContent = `${m.uploader_name||'Invité'} · ${m.created_at?new Date(m.created_at).toLocaleDateString('fr-FR'):''} · ${formatSize(m.size_bytes||0)}`;
-  lb.style.display='flex';
-}
-function closeLightbox(){
-  document.getElementById('lightbox').style.display='none';
-  document.getElementById('lb-vid').pause?.();
-  document.getElementById('lb-vid').src='';
-}
-function downloadMedia(){
-  if(!_lbCurrent) return;
-  const url = `${SUPABASE_URL}/storage/v1/object/public/wedding-media/${_lbCurrent.path}`;
-  const a=document.createElement('a'); a.href=url; a.download=_lbCurrent.filename||_lbCurrent.path; a.target='_blank'; a.click();
-}
-async function deleteMedia(id, path){
-  if(!confirm('Supprimer ce média ?')) return;
-  try{
-    await fetch(`${SUPABASE_URL}/storage/v1/object/wedding-media/${path}`,{method:'DELETE',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}});
-    await sbFetch(`media?id=eq.${id}`,{method:'DELETE',headers:{'Prefer':'return=minimal'}});
-    await renderGalerie();
-    showToast('Supprimé');
-  }catch(e){ showToast('Erreur: '+e.message, true); }
-}
-async function downloadAll(){
-  if(!_mediaCache.length){ showToast('Aucun média', true); return; }
-  showToast('Téléchargement en cours…');
-  for(const m of _mediaCache){
-    const url=`${SUPABASE_URL}/storage/v1/object/public/wedding-media/${m.path}`;
-    const a=document.createElement('a'); a.href=url; a.download=m.filename||m.path; a.target='_blank'; a.click();
-    await new Promise(r=>setTimeout(r,300));
-  }
-}
-function formatSize(bytes){
-  if(!bytes) return '0 Ko';
-  if(bytes<1024*1024) return Math.round(bytes/1024)+' Ko';
-  return (bytes/(1024*1024)).toFixed(1)+' Mo';
-}
-
-// Close lightbox on backdrop click
-document.addEventListener('click', e=>{ if(e.target.id==='lightbox') closeLightbox(); });
 
 function filterByEnveloppe(name){
   const sel = document.getElementById('bfilter-enveloppe');
