@@ -583,7 +583,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v1.5</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v1.6</span></div>
 </aside>
 
 <div class="main">
@@ -2500,7 +2500,7 @@ function renderExpenseList(expenses){
   if(filterStatut==='paye')        filtered = filtered.filter(e=>e.effectue>0);
   if(filterStatut==='nonpaye')     filtered = filtered.filter(e=>e.effectue===0||!e.effectue);
   if(filterStatut==='resteapayer') filtered = filtered.filter(e=>e.prevu>0 && (e.effectue||0) < e.prevu);
-  if(filterStatut==='prevuatteint') filtered = filtered.filter(e=>e.prevu>0 && (e.effectue||0) >= e.prevu);
+  if(filterStatut==='prevuatteint') filtered = filtered.filter(e=>(e.effectue||0) > 0 && (e.effectue||0) >= (e.prevu||0));
   if(filterStatut==='over')        filtered = filtered.filter(e=>overExpenseIds.has(e.id));
   if(filterStatut==='noenv')       filtered = filtered.filter(e=>!e.enveloppe||e.enveloppe==='');
 
