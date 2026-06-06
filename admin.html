@@ -583,7 +583,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée</div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v1.3</span></div>
 </aside>
 
 <div class="main">
@@ -756,43 +756,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div id="enveloppes-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.8rem;"></div>
     </div>
 
-    <!-- KPIs -->
-    <div class="budget-kpis" id="budget-kpis"></div>
-
-    <!-- INDICATEURS PAR PERSONNE -->
-    <div id="budget-person-section" style="display:none;margin-bottom:1.4rem;">
-      <div style="font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:0.8rem;">Dépenses par personne</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;" id="budget-person-cards"></div>
-    </div>
-
-    <!-- DASHBOARD ROW 1 -->
-    <div class="bdash-grid">
-      <div class="bdash-card">
-        <h4>📊 Par catégorie <span class="bdash-count" id="bdc-count"></span></h4>
-        <div id="budget-cat-bars"></div>
-      </div>
-      <div class="bdash-card">
-        <h4>💳 Par moyen de paiement</h4>
-        <div id="budget-pay-dashboard"></div>
-      </div>
-    </div>
-
-    <!-- DASHBOARD ROW 2 -->
-    <div class="bdash-grid">
-      <div class="bdash-card">
-        <h4>✅ Payé vs Prévu</h4>
-        <div id="budget-paye-vs-prevu"></div>
-      </div>
-      <div class="bdash-card">
-        <h4>🔝 Top 5 dépenses</h4>
-        <div id="budget-top-depenses"></div>
-      </div>
-    </div>
-
-    <!-- DASHBOARD ROW 3 : Paiement par personne -->
+    <!-- PAR CATÉGORIE -->
     <div class="bdash-card" style="margin-bottom:1.4rem;">
-      <h4>👤 Moyens de paiement par personne</h4>
-      <div id="budget-pay-by-person"></div>
+      <h4>📊 Par catégorie</h4>
+      <div id="budget-cat-bars"></div>
     </div>
 
     <!-- TRÉSORERIE -->
@@ -2433,471 +2400,13 @@ async function renderBudget(){
     requestAnimationFrame(drawRingFrame);
   }
 
-  // ── KPIs ──
-  const kpis = [
-    { icon:'💰', label:'Budget total', val: fmt(total), sub: 'Enveloppe globale', color:'linear-gradient(135deg,#C08A20,#E8D070)', isDanger:false },
-    { icon:'📋', label:'Prévu', val: fmt(totalPrevu), sub: total ? `${Math.round(totalPrevu/total*100)}% du budget` : '—', color:'linear-gradient(135deg,var(--sky),#7AAAD4)', isDanger:false },
-    { icon:'✅', label:'Payé', val: fmt(totalPaye), sub: total ? `${pctPaye}% réglé` : '—', color:'linear-gradient(135deg,var(--sage),var(--sage2))', isDanger:false },
-    { icon:'⏳', label:'Reste à payer', val: fmt(Math.max(0,totalPrevu-totalPaye)), sub: 'Sur dépenses prévues', color:'linear-gradient(135deg,var(--rose),var(--rose2))', isDanger:false },
-    { icon: reste<0?'🚨':'💚', label:'Solde', val: fmt(Math.abs(reste)), sub: reste<0?'⚠️ Dépassé !':'Disponible', color: reste<0?'linear-gradient(135deg,var(--danger),#E07070)':'linear-gradient(135deg,var(--lavender),#B090D0)', isDanger:reste<0 },
-    { icon:'📌', label:'Dépenses', val: expenses.length, sub: `${expenses.filter(e=>e.effectue>0).length} payées`, color:'linear-gradient(135deg,var(--gold2),#F0C860)', isDanger:false },
-  ];
-  document.getElementById('budget-kpis').innerHTML = kpis.map((k,i)=>`
-    <div class="bkpi ${k.isDanger?'danger':''}" style="animation-delay:${i*0.05}s">
-      <div class="bkpi-accent" style="background:${k.color}"></div>
-      <div class="bkpi-glow" style="background:${k.color}"></div>
-      <span class="bkpi-icon">${k.icon}</span>
-      <div class="bkpi-label">${k.label}</div>
-      <div class="bkpi-val" id="bkv-${i}">${k.val}</div>
-      <div class="bkpi-sub">${k.sub}</div>
-    </div>`).join('');
-
-  // ── Catégories count badge ──
   const cats = [...new Set(expenses.map(e=>e.cat))];
-  const bdc = document.getElementById('bdc-count');
-  if(bdc) bdc.textContent = cats.length + ' catégorie' + (cats.length>1?'s':'');
 
-  // ── Stats par personne ──
+  // ── Stats par personne (pour compatibilité oriStats) ──
   const origines = ['Raoine','Aboudé','Ensemble'];
   const oriColors = {'Raoine':'#E8849A','Aboudé':'#4A7AA8','Ensemble':'#4A7A5A'};
   const oriBudgets = {'Raoine': budgetRaoine, 'Aboudé': budgetAboude, 'Ensemble': 0};
-  const oriStats = origines.map(o => {
-    const items = expenses.filter(e=>e.origine===o);
-    return { o, prevu: items.reduce((s,e)=>s+e.prevu,0), paye: items.reduce((s,e)=>s+e.effectue,0), count: items.length, budget: oriBudgets[o] };
-  }).filter(x=>x.prevu>0||x.paye>0||x.budget>0);
 
-  // Injecter les cards personne dans le hero
-  let heroSub = '';
-  if(oriStats.length){
-    heroSub = oriStats.map(x=>`
-      <span style="display:inline-flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:0.3rem 0.8rem;font-size:0.72rem;color:rgba(255,255,255,0.7);">
-        <span style="width:7px;height:7px;border-radius:50%;background:${oriColors[x.o]||'#aaa'};flex-shrink:0;"></span>
-        ${x.o} : <strong style="color:#fff">${fmt(x.paye)}</strong> payé / ${fmt(x.prevu)} prévu${x.budget>0?' · budget '+fmt(x.budget):''}
-      </span>`).join('');
-  }
-  const bhSub2 = document.getElementById('bh-sub');
-  if(bhSub2 && oriStats.length){
-    bhSub2.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.5rem">${heroSub}</div>`;
-  }
-
-  // ── Indicateurs par personne ──
-  const personConfig = [
-    { key:'Raoine',  icon:'👰', color:'#E8849A', budget: budgetRaoine },
-    { key:'Aboudé',  icon:'🤵', color:'#4A7AA8', budget: budgetAboude },
-    { key:'Ensemble',icon:'💑', color:'#4A7A5A', budget: 0 },
-    { key:'Maman',   icon:'👩', color:'#C05A8A', budget: 0 },
-  ];
-  const personSection = document.getElementById('budget-person-section');
-  const personCards   = document.getElementById('budget-person-cards');
-  const anyPerson = expenses.some(e=>e.origine);
-  if(personSection) personSection.style.display = anyPerson ? 'block' : 'none';
-  if(personCards && anyPerson){
-    // Render person cards in pure JS (no nested backticks)
-    personCards.innerHTML = '';
-    personConfig.forEach((p,pi)=>{
-      const items  = expenses.filter(e=>e.origine===p.key);
-      const prevu  = items.reduce((s,e)=>s+e.prevu,0);
-      const paye   = items.reduce((s,e)=>s+e.effectue,0);
-      const count  = items.length;
-      const pctBudget = p.budget>0 ? Math.min(Math.round(prevu/p.budget*100),999) : 0;
-      const pctPaye   = prevu>0    ? Math.min(Math.round(paye/prevu*100),100)      : 0;
-      const over      = p.budget>0 && prevu>p.budget;
-
-      // Payment segments
-      const paySegs = ['Cash','Virement','CB','Chèque','Autre',''].map(pk=>({
-        pk, color:PAY_COLORS_MAP[pk]||'#C8BDB5',
-        val:items.filter(e=>e.paiement===pk).reduce((s,e)=>s+e.effectue,0)
-      })).filter(s=>s.val>0);
-      const totalRef = paye>0?paye:1;
-
-      const div = document.createElement('div');
-      div.className = 'person-card';
-      div.style.cssText = 'text-align:center;';
-
-      // Top bar
-      const topBar = document.createElement('div');
-      topBar.style.cssText = 'position:absolute;top:0;left:0;right:0;height:3px;background:'+p.color;
-      div.appendChild(topBar);
-
-      // Canvas gauge
-      const gaugeWrap = document.createElement('div');
-      gaugeWrap.style.cssText = 'position:relative;display:inline-block;margin:0 auto 0.8rem;';
-      const cv = document.createElement('canvas');
-      cv.id = 'pgauge-'+pi;
-      cv.width=130; cv.height=75;
-      const pctLabel = document.createElement('div');
-      pctLabel.style.cssText = 'position:absolute;bottom:0;left:50%;transform:translateX(-50%);text-align:center;line-height:1;';
-      const gaugeColor = over ? 'var(--danger)' : 'var(--text)';
-      const gaugeLabel = p.budget>0 ? 'utilisé' : 'payé';
-      pctLabel.innerHTML = '<div style="font-family:serif;font-size:1.5rem;font-weight:400;color:' + gaugeColor + ';">' + pctBudget + '%</div>'
-        + '<div style="font-size:0.55rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">' + gaugeLabel + '</div>';
-      gaugeWrap.appendChild(cv);
-      gaugeWrap.appendChild(pctLabel);
-      div.appendChild(gaugeWrap);
-
-      // Name
-      const nameDiv = document.createElement('div');
-      nameDiv.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:0.4rem;margin-bottom:0.6rem;';
-      nameDiv.innerHTML = '<span style="font-size:1.1rem">'+p.icon+'</span>'
-        +'<span style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">'+p.key+'</span>';
-      div.appendChild(nameDiv);
-
-      // Amount
-      const amtDiv = document.createElement('div');
-      amtDiv.style.cssText = "font-family:'Playfair Display',serif;font-size:1.5rem;color:" + (over?'var(--danger)':'var(--text)') + ";line-height:1;margin-bottom:0.2rem;";
-      amtDiv.textContent = fmt(prevu);
-      div.appendChild(amtDiv);
-
-      const subDiv = document.createElement('div');
-      subDiv.style.cssText = 'font-size:0.65rem;color:var(--muted);margin-bottom:0.7rem;';
-      subDiv.textContent = 'prévu'+(p.budget>0?' sur '+fmt(p.budget):' — budget non défini');
-      div.appendChild(subDiv);
-
-      // Multi-color pay bar
-      const barWrap = document.createElement('div');
-      barWrap.style.cssText = 'background:var(--bg3);border-radius:4px;height:10px;overflow:hidden;margin-bottom:0.3rem;display:flex;';
-      if(paySegs.length>0){
-        paySegs.forEach(s=>{
-          const seg=document.createElement('div');
-          seg.style.cssText='height:100%;width:'+Math.round(s.val/totalRef*100)+'%;background:'+s.color+';flex-shrink:0;transition:width .8s ease;';
-          seg.title=(s.pk||'?')+': '+fmt(s.val);
-          barWrap.appendChild(seg);
-        });
-      } else {
-        const seg=document.createElement('div');
-        seg.style.cssText='height:100%;width:0%;background:var(--sage);flex-shrink:0;border-radius:4px;transition:width .8s ease;';
-        seg.setAttribute('data-pw2',pctPaye);
-        barWrap.appendChild(seg);
-      }
-      div.appendChild(barWrap);
-
-      // Pay info row
-      const payRow = document.createElement('div');
-      payRow.style.cssText='display:flex;justify-content:space-between;font-size:0.62rem;color:var(--muted);';
-      payRow.innerHTML='<span style="color:'+(paye>0?'var(--text2)':'var(--muted)')+';font-weight:'+(paye>0?'600':'400')+'">'+(paye>0?'✓ '+fmt(paye)+' payé':' Non payé')+'</span>'
-        +'<span>'+pctPaye+'% réglé</span>';
-      div.appendChild(payRow);
-
-      // Legend
-      if(paySegs.length>0){
-        const leg=document.createElement('div');
-        leg.style.cssText='display:flex;flex-wrap:wrap;gap:0.35rem;justify-content:center;margin-top:0.4rem;';
-        paySegs.forEach(s=>{
-          const sp=document.createElement('span');
-          sp.style.cssText='display:inline-flex;align-items:center;gap:3px;font-size:0.58rem;color:var(--muted);';
-          sp.innerHTML='<span style="width:8px;height:8px;border-radius:50%;background:'+s.color+';flex-shrink:0;"></span>'+( s.pk||'?')+' '+fmt(s.val);
-          leg.appendChild(sp);
-        });
-        div.appendChild(leg);
-      }
-
-      // Over/available badge
-      if(over){
-        const badge=document.createElement('div');
-        badge.style.cssText='margin-top:0.6rem;font-size:0.65rem;font-weight:700;color:var(--danger);background:#FEEAEA;border-radius:6px;padding:0.4rem 0.8rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(200,64,64,0.2);transition:all .2s;';
-        badge.innerHTML='<span>⚠️ Dépassement : +'+fmt(prevu-p.budget)+'</span><span style="font-size:0.6rem;font-weight:500;text-decoration:underline;opacity:0.8;">Voir les dépenses →</span>';
-        badge.title='Cliquez pour filtrer les dépenses de '+p.key;
-        badge.onmouseenter=()=>badge.style.background='#FDDCDC';
-        badge.onmouseleave=()=>badge.style.background='#FEEAEA';
-        badge.onclick=()=>{
-          // Scroll vers la liste des dépenses
-          document.querySelector('#page-budget .budget-form-card:last-child')?.scrollIntoView({behavior:'smooth',block:'start'});
-          // Appliquer le filtre par personne
-          const sel=document.getElementById('bfilter-origine');
-          if(sel){ sel.value=p.key; }
-          // Petite animation pour attirer l'attention
-          setTimeout(()=>{
-            const listEl=document.getElementById('expense-list');
-            if(listEl){ listEl.style.outline='2px solid var(--danger)'; setTimeout(()=>listEl.style.outline='',1200); }
-            renderBudget();
-          },400);
-        };
-        div.appendChild(badge);
-      } else if(p.budget>0){
-        const badge=document.createElement('div');
-        badge.style.cssText='margin-top:0.6rem;font-size:0.65rem;color:var(--sage);background:var(--sage-bg);border-radius:6px;padding:0.3rem 0.6rem;';
-        badge.textContent=fmt(p.budget-prevu)+' disponible';
-        div.appendChild(badge);
-      }
-
-      // Count
-      const cntDiv=document.createElement('div');
-      cntDiv.style.cssText='font-size:0.6rem;color:var(--muted2);margin-top:0.5rem;';
-      cntDiv.textContent=count+' dépense'+(count>1?'s':'');
-      div.appendChild(cntDiv);
-
-      // Envelopes slot
-      const envSlot=document.createElement('span');
-      envSlot.id='penv-'+pi;
-      div.appendChild(envSlot);
-
-      personCards.appendChild(div);
-    });
-
-    // ── Enveloppes par personne ──
-    personConfig.forEach((p,pi)=>{
-      const envSlot = document.getElementById('penv-'+pi);
-      if(!envSlot) return;
-      const personEnvs = _enveloppes.filter(env=>env.person===p.key);
-      if(!personEnvs.length){ envSlot.innerHTML=''; return; }
-
-      let h = '<div style="margin-top:0.9rem;border-top:1px solid var(--border);padding-top:0.8rem;">';
-      h += '<div style="font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:0.6rem;">Enveloppes</div>';
-      h += '<div style="display:flex;flex-direction:column;gap:0.5rem;">';
-
-      personEnvs.forEach(env=>{
-        const envExp  = expenses.filter(x=>x.enveloppe===env.name);
-        const envP    = envExp.reduce((s,x)=>s+x.prevu,0);
-        const envPy   = envExp.reduce((s,x)=>s+x.effectue,0);
-        const envReste= Math.max(0, envP - envPy);
-        const pctPy   = envP>0 ? Math.min(Math.round(envPy/envP*100),100) : 0;
-        const over    = env.budget>0 && envP>env.budget;
-
-        h += '<div style="background:var(--bg3);border-radius:10px;padding:0.7rem 0.8rem;border-left:3px solid '+env.color+';">';
-
-        // Nom + budget alloué
-        h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">';
-        h += '<span style="font-size:0.75rem;font-weight:600;color:var(--text);">'+env.name+'</span>';
-        h += '<span style="font-size:0.6rem;color:var(--muted);background:var(--bg2);padding:1px 7px;border-radius:20px;border:1px solid var(--border);">Budget '+fmt(env.budget)+'</span>';
-        h += '</div>';
-
-        // Barre payé
-        h += '<div style="background:var(--bg2);border-radius:4px;height:6px;overflow:hidden;margin-bottom:0.5rem;">';
-        h += '<div style="height:100%;width:'+pctPy+'%;background:'+env.color+';border-radius:4px;transition:width 1s ease;"></div></div>';
-
-        // 3 montants : Payé · Restant · Prévu
-        h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;text-align:center;">';
-
-        h += '<div style="background:var(--bg2);border-radius:6px;padding:0.3rem 0.2rem;">';
-        h += '<div style="font-size:0.7rem;font-weight:700;color:var(--sage);">'+fmt(envPy)+'</div>';
-        h += '<div style="font-size:0.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Payé</div>';
-        h += '</div>';
-
-        h += '<div style="background:var(--bg2);border-radius:6px;padding:0.3rem 0.2rem;">';
-        h += '<div style="font-size:0.7rem;font-weight:700;color:'+(envReste>0?'var(--rose)':'var(--sage)')+';">'+fmt(envReste)+'</div>';
-        h += '<div style="font-size:0.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Restant</div>';
-        h += '</div>';
-
-        h += '<div style="background:var(--bg2);border-radius:6px;padding:0.3rem 0.2rem;">';
-        h += '<div style="font-size:0.7rem;font-weight:700;color:'+(over?'var(--danger)':'var(--text2)')+';">'+fmt(envP)+(over?' ⚠️':'')+'</div>';
-        h += '<div style="font-size:0.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Prévu</div>';
-        h += '</div>';
-
-        h += '</div>'; // grid
-        h += '</div>'; // card
-      });
-
-      h += '</div></div>';
-      envSlot.innerHTML = h;
-    });
-
-    setTimeout(()=>{
-      personConfig.forEach((p,pi)=>{
-        const items = expenses.filter(e=>e.origine===p.key);
-        const prevu = items.reduce((s,e)=>s+e.prevu,0);
-        const pctFill = p.budget>0 ? Math.min(prevu/p.budget,1) : (prevu>0 ? Math.min(paye/prevu,1) : 0);
-        const over = p.budget>0 && prevu>p.budget;
-        const cv = document.getElementById('pgauge-'+pi);
-        if(!cv) return;
-        const ctx=cv.getContext('2d'), cx=65, cy=70, r=52, lw=10;
-        let cur=0, target=pctFill;
-        const color = over ? '#C84040' : p.color;
-        function drawG(){
-          ctx.clearRect(0,0,130,75);
-          ctx.beginPath();ctx.arc(cx,cy,r,Math.PI,2*Math.PI);
-          ctx.strokeStyle='#EDE8E0';ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();
-          if(cur>0){
-            ctx.beginPath();ctx.arc(cx,cy,r,Math.PI,Math.PI+Math.PI*cur);
-            ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();
-          }
-          if(cur<target){cur=Math.min(cur+0.025,target);requestAnimationFrame(drawG);}
-        }
-        requestAnimationFrame(drawG);
-      });
-      document.querySelectorAll('[data-pw2]').forEach(b=>b.style.width=b.dataset.pw2+'%');
-    }, 80);
-  }
-  // ── Dashboard paiement ──
-  const PAY_CONFIG = [
-    { key:'Cash',     label:'💵 Cash',          color:'#C08A20' },
-    { key:'Virement', label:'🏦 Virement',       color:'#4A7AA8' },
-    { key:'CB',       label:'💳 Carte bancaire', color:'#4A7A5A' },
-    { key:'Chèque',   label:'📝 Chèque',         color:'#7A5AA8' },
-    { key:'Autre',    label:'📌 Autre',           color:'#8C8078' },
-    { key:'',         label:'❓ Non défini',      color:'#C8BDB5' },
-  ];
-  const payEl = document.getElementById('budget-pay-dashboard');
-  if(payEl){
-    const payData = PAY_CONFIG.map(p => {
-      const items = expenses.filter(e=>e.paiement===(p.key));
-      return { ...p, prevu: items.reduce((s,e)=>s+e.prevu,0), paye: items.reduce((s,e)=>s+e.effectue,0), count: items.length };
-    }).filter(p=>p.prevu>0||p.paye>0);
-
-    const totalPay = payData.reduce((s,p)=>s+p.prevu,0) || 1;
-    if(!payData.length){
-      payEl.innerHTML='<p style="font-size:0.82rem;color:var(--muted)">Aucune dépense avec moyen de paiement.</p>';
-    } else {
-      payEl.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.7rem;margin-bottom:1.2rem;">
-          ${payData.map(p=>`
-            <div style="background:var(--bg3);border-radius:10px;padding:0.9rem 0.8rem;border:1px solid var(--border);text-align:center;">
-              <div style="font-size:1.1rem;margin-bottom:0.3rem">${p.label.split(' ')[0]}</div>
-              <div style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--text)">${fmt(p.prevu)}</div>
-              <div style="font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-top:0.2rem">${p.label.split(' ').slice(1).join(' ')}</div>
-              <div style="font-size:0.68rem;color:${p.color};font-weight:600;margin-top:0.3rem">${p.paye>0?'✓ '+fmt(p.paye)+' payé':'Non payé'}</div>
-            </div>`).join('')}
-        </div>
-        <div style="display:flex;flex-direction:column;gap:0.5rem;">
-          ${payData.map(p=>{
-            const pct = Math.round(p.prevu/totalPay*100);
-            const pctPaid = p.prevu ? Math.round(p.paye/p.prevu*100) : 0;
-            return `<div class="bprog-row" style="margin-bottom:0.6rem">
-              <div class="bprog-head">
-                <div class="bprog-label">${p.label} <span style="color:var(--muted);font-weight:400">(${p.count} dépense${p.count>1?'s':''})</span></div>
-                <div class="bprog-amounts ${p.paye>p.prevu?'bprog-over':''}">${fmt(p.paye)} / ${fmt(p.prevu)}</div>
-              </div>
-              <div class="bprog-track"><div class="bprog-fill" style="width:0%;background:${p.color}" data-w="${Math.min(pctPaid,100)}"></div></div>
-              <div style="font-size:0.62rem;color:var(--muted);margin-top:2px">${pct}% du total prévu · ${pctPaid}% réglé</div>
-            </div>`;
-          }).join('')}
-        </div>`;
-      setTimeout(()=>document.querySelectorAll('#budget-pay-dashboard .bprog-fill').forEach(f=>f.style.width=f.dataset.w+'%'),50);
-    }
-  }
-
-  // ── Payé vs Prévu par catégorie ──
-  const pvpEl = document.getElementById('budget-paye-vs-prevu');
-  if(pvpEl){
-    const allCats = [...new Set(expenses.map(e=>e.cat))];
-    if(!allCats.length){ pvpEl.innerHTML='<p style="font-size:0.82rem;color:var(--muted)">Aucune donnée.</p>'; }
-    else {
-      pvpEl.innerHTML = allCats.map(cat=>{
-        const items = expenses.filter(e=>e.cat===cat);
-        const cp = items.reduce((s,e)=>s+e.prevu,0);
-        const ce = items.reduce((s,e)=>s+e.effectue,0);
-        const color = CAT_COLORS[cat]||'#8C8078';
-        const pct = cp ? Math.min(Math.round(ce/cp*100),100) : 0;
-        const over = ce > cp;
-        return `<div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.75rem;">
-          <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></div>
-          <div style="flex:1;min-width:0;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-              <span style="font-size:0.75rem;font-weight:500;color:var(--text2)">${cat}</span>
-              <span style="font-size:0.7rem;${over?'color:var(--danger);font-weight:700':'color:var(--muted)'}">${fmt(ce)} / ${fmt(cp)}</span>
-            </div>
-            <div class="bprog-track">
-              <div class="bprog-fill" style="width:0%;background:${over?'var(--danger)':color}" data-w2="${pct}"></div>
-            </div>
-          </div>
-          <div style="font-size:0.68rem;font-weight:600;color:${over?'var(--danger)':'var(--sage)'};min-width:32px;text-align:right">${pct}%</div>
-        </div>`;
-      }).join('');
-      setTimeout(()=>document.querySelectorAll('#budget-paye-vs-prevu .bprog-fill').forEach(f=>f.style.width=f.dataset.w2+'%'),50);
-    }
-  }
-
-  // ── Top 5 dépenses ──
-  const topEl = document.getElementById('budget-top-depenses');
-  if(topEl){
-    const top5 = [...expenses].sort((a,b)=>b.prevu-a.prevu).slice(0,5);
-    if(!top5.length){ topEl.innerHTML='<p style="font-size:0.82rem;color:var(--muted)">Aucune dépense.</p>'; }
-    else {
-      const maxVal = top5[0].prevu || 1;
-      topEl.innerHTML = top5.map((e,i)=>{
-        const color = CAT_COLORS[e.cat]||'#8C8078';
-        const pct = Math.round(e.prevu/maxVal*100);
-        const payIcon = e.paiement==='Cash'?'💵':e.paiement==='Virement'?'🏦':e.paiement==='CB'?'💳':e.paiement==='Chèque'?'📝':'';
-        return `<div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:0.8rem;">
-          <div style="width:22px;height:22px;border-radius:50%;background:${color}20;color:${color};font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;">
-              <span style="font-size:0.8rem;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">${e.name}</span>
-              <span style="font-size:0.75rem;font-weight:600;color:var(--text);flex-shrink:0">${fmt(e.prevu)} ${payIcon}</span>
-            </div>
-            <div class="bprog-track"><div style="height:100%;border-radius:5px;background:${color};width:${pct}%;transition:width .8s ease"></div></div>
-            <div style="font-size:0.62rem;color:var(--muted);margin-top:2px">${e.cat}${e.origine?' · '+e.origine:''}${e.effectue>0?' · ✓ '+fmt(e.effectue)+' payé':''}</div>
-          </div>
-        </div>`;
-      }).join('');
-    }
-  }
-
-  // ── Moyens de paiement par personne ──
-  const payByPersonEl = document.getElementById('budget-pay-by-person');
-  if(payByPersonEl){
-    const personKeys = ['Raoine','Aboudé','Ensemble','Maman'];
-    const personIcons = {'Raoine':'👰','Aboudé':'🤵','Ensemble':'💑','Maman':'👩'};
-    const personColors = {'Raoine':'#E8849A','Aboudé':'#4A7AA8','Ensemble':'#4A7A5A','Maman':'#C05A8A'};
-
-    payByPersonEl.innerHTML = '';
-    personKeys.forEach(pk => {
-      const items = expenses.filter(e=>e.origine===pk);
-      if(!items.length) return;
-      const prevu = items.reduce((s,e)=>s+e.prevu,0);
-      const paye  = items.reduce((s,e)=>s+e.effectue,0);
-      const personBudget = _enveloppes.filter(e=>e.person===pk).reduce((s,e)=>s+e.budget,0);
-      const overPerson = personBudget>0 && prevu>personBudget;
-
-      const section = document.createElement('div');
-      section.style.cssText = 'margin-bottom:1.4rem;padding-bottom:1.4rem;border-bottom:1px solid var(--border);';
-
-      // Header
-      const hdr = document.createElement('div');
-      hdr.style.cssText = 'display:flex;align-items:center;gap:.6rem;margin-bottom:.9rem;flex-wrap:wrap;';
-      hdr.innerHTML = '<span style="font-size:1.1rem">'+(personIcons[pk]||'👤')+'</span>'
-        +'<span style="font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)">'+pk+'</span>'
-        +(personBudget>0?'<span style="font-size:.68rem;color:var(--muted);background:var(--bg3);border-radius:10px;padding:1px 7px;">Budget : '+fmt(personBudget)+'</span>':'')
-        +'<span style="margin-left:auto;font-size:.72rem;color:var(--muted)">Prévu <strong style="color:'+(overPerson?'var(--danger)':'var(--text)')+'">'+fmt(prevu)+'</strong> · Payé <strong style="color:var(--sage)">'+fmt(paye)+'</strong></span>';
-      section.appendChild(hdr);
-
-      // Alerte dépassement
-      if(overPerson){
-        const alert = document.createElement('div');
-        alert.style.cssText = 'background:#FEEAEA;border:1px solid rgba(200,64,64,0.2);border-radius:8px;padding:.5rem .8rem;margin-bottom:.8rem;font-size:.68rem;font-weight:600;color:var(--danger);display:flex;justify-content:space-between;align-items:center;cursor:pointer;';
-        alert.innerHTML = '<span>⚠️ Dépassement de '+fmt(prevu-personBudget)+'</span><span style="text-decoration:underline;font-weight:400;">Voir les dépenses →</span>';
-        alert.onclick = ()=>{ const s=document.getElementById('bfilter-origine'); if(s){s.value=pk;} document.querySelector('#page-budget .budget-form-card:last-child')?.scrollIntoView({behavior:'smooth'}); setTimeout(()=>renderBudget(),400); };
-        section.appendChild(alert);
-      }
-
-      // Enveloppes chips
-      const personEnvs = _enveloppes.filter(e=>e.person===pk);
-      if(personEnvs.length){
-        const envDiv = document.createElement('div');
-        envDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.8rem;';
-        personEnvs.forEach(env=>{
-          const envP  = expenses.filter(x=>x.enveloppe===env.name).reduce((s,x)=>s+x.prevu,0);
-          const envOver = env.budget>0 && envP>env.budget;
-          const chip = document.createElement('div');
-          chip.style.cssText = 'display:inline-flex;align-items:center;gap:.35rem;font-size:.65rem;padding:.28rem .65rem;border-radius:20px;border:1px solid '+(envOver?'var(--danger)':env.color+'55')+';background:'+(envOver?'#FEEAEA':env.color+'11')+';color:'+(envOver?'var(--danger)':'var(--text2)')+';cursor:'+(envOver?'pointer':'default')+';';
-          chip.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:'+env.color+';flex-shrink:0;"></span>'
-            +env.name+' — Prévu '+fmt(envP)+' / '+fmt(env.budget)+(envOver?' ⚠️':'');
-          if(envOver) chip.onclick=()=>filterByEnveloppe(env.name);
-          envDiv.appendChild(chip);
-        });
-        section.appendChild(envDiv);
-      }
-
-      // Lignes par moyen de paiement
-      const methods = ['Cash','Virement','CB','Chèque','Autre',''].map(m=>({
-        m, label:m||'Non défini', color:PAY_COLORS_MAP[m]||'#C8BDB5',
-        prevu: items.filter(e=>e.paiement===m).reduce((s,e)=>s+e.prevu,0),
-        paye:  items.filter(e=>e.paiement===m).reduce((s,e)=>s+e.effectue,0),
-      })).filter(x=>x.prevu>0||x.paye>0);
-
-      const maxVal = Math.max(prevu,1);
-      methods.forEach(x=>{
-        const row = document.createElement('div');
-        row.style.cssText = 'display:grid;grid-template-columns:80px 1fr 1fr;align-items:center;gap:.7rem;margin-bottom:.6rem;';
-        row.innerHTML = '<div style="display:flex;align-items:center;gap:.4rem;font-size:.7rem;color:var(--text2);font-weight:500;"><span style="width:8px;height:8px;border-radius:50%;background:'+x.color+';flex-shrink:0;"></span>'+x.label+'</div>'
-          +'<div><div style="font-size:.58rem;color:var(--muted);margin-bottom:2px;">Prévu '+fmt(x.prevu)+'</div><div style="background:var(--bg3);border-radius:3px;height:6px;overflow:hidden;"><div style="height:100%;width:'+Math.round(x.prevu/maxVal*100)+'%;background:'+x.color+'66;border-radius:3px;transition:width .9s ease;"></div></div></div>'
-          +'<div><div style="font-size:.58rem;color:'+(x.paye>0?'var(--sage)':'var(--muted)')+';margin-bottom:2px;">Payé '+fmt(x.paye)+'</div><div style="background:var(--bg3);border-radius:3px;height:6px;overflow:hidden;"><div style="height:100%;width:'+Math.round(x.paye/maxVal*100)+'%;background:'+x.color+';border-radius:3px;transition:width .9s ease;"></div></div></div>';
-        section.appendChild(row);
-      });
-      payByPersonEl.appendChild(section);
-    });
-    if(!payByPersonEl.children.length)
-      payByPersonEl.innerHTML = '<p style="font-size:.82rem;color:var(--muted);">Aucune dépense avec personne attribuée.</p>';
-  }
 
   // Trésorerie (fail-safe)
   renderTresorerie(expenses).catch(e=>console.warn('tresorerie:', e.message));
@@ -3296,6 +2805,53 @@ async function renderTresorerie(expenses){
       barLbl.style.cssText='font-size:0.58rem;color:var(--muted);margin-top:3px;text-align:right;';
       barLbl.textContent = pct+'% du disponible engagé';
       card.appendChild(barLbl);
+    }
+
+    // ── Enveloppes de cette personne ──
+    const personEnvs = _enveloppes.filter(env => env.person === p.key);
+    if(personEnvs.length){
+      const sep2 = document.createElement('div');
+      sep2.style.cssText = 'border-top:1px solid var(--border);margin:0.8rem 0 0.6rem;';
+      card.appendChild(sep2);
+
+      const envTitle = document.createElement('div');
+      envTitle.style.cssText = 'font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:0.5rem;';
+      envTitle.textContent = 'Enveloppes';
+      card.appendChild(envTitle);
+
+      personEnvs.forEach(env=>{
+        const envExp  = (window._lastExpenses||expenses).filter(x=>x.enveloppe===env.name);
+        const envPy   = envExp.reduce((s,x)=>s+x.effectue,0);
+        const envP    = envExp.reduce((s,x)=>s+x.prevu,0);
+        const envReste= Math.max(0, envP - envPy);
+        const pctPy   = envP>0 ? Math.min(Math.round(envPy/envP*100),100) : 0;
+
+        const envRow = document.createElement('div');
+        envRow.style.cssText = 'background:var(--bg3);border-radius:8px;padding:0.55rem 0.7rem;margin-bottom:0.4rem;border-left:3px solid '+env.color+';';
+
+        // Nom + budget
+        envRow.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">'
+          +'<span style="font-size:0.72rem;font-weight:600;color:var(--text);">'+env.name+'</span>'
+          +'<span style="font-size:0.58rem;color:var(--muted);">Budget '+fmt(env.budget)+'</span>'
+          +'</div>'
+          // Barre payé
+          +'<div style="background:var(--bg2);border-radius:3px;height:5px;overflow:hidden;margin-bottom:0.45rem;">'
+          +'<div style="height:100%;width:'+pctPy+'%;background:'+env.color+';border-radius:3px;transition:width 1s ease;"></div></div>'
+          // 3 montants
+          +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.25rem;text-align:center;">'
+          +'<div style="background:var(--bg2);border-radius:5px;padding:0.2rem 0.1rem;">'
+            +'<div style="font-size:0.68rem;font-weight:700;color:var(--sage);">'+fmt(envPy)+'</div>'
+            +'<div style="font-size:0.5rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Payé</div></div>'
+          +'<div style="background:var(--bg2);border-radius:5px;padding:0.2rem 0.1rem;">'
+            +'<div style="font-size:0.68rem;font-weight:700;color:'+(envReste>0?'var(--rose)':'var(--sage)')+';">'+fmt(envReste)+'</div>'
+            +'<div style="font-size:0.5rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Restant</div></div>'
+          +'<div style="background:var(--bg2);border-radius:5px;padding:0.2rem 0.1rem;">'
+            +'<div style="font-size:0.68rem;font-weight:700;color:var(--text2);">'+fmt(envP)+'</div>'
+            +'<div style="font-size:0.5rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Prévu</div></div>'
+          +'</div>';
+
+        card.appendChild(envRow);
+      });
     }
 
     grid.appendChild(card);
