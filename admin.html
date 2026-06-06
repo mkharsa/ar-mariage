@@ -1117,6 +1117,7 @@ create policy "public delete events" on events for delete using (true);</pre>
         <option value="">— Commune</option>
         <option value="Raoine">👰 Raoine</option>
         <option value="Aboudé">🤵 Aboudé</option>
+        <option value="Maman">👩 Maman</option>
         <option value="Ensemble">💑 Ensemble</option>
       </select>
     </div>
@@ -2648,29 +2649,42 @@ async function renderBudget(){
         const envExp  = expenses.filter(x=>x.enveloppe===env.name);
         const envP    = envExp.reduce((s,x)=>s+x.prevu,0);
         const envPy   = envExp.reduce((s,x)=>s+x.effectue,0);
-        const pct     = env.budget>0 ? Math.min(Math.round(envP/env.budget*100),100) : 0;
-        const pctPy   = env.budget>0 ? Math.min(Math.round(envPy/env.budget*100),100) : 0;
+        const envReste= Math.max(0, envP - envPy);
+        const pctPy   = envP>0 ? Math.min(Math.round(envPy/envP*100),100) : 0;
         const over    = env.budget>0 && envP>env.budget;
 
-        h += '<div style="background:var(--bg3);border-radius:8px;padding:0.55rem 0.75rem;">';
-        // Header row
-        h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">';
-        h += '<span style="font-size:0.72rem;font-weight:600;color:var(--text);display:flex;align-items:center;gap:0.3rem;">';
-        h += '<span style="width:7px;height:7px;border-radius:50%;background:'+env.color+';flex-shrink:0;"></span>'+env.name+'</span>';
-        h += '<span style="font-size:0.62rem;color:'+(over?'var(--danger)':'var(--muted)')+';">'+fmt(env.budget)+'</span>';
+        h += '<div style="background:var(--bg3);border-radius:10px;padding:0.7rem 0.8rem;border-left:3px solid '+env.color+';">';
+
+        // Nom + budget alloué
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">';
+        h += '<span style="font-size:0.75rem;font-weight:600;color:var(--text);">'+env.name+'</span>';
+        h += '<span style="font-size:0.6rem;color:var(--muted);background:var(--bg2);padding:1px 7px;border-radius:20px;border:1px solid var(--border);">Budget '+fmt(env.budget)+'</span>';
         h += '</div>';
-        // Prevu bar
-        h += '<div style="background:var(--bg2);border-radius:3px;height:4px;overflow:hidden;margin-bottom:2px;">';
-        h += '<div style="height:100%;width:'+pct+'%;background:'+env.color+'55;border-radius:3px;transition:width 1s ease;"></div></div>';
-        // Paye bar
-        h += '<div style="background:var(--bg2);border-radius:3px;height:4px;overflow:hidden;margin-bottom:4px;">';
-        h += '<div style="height:100%;width:'+pctPy+'%;background:'+env.color+';border-radius:3px;transition:width 1s ease;"></div></div>';
-        // Footer
-        h += '<div style="display:flex;justify-content:space-between;font-size:0.6rem;color:var(--muted);">';
-        h += '<span>Prévu '+fmt(envP)+(over?' <span style="color:var(--danger)">⚠️ +'+fmt(envP-env.budget)+'</span>':'')+'</span>';
-        h += '<span style="color:'+(envPy>0?'var(--sage)':'var(--muted)')+'">Payé '+fmt(envPy)+'</span>';
+
+        // Barre payé
+        h += '<div style="background:var(--bg2);border-radius:4px;height:6px;overflow:hidden;margin-bottom:0.5rem;">';
+        h += '<div style="height:100%;width:'+pctPy+'%;background:'+env.color+';border-radius:4px;transition:width 1s ease;"></div></div>';
+
+        // 3 montants : Payé · Restant · Prévu
+        h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.3rem;text-align:center;">';
+
+        h += '<div style="background:var(--bg2);border-radius:6px;padding:0.3rem 0.2rem;">';
+        h += '<div style="font-size:0.7rem;font-weight:700;color:var(--sage);">'+fmt(envPy)+'</div>';
+        h += '<div style="font-size:0.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Payé</div>';
         h += '</div>';
+
+        h += '<div style="background:var(--bg2);border-radius:6px;padding:0.3rem 0.2rem;">';
+        h += '<div style="font-size:0.7rem;font-weight:700;color:'+(envReste>0?'var(--rose)':'var(--sage)')+';">'+fmt(envReste)+'</div>';
+        h += '<div style="font-size:0.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Restant</div>';
         h += '</div>';
+
+        h += '<div style="background:var(--bg2);border-radius:6px;padding:0.3rem 0.2rem;">';
+        h += '<div style="font-size:0.7rem;font-weight:700;color:'+(over?'var(--danger)':'var(--text2)')+';">'+fmt(envP)+(over?' ⚠️':'')+'</div>';
+        h += '<div style="font-size:0.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">Prévu</div>';
+        h += '</div>';
+
+        h += '</div>'; // grid
+        h += '</div>'; // card
       });
 
       h += '</div></div>';
