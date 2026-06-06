@@ -865,6 +865,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <option value="">🔘 Statut</option>
             <option value="paye">✅ Payé</option>
             <option value="nonpaye">⏳ Non payé</option>
+            <option value="resteapayer">💸 Prévu non atteint</option>
             <option value="over">🔴 En dépassement</option>
             <option value="noenv">📭 Sans enveloppe</option>
           </select>
@@ -2495,10 +2496,11 @@ function renderExpenseList(expenses){
   if(filterOrigine)  filtered = filtered.filter(e=>e.origine===filterOrigine);
   if(filterEnv)      filtered = filtered.filter(e=>e.enveloppe===filterEnv);
   if(filterPaiement) filtered = filtered.filter(e=>e.paiement===filterPaiement);
-  if(filterStatut==='paye')    filtered = filtered.filter(e=>e.effectue>0);
-  if(filterStatut==='nonpaye') filtered = filtered.filter(e=>e.effectue===0||!e.effectue);
-  if(filterStatut==='over')    filtered = filtered.filter(e=>overExpenseIds.has(e.id));
-  if(filterStatut==='noenv')   filtered = filtered.filter(e=>!e.enveloppe||e.enveloppe==='');
+  if(filterStatut==='paye')        filtered = filtered.filter(e=>e.effectue>0);
+  if(filterStatut==='nonpaye')     filtered = filtered.filter(e=>e.effectue===0||!e.effectue);
+  if(filterStatut==='resteapayer') filtered = filtered.filter(e=>e.prevu>0 && (e.effectue||0) < e.prevu);
+  if(filterStatut==='over')        filtered = filtered.filter(e=>overExpenseIds.has(e.id));
+  if(filterStatut==='noenv')       filtered = filtered.filter(e=>!e.enveloppe||e.enveloppe==='');
 
   const countEl = document.getElementById('expense-filter-count');
   const hasFilter = filterCat||filterOrigine||filterEnv||filterPaiement||filterStatut;
