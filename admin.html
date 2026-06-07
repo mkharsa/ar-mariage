@@ -625,7 +625,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v2.3</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v2.4</span></div>
 </aside>
 
 <div class="main">
@@ -2238,9 +2238,9 @@ async function renderCalendrier(){
     .sort((a,b) => a._d - b._d);
 
   const withStatus = dated.map(e => {
-    const paye = (e.effectue||0) >= e.prevu && e.prevu > 0;
-    const retard = !paye && e._d < today;
-    return {...e, _paye: paye, _retard: retard};
+    // Date dépassée = considérée comme payée dans la frise
+    const paye = ((e.effectue||0) >= e.prevu && e.prevu > 0) || e._d < today;
+    return {...e, _paye: paye, _retard: false};
   });
 
   let visible = withStatus;
@@ -2381,10 +2381,16 @@ function ganttTipShow(ev){
   tip.innerHTML = `
     <div style="font-weight:700;font-size:.78rem;margin-bottom:2px">${d.name}</div>
     <div style="color:rgba(255,255,255,.5);font-size:.63rem;margin-bottom:8px">${d.cat}${d.envName?' · 📁 '+d.envName:''}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:.7rem">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:.7rem;margin-bottom:8px">
       <span style="color:rgba(255,255,255,.6)">Prévu</span><span style="font-weight:700">${fmt(d.prevu)}</span>
       <span style="color:rgba(255,255,255,.6)">Payé</span><span style="font-weight:700">${fmt(d.paye)}</span>
-      <span style="color:rgba(255,255,255,.6)">${resteLabel}</span><span style="font-weight:700;color:#F5A3B0">${fmt(resteEnv)}</span>
+    </div>
+    <div style="border-top:1px solid rgba(255,255,255,.12);margin-top:2px;padding-top:8px;font-size:.68rem">
+      <div style="font-weight:700;margin-bottom:4px;color:rgba(255,255,255,.75)">${d.envName ? '📁 '+d.envName : '📭 Sans enveloppe'}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;color:rgba(255,255,255,.6)">
+        <span>Payé env.</span><span style="font-weight:700;color:#fff">${fmt(d.envPaye)}</span>
+        <span>Reste env.</span><span style="font-weight:700;color:#F5A3B0">${fmt(resteEnv)}</span>
+      </div>
     </div>
     <div style="border-top:1px solid rgba(255,255,255,.12);margin-top:8px;padding-top:8px;font-size:.67rem;display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;color:rgba(255,255,255,.6)">
       <span>🌍 Payé global</span><span style="font-weight:700;color:#fff">${fmt(d.totalPaye)}</span>
