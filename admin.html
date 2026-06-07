@@ -140,35 +140,45 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .search-bar input::placeholder{color:var(--muted2);}
 .filter-chips{display:flex;gap:0.4rem;flex-wrap:wrap;}
 
-/* ── Frise chronologique ── */
-.tl-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.7rem;margin-bottom:1.4rem;}
+/* ── Frise Gantt ── */
+.tl-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.7rem;margin-bottom:1.2rem;}
 .tl-kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.8rem 1rem;}
 .tl-kpi-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.25rem;}
-.tl-kpi-val{font-size:1.1rem;font-weight:800;color:var(--text);}
+.tl-kpi-val{font-size:1.05rem;font-weight:800;color:var(--text);}
 .tl-kpi-val.rose{color:var(--rose);}
 .tl-kpi-val.sage{color:var(--sage);}
-.tl-month{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:1.4rem 0 .5rem 2.6rem;}
-.tl-today-marker{display:flex;align-items:center;gap:.7rem;margin:1rem 0;color:var(--rose);font-size:.7rem;font-weight:700;}
-.tl-today-marker::before,.tl-today-marker::after{content:'';flex:1;height:2px;background:linear-gradient(90deg,var(--rose),transparent);}
-.tl-today-marker::after{background:linear-gradient(270deg,var(--rose),transparent);}
-.tl-row{display:flex;align-items:center;gap:.8rem;padding:.65rem .8rem .65rem 0;border-radius:10px;transition:background .15s;cursor:default;position:relative;}
-.tl-row:hover{background:var(--bg3);}
-.tl-line{display:flex;flex-direction:column;align-items:center;width:2rem;flex-shrink:0;}
-.tl-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;border:2px solid var(--card);box-shadow:0 0 0 1.5px currentColor;}
-.tl-vline{width:2px;background:var(--border);flex:1;min-height:8px;}
-.tl-date{font-size:.68rem;font-weight:700;color:var(--text2);min-width:52px;flex-shrink:0;text-align:right;}
-.tl-body{flex:1;min-width:0;}
-.tl-name{font-size:.82rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.tl-meta{font-size:.63rem;color:var(--muted);margin-top:1px;}
-.tl-amount{font-size:.85rem;font-weight:700;color:var(--text);white-space:nowrap;flex-shrink:0;}
-.tl-badge{font-size:.58rem;font-weight:700;padding:.2rem .55rem;border-radius:20px;flex-shrink:0;white-space:nowrap;}
-.tl-badge.paye{background:var(--sage-bg);color:var(--sage);}
-.tl-badge.apayer{background:var(--rose-bg);color:var(--rose);}
-.tl-badge.retard{background:#FDE8E8;color:var(--danger);}
-.tl-empty{text-align:center;color:var(--muted);font-size:.85rem;padding:3rem 0;}
-.tl-filters{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem;}
+.tl-filters{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.9rem;}
 .tl-filter-btn{font-size:.65rem;border:1px solid var(--border);border-radius:20px;padding:.28rem .75rem;background:var(--bg3);color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s;}
 .tl-filter-btn.on{background:var(--rose);border-color:var(--rose);color:#fff;}
+.tl-empty{text-align:center;color:var(--muted);font-size:.85rem;padding:3rem 0;}
+/* Gantt wrapper */
+.gantt-wrap{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--card);}
+.gantt-inner{display:flex;}
+.gantt-labels{width:180px;flex-shrink:0;border-right:1px solid var(--border);}
+.gantt-label-head{height:38px;display:flex;align-items:center;padding:0 .8rem;border-bottom:1px solid var(--border);font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);}
+.gantt-label-row{height:42px;display:flex;align-items:center;padding:0 .8rem;border-bottom:1px solid var(--border);gap:.5rem;overflow:hidden;}
+.gantt-label-row:last-child{border-bottom:none;}
+.gantt-label-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.gantt-label-text{font-size:.72rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gantt-label-sub{font-size:.6rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gantt-scroll{overflow-x:auto;flex:1;-webkit-overflow-scrolling:touch;}
+.gantt-scroll::-webkit-scrollbar{height:4px;}
+.gantt-scroll::-webkit-scrollbar-track{background:transparent;}
+.gantt-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.gantt-months{display:flex;height:38px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:2;}
+.gantt-month{flex-shrink:0;border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
+.gantt-month:last-child{border-right:none;}
+.gantt-rows{position:relative;}
+.gantt-row{height:42px;border-bottom:1px solid var(--border);position:relative;}
+.gantt-row:last-child{border-bottom:none;}
+.gantt-row-alt{background:rgba(0,0,0,.018);}
+.gantt-pill{position:absolute;top:50%;transform:translateY(-50%);height:22px;border-radius:20px;display:flex;align-items:center;padding:0 .55rem;font-size:.62rem;font-weight:700;color:#fff;white-space:nowrap;cursor:default;transition:filter .15s;box-shadow:0 2px 6px rgba(0,0,0,.18);min-width:22px;}
+.gantt-pill:hover{filter:brightness(1.12);}
+.gantt-pill.done{opacity:.55;filter:grayscale(.4);}
+.gantt-today{position:absolute;top:0;bottom:0;width:2px;background:var(--rose);z-index:3;pointer-events:none;}
+.gantt-today-label{position:absolute;top:0;transform:translateX(-50%);font-size:.55rem;font-weight:700;color:var(--rose);white-space:nowrap;background:var(--card);padding:0 3px;}
+.gantt-month-bg{position:absolute;top:0;bottom:0;}
+@media(max-width:600px){.gantt-labels{width:120px;}.gantt-label-text{font-size:.65rem;}.gantt-label-sub{display:none;}}
 .chip{font-size:0.65rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.35rem 0.8rem;border-radius:50px;cursor:pointer;border:1.5px solid var(--border);background:var(--bg2);color:var(--muted);transition:all 0.2s;}
 .chip:hover{border-color:var(--rose);color:var(--rose);}
 .chip.on{background:var(--rose);border-color:var(--rose);color:#fff;}
@@ -614,7 +624,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v1.8</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v1.9</span></div>
 </aside>
 
 <div class="main">
@@ -917,10 +927,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div id="page-calendrier" class="page">
     <div id="tl-kpis" class="tl-kpis"></div>
     <div class="tl-filters">
-      <button class="tl-filter-btn on" id="tlf-all"     onclick="tlSetFilter('all')">Tous</button>
-      <button class="tl-filter-btn"    id="tlf-avenir"  onclick="tlSetFilter('avenir')">⏳ À venir</button>
-      <button class="tl-filter-btn"    id="tlf-paye"    onclick="tlSetFilter('paye')">✅ Payés</button>
-      <button class="tl-filter-btn"    id="tlf-retard"  onclick="tlSetFilter('retard')">🔴 En retard</button>
+      <button class="tl-filter-btn on" id="tlf-all"    onclick="tlSetFilter('all')">Tous</button>
+      <button class="tl-filter-btn"   id="tlf-avenir" onclick="tlSetFilter('avenir')">⏳ À venir</button>
+      <button class="tl-filter-btn"   id="tlf-paye"   onclick="tlSetFilter('paye')">✅ Payés</button>
+      <button class="tl-filter-btn"   id="tlf-retard" onclick="tlSetFilter('retard')">🔴 En retard</button>
     </div>
     <div id="tl-body"></div>
   </div>
@@ -2185,8 +2195,11 @@ async function updateExpense(id){
   showToast('Dépense mise à jour ✅');
 }
 
-/* ═══ FRISE CHRONOLOGIQUE ═══ */
+/* ═══ FRISE GANTT ═══ */
 let _tlFilter = 'all';
+const MONTH_W = 130; // px par mois
+const MSHORT = ['jan','fév','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
+const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
 function calNormalizeDate(s){
   if(!s) return null;
@@ -2213,37 +2226,33 @@ async function renderCalendrier(){
   window._lastExpenses = expenses;
 
   const today = new Date(); today.setHours(0,0,0,0);
-  const todayMs = today.getTime();
 
-  // Dépenses avec une date
+  // Seulement les dépenses avec une date
   const dated = expenses
     .map(e => ({...e, _d: calParseDate(e.date)}))
     .filter(e => e._d)
     .sort((a,b) => a._d - b._d);
 
-  // Statut de chaque dépense
   const withStatus = dated.map(e => {
     const paye = (e.effectue||0) >= e.prevu && e.prevu > 0;
     const retard = !paye && e._d < today;
     return {...e, _paye: paye, _retard: retard};
   });
 
-  // Filtrage
   let visible = withStatus;
-  if(_tlFilter==='avenir')  visible = withStatus.filter(e=>!e._paye && !e._retard && e._d >= today);
-  if(_tlFilter==='paye')    visible = withStatus.filter(e=>e._paye);
-  if(_tlFilter==='retard')  visible = withStatus.filter(e=>e._retard);
+  if(_tlFilter==='avenir') visible = withStatus.filter(e=>!e._paye && e._d >= today);
+  if(_tlFilter==='paye')   visible = withStatus.filter(e=>e._paye);
+  if(_tlFilter==='retard') visible = withStatus.filter(e=>e._retard);
 
   // KPIs
   const aVenir   = withStatus.filter(e=>!e._paye && e._d >= today);
   const enRetard = withStatus.filter(e=>e._retard);
   const totalAvenir = aVenir.reduce((s,e)=>s+e.prevu,0);
-  const nextPay = aVenir.length ? aVenir[0] : null;
-  const MSHORT=['jan','fév','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
+  const nextPay = aVenir[0]||null;
 
   document.getElementById('tl-kpis').innerHTML=`
     <div class="tl-kpi"><div class="tl-kpi-label">Total à venir</div><div class="tl-kpi-val rose">${fmt(totalAvenir)}</div></div>
-    <div class="tl-kpi"><div class="tl-kpi-label">Prochaine échéance</div><div class="tl-kpi-val" style="font-size:.85rem">${nextPay ? nextPay.name+'<br><span style="font-size:.7rem;color:var(--muted)">'+nextPay._d.getDate()+' '+MSHORT[nextPay._d.getMonth()]+' · '+fmt(nextPay.prevu)+'</span>' : '<span style="color:var(--muted);font-size:.8rem">—</span>'}</div></div>
+    <div class="tl-kpi"><div class="tl-kpi-label">Prochaine échéance</div><div class="tl-kpi-val" style="font-size:.82rem;line-height:1.3">${nextPay?nextPay.name+'<br><span style="font-size:.68rem;color:var(--muted)">'+nextPay._d.getDate()+' '+MSHORT[nextPay._d.getMonth()]+' · '+fmt(nextPay.prevu)+'</span>':'<span style="color:var(--muted);font-size:.8rem">—</span>'}</div></div>
     <div class="tl-kpi"><div class="tl-kpi-label">En retard</div><div class="tl-kpi-val ${enRetard.length?'rose':'sage'}">${enRetard.length}</div></div>
     <div class="tl-kpi"><div class="tl-kpi-label">Dépenses datées</div><div class="tl-kpi-val">${dated.length}</div></div>`;
 
@@ -2253,71 +2262,80 @@ async function renderCalendrier(){
     return;
   }
 
-  // Grouper par mois
-  const byMonth = {};
-  visible.forEach(e => {
-    const key = `${e._d.getFullYear()}-${String(e._d.getMonth()).padStart(2,'0')}`;
-    if(!byMonth[key]) byMonth[key]=[];
-    byMonth[key].push(e);
-  });
+  // Plage de dates : du 1er du mois min au dernier jour du mois max (inclut toujours aujourd'hui)
+  const allDates = [today, ...visible.map(e=>e._d)];
+  const minMs = Math.min(...allDates.map(d=>d.getTime()));
+  const maxMs = Math.max(...allDates.map(d=>d.getTime()));
+  const startDate = new Date(new Date(minMs).getFullYear(), new Date(minMs).getMonth(), 1);
+  const endDate   = new Date(new Date(maxMs).getFullYear(), new Date(maxMs).getMonth()+1, 0);
 
-  const MONTHS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-  const DAYS=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
-
-  let todayInserted = false;
-  let html = '';
-
-  Object.keys(byMonth).sort().forEach(mKey => {
-    const [yr, mo] = mKey.split('-').map(Number);
-    html += `<div class="tl-month">${MONTHS[mo]} ${yr}</div>`;
-
-    byMonth[mKey].forEach((e, idx) => {
-      // Insérer le marqueur "Aujourd'hui" au bon endroit
-      if(!todayInserted && e._d >= today && (_tlFilter==='all'||_tlFilter==='avenir')){
-        const prev = idx===0 ? null : byMonth[mKey][idx-1];
-        if(!prev || prev._d < today){
-          html += `<div class="tl-today-marker">Aujourd'hui</div>`;
-          todayInserted = true;
-        }
-      }
-
-      const color = CAT_COLORS[e.cat]||'#8C8078';
-      const env = _enveloppes.find(x=>x.name===e.enveloppe);
-      const envExps = env ? expenses.filter(x=>x.enveloppe===env.name) : [];
-      const envPaye  = envExps.reduce((s,x)=>s+(x.effectue||0),0);
-      const envPrevu = envExps.reduce((s,x)=>s+x.prevu,0);
-      const envReste = Math.max(0, envPrevu - envPaye);
-
-      const badge = e._paye
-        ? `<span class="tl-badge paye">✅ Payé</span>`
-        : e._retard
-          ? `<span class="tl-badge retard">🔴 En retard</span>`
-          : `<span class="tl-badge apayer">⏳ À payer</span>`;
-
-      const opacity = e._paye ? 'opacity:.55;' : '';
-      const dateFmt = `${DAYS[e._d.getDay()]} ${e._d.getDate()} ${MSHORT[e._d.getMonth()]}`;
-
-      html += `<div class="tl-row" style="${opacity}">
-        <div class="tl-line">
-          <div class="tl-dot" style="color:${color};background:${color}"></div>
-        </div>
-        <div class="tl-date">${dateFmt}</div>
-        <div class="tl-body">
-          <div class="tl-name">${e.name}</div>
-          <div class="tl-meta">${e.cat}${env?' · 📁 '+env.name:''}${env?' · reste enveloppe '+fmt(envReste):''}</div>
-        </div>
-        <div class="tl-amount">${fmt(e.prevu)}</div>
-        ${badge}
-      </div>`;
+  // Colonnes de mois
+  const monthCols = [];
+  let cur = new Date(startDate);
+  while(cur <= endDate){
+    monthCols.push({year:cur.getFullYear(), month:cur.getMonth(),
+      start: new Date(cur.getFullYear(), cur.getMonth(), 1),
+      end:   new Date(cur.getFullYear(), cur.getMonth()+1, 0)
     });
-  });
-
-  // Marqueur aujourd'hui si tout est dans le futur et pas encore inséré
-  if(!todayInserted && (_tlFilter==='all'||_tlFilter==='avenir') && visible.every(e=>e._d>=today)){
-    html = `<div class="tl-today-marker">Aujourd'hui</div>` + html;
+    cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1);
   }
 
-  body.innerHTML = html;
+  const totalMs  = endDate.getTime() - startDate.getTime();
+  const totalW   = monthCols.length * MONTH_W;
+  const dateToX  = d => Math.round(((d.getTime()-startDate.getTime())/totalMs)*totalW);
+  const todayX   = dateToX(today);
+
+  // ── Construire le HTML ──
+  // En-têtes de mois
+  const monthHeadersHtml = monthCols.map(m =>
+    `<div class="gantt-month" style="width:${MONTH_W}px">${MSHORT[m.month]} ${m.year}</div>`
+  ).join('');
+
+  // Bandes de mois alternées (fond)
+  const monthBandsHtml = monthCols.map((m,i) =>
+    `<div class="gantt-month-bg" style="left:${i*MONTH_W}px;width:${MONTH_W}px;background:${i%2===0?'transparent':'rgba(0,0,0,.025)'}"></div>`
+  ).join('');
+
+  // Ligne aujourd'hui
+  const todayHtml = `<div class="gantt-today" style="left:${todayX}px"><div class="gantt-today-label" style="top:2px">Auj.</div></div>`;
+
+  // Lignes dépenses
+  const labelsHtml = visible.map((e,i) => {
+    const color = CAT_COLORS[e.cat]||'#8C8078';
+    const env = _enveloppes.find(x=>x.name===e.enveloppe);
+    return `<div class="gantt-label-row${i%2===0?'':' gantt-row-alt'}">
+      <div class="gantt-label-dot" style="background:${color}"></div>
+      <div><div class="gantt-label-text">${e.name}</div><div class="gantt-label-sub">${env?'📁 '+env.name:e.cat}</div></div>
+    </div>`;
+  }).join('');
+
+  const rowsHtml = visible.map((e,i) => {
+    const color = CAT_COLORS[e.cat]||'#8C8078';
+    const pillColor = e._retard ? 'var(--danger)' : e._paye ? '#8AAF8A' : color;
+    const x = dateToX(e._d);
+    const label = `${e._d.getDate()} ${MSHORT[e._d.getMonth()]} · ${fmt(e.prevu)}`;
+    const doneClass = e._paye ? ' done' : '';
+    return `<div class="gantt-row${i%2===0?'':' gantt-row-alt'}" style="width:${totalW}px">
+      <div class="gantt-pill${doneClass}" style="left:${x}px;background:${pillColor}" title="${e.name} · ${label}">${label}</div>
+    </div>`;
+  }).join('');
+
+  body.innerHTML = `<div class="gantt-wrap">
+    <div class="gantt-inner">
+      <div class="gantt-labels">
+        <div class="gantt-label-head">Dépense</div>
+        ${labelsHtml}
+      </div>
+      <div class="gantt-scroll">
+        <div class="gantt-months" style="width:${totalW}px">${monthHeadersHtml}</div>
+        <div class="gantt-rows" style="width:${totalW}px">
+          ${monthBandsHtml}
+          ${todayHtml}
+          ${rowsHtml}
+        </div>
+      </div>
+    </div>
+  </div>`;
 }
 
 function fmt(n){ return n.toLocaleString('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}); }
