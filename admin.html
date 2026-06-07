@@ -626,7 +626,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.01</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.02</span></div>
 </aside>
 
 <div class="main">
@@ -2316,15 +2316,18 @@ async function renderCalendrier(){
     const envExps = env ? expenses.filter(x=>x.enveloppe===env.name) : [];
     const envPaye  = envExps.reduce((s,x)=>s+(x.effectue||0),0);
     const envPrevu = envExps.reduce((s,x)=>s+x.prevu,0);
-    // Solde prévisionnel progressif : budget enveloppe - tout ce qui est prévu jusqu'à cette date
-    // On utilise prevu brut (pas prevu-effectue) pour que les dépenses payées réduisent bien le solde
-    const totalEngageUpToD = envExps
-      .map(x => ({...x, _d: calParseDate(x.date)}))
-      .filter(x => x._d && x._d <= e._d)
+    // Solde prévisionnel progressif :
+    //   - on déduit toujours les paiements déjà effectués (quelle que soit leur date)
+    //   - on déduit en plus le prévu des dépenses NON payées dont la date est ≤ D
+    const envExpsWithD = envExps.map(x => ({...x, _d: calParseDate(x.date)}));
+    const isPaid = x => (x.effectue||0) > 0 && (x.effectue||0) >= (x.prevu||0);
+    const dejaPayeEnv = envExpsWithD.reduce((s,x) => s + (isPaid(x) ? (x.effectue||0) : 0), 0);
+    const impayesDusJusquaD = envExpsWithD
+      .filter(x => !isPaid(x) && x._d && x._d <= e._d)
       .reduce((s,x) => s + x.prevu, 0);
     // Base = budget de l'enveloppe si défini, sinon total des prevus
     const envBase = (env && env.budget > 0) ? env.budget : envPrevu;
-    const envRestePrevisionnel = envBase - totalEngageUpToD; // peut être négatif
+    const envRestePrevisionnel = envBase - dejaPayeEnv - impayesDusJusquaD; // peut être négatif
 
     window._ganttTips[e.id] = {
       name:e.name, cat:e.cat,
