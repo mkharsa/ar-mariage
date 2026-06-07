@@ -175,7 +175,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .gantt-pill{position:absolute;top:50%;transform:translateY(-50%);height:24px;border-radius:20px;display:flex;align-items:center;padding:0 .65rem;font-size:.63rem;font-weight:700;color:#fff;white-space:nowrap;cursor:default;transition:filter .15s,box-shadow .15s;box-shadow:0 2px 8px rgba(0,0,0,.22);min-width:22px;user-select:none;}
 .gantt-pill:hover{filter:brightness(1.1);box-shadow:0 4px 14px rgba(0,0,0,.3);}
 .gantt-pill.gantt-draggable{cursor:grab;}
-.gantt-pill.done{opacity:.55;filter:grayscale(.4);}
+.gantt-pill.done{opacity:.5;filter:grayscale(.35);}
+.gantt-pill.retard-pill{box-shadow:0 0 0 2px rgba(192,48,64,.4),0 2px 8px rgba(0,0,0,.22);}
 .gantt-today{position:absolute;top:0;bottom:0;width:2px;background:var(--rose);z-index:3;pointer-events:none;}
 .gantt-today-label{position:absolute;top:0;transform:translateX(-50%);font-size:.55rem;font-weight:700;color:var(--rose);white-space:nowrap;background:var(--card);padding:0 3px;}
 .gantt-month-bg{position:absolute;top:0;bottom:0;}
@@ -625,7 +626,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v2.7</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v2.8</span></div>
 </aside>
 
 <div class="main">
@@ -935,6 +936,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <button class="tl-filter-btn on" id="tlf-all"    onclick="tlSetFilter('all')">Tous</button>
         <button class="tl-filter-btn"   id="tlf-avenir" onclick="tlSetFilter('avenir')">⏳ À venir</button>
         <button class="tl-filter-btn"   id="tlf-paye"   onclick="tlSetFilter('paye')">✅ Payés</button>
+        <button class="tl-filter-btn"   id="tlf-retard" onclick="tlSetFilter('retard')">🔴 En retard</button>
       </div>
       <select id="tlf-env" onchange="renderCalendrier()" style="font-size:.65rem;border:1px solid var(--border);border-radius:20px;padding:.28rem .75rem;background:var(--bg3);color:var(--muted);cursor:pointer;outline:none;font-family:inherit;">
         <option value="">📁 Toutes les enveloppes</option>
@@ -2242,9 +2244,10 @@ async function renderCalendrier(){
     .sort((a,b) => a._d - b._d);
 
   const withStatus = dated.map(e => {
-    // Date dépassée = considérée comme payée dans la frise
-    const paye = ((e.effectue||0) >= e.prevu && e.prevu > 0) || e._d < today;
-    return {...e, _paye: paye, _retard: false};
+    const effectivementPaye = (e.effectue||0) >= e.prevu && e.prevu > 0;
+    const datePasse = e._d < today;
+    const retard = datePasse && !effectivementPaye; // date passée mais pas payé → rouge
+    return {...e, _paye: effectivementPaye, _retard: retard};
   });
 
   // Alimenter le select enveloppes
@@ -2257,7 +2260,7 @@ async function renderCalendrier(){
   const filterEnv = envSelect?.value || '';
 
   let visible = withStatus;
-  if(_tlFilter==='avenir') visible = withStatus.filter(e=>!e._paye && e._d >= today);
+  if(_tlFilter==='avenir') visible = withStatus.filter(e=>!e._paye && !e._retard);
   if(_tlFilter==='paye')   visible = withStatus.filter(e=>e._paye);
   if(_tlFilter==='retard') visible = withStatus.filter(e=>e._retard);
   if(filterEnv) visible = visible.filter(e=>e.enveloppe===filterEnv);
@@ -2356,7 +2359,7 @@ async function renderCalendrier(){
     const pillColor = e._retard ? '#C03040' : e._paye ? '#8AAF8A' : color;
     const x = dateToX(e._d);
     const label = `${e._d.getDate()} ${MSHORT[e._d.getMonth()]} · ${fmt(e.prevu)}`;
-    const doneClass = e._paye ? ' done' : '';
+    const doneClass = e._paye ? ' done' : e._retard ? ' retard-pill' : '';
     return `<div class="gantt-row${i%2===0?'':' gantt-row-alt'}" style="width:${totalW}px">
       <div class="gantt-pill${doneClass} gantt-draggable" data-id="${e.id}" data-prevu="${e.prevu}" style="left:${x}px;background:${pillColor}">${label}</div>
     </div>`;
