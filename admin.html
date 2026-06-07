@@ -626,7 +626,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.03</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.04</span></div>
 </aside>
 
 <div class="main">
@@ -2328,12 +2328,22 @@ async function renderCalendrier(){
     const envBase = (env && env.budget > 0) ? env.budget : envPrevu;
     const envRestePrevisionnel = envBase - totalEffectueEnv - resteAPayerDusJusquaD; // peut être négatif
 
+    // Global progressif : même logique que l'enveloppe mais sur toutes les dépenses
+    const allExpsWithD = expenses.map(x => ({...x, _d: calParseDate(x.date)}));
+    const totalEffectueGlobal = allExpsWithD.reduce((s,x) => s + (x.effectue||0), 0);
+    const resteAPayerGlobalJusquaD = allExpsWithD
+      .filter(x => x._d && x._d <= e._d)
+      .reduce((s,x) => s + Math.max(0, x.prevu - (x.effectue||0)), 0);
+    const totalPrevu = expenses.reduce((s,x) => s + x.prevu, 0);
+    const globalBase = _enveloppes.reduce((s,env) => s + (env.budget > 0 ? env.budget : 0), 0) || totalPrevu;
+    const globalReste = globalBase - totalEffectueGlobal - resteAPayerGlobalJusquaD;
+
     window._ganttTips[e.id] = {
       name:e.name, cat:e.cat,
       prevu:e.prevu, paye:e.effectue||0,
       envName: env?env.name:null, envPaye, envPrevu,
-      envReste: envRestePrevisionnel, // solde après paiement de toutes les dépenses jusqu'à cette date
-      totalPaye, totalReste
+      envReste: envRestePrevisionnel,
+      totalPaye: totalEffectueGlobal, totalReste: globalReste
     };
   });
 
