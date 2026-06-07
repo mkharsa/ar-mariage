@@ -172,8 +172,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .gantt-row{height:42px;border-bottom:1px solid var(--border);position:relative;}
 .gantt-row:last-child{border-bottom:none;}
 .gantt-row-alt{background:rgba(0,0,0,.018);}
-.gantt-pill{position:absolute;top:50%;transform:translateY(-50%);height:22px;border-radius:20px;display:flex;align-items:center;padding:0 .55rem;font-size:.62rem;font-weight:700;color:#fff;white-space:nowrap;cursor:default;transition:filter .15s;box-shadow:0 2px 6px rgba(0,0,0,.18);min-width:22px;}
-.gantt-pill:hover{filter:brightness(1.12);}
+.gantt-pill{position:absolute;top:50%;transform:translateY(-50%);height:24px;border-radius:20px;display:flex;align-items:center;padding:0 .65rem;font-size:.63rem;font-weight:700;color:#fff;white-space:nowrap;cursor:default;transition:filter .15s,box-shadow .15s;box-shadow:0 2px 8px rgba(0,0,0,.22);min-width:22px;user-select:none;}
+.gantt-pill:hover{filter:brightness(1.1);box-shadow:0 4px 14px rgba(0,0,0,.3);}
+.gantt-pill.gantt-draggable{cursor:grab;}
 .gantt-pill.done{opacity:.55;filter:grayscale(.4);}
 .gantt-today{position:absolute;top:0;bottom:0;width:2px;background:var(--rose);z-index:3;pointer-events:none;}
 .gantt-today-label{position:absolute;top:0;transform:translateX(-50%);font-size:.55rem;font-weight:700;color:var(--rose);white-space:nowrap;background:var(--card);padding:0 3px;}
@@ -624,7 +625,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v1.9</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v2.0</span></div>
 </aside>
 
 <div class="main">
@@ -922,6 +923,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
 
   </div>
+
+  <!-- Tooltip flottant Gantt -->
+  <div id="gantt-tip" style="display:none;position:fixed;z-index:9999;background:#1E1A17;color:#fff;border-radius:12px;padding:.85rem 1rem;min-width:210px;max-width:290px;box-shadow:0 10px 40px rgba(0,0,0,.45);pointer-events:none;line-height:1.5;"></div>
 
   <!-- FRISE CHRONOLOGIQUE -->
   <div id="page-calendrier" class="page">
@@ -2249,6 +2253,9 @@ async function renderCalendrier(){
   const enRetard = withStatus.filter(e=>e._retard);
   const totalAvenir = aVenir.reduce((s,e)=>s+e.prevu,0);
   const nextPay = aVenir[0]||null;
+  const totalPaye  = expenses.reduce((s,e)=>s+(e.effectue||0),0);
+  const totalPrevu = expenses.reduce((s,e)=>s+e.prevu,0);
+  const totalReste = Math.max(0, totalPrevu - totalPaye);
 
   document.getElementById('tl-kpis').innerHTML=`
     <div class="tl-kpi"><div class="tl-kpi-label">Total à venir</div><div class="tl-kpi-val rose">${fmt(totalAvenir)}</div></div>
@@ -2262,21 +2269,17 @@ async function renderCalendrier(){
     return;
   }
 
-  // Plage de dates : du 1er du mois min au dernier jour du mois max (inclut toujours aujourd'hui)
+  // Plage dates
   const allDates = [today, ...visible.map(e=>e._d)];
   const minMs = Math.min(...allDates.map(d=>d.getTime()));
   const maxMs = Math.max(...allDates.map(d=>d.getTime()));
   const startDate = new Date(new Date(minMs).getFullYear(), new Date(minMs).getMonth(), 1);
-  const endDate   = new Date(new Date(maxMs).getFullYear(), new Date(maxMs).getMonth()+1, 0);
+  const endDate   = new Date(new Date(maxMs).getFullYear(), new Date(maxMs).getMonth()+2, 0); // +1 mois de marge
 
-  // Colonnes de mois
   const monthCols = [];
   let cur = new Date(startDate);
   while(cur <= endDate){
-    monthCols.push({year:cur.getFullYear(), month:cur.getMonth(),
-      start: new Date(cur.getFullYear(), cur.getMonth(), 1),
-      end:   new Date(cur.getFullYear(), cur.getMonth()+1, 0)
-    });
+    monthCols.push({year:cur.getFullYear(), month:cur.getMonth()});
     cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1);
   }
 
@@ -2285,21 +2288,36 @@ async function renderCalendrier(){
   const dateToX  = d => Math.round(((d.getTime()-startDate.getTime())/totalMs)*totalW);
   const todayX   = dateToX(today);
 
-  // ── Construire le HTML ──
-  // En-têtes de mois
+  // Stocker pour le drag
+  window._ganttMeta = {startDate, endDate, totalW, totalMs, dateToX};
+  window._ganttExpenses = expenses;
+
+  // Stocker les tip data par id
+  window._ganttTips = {};
+  visible.forEach(e => {
+    const env = _enveloppes.find(x=>x.name===e.enveloppe);
+    const envExps = env ? expenses.filter(x=>x.enveloppe===env.name) : [];
+    const envPaye  = envExps.reduce((s,x)=>s+(x.effectue||0),0);
+    const envPrevu = envExps.reduce((s,x)=>s+x.prevu,0);
+    const envReste = Math.max(0, envPrevu - envPaye);
+    window._ganttTips[e.id] = {
+      name:e.name, cat:e.cat,
+      prevu:e.prevu, paye:e.effectue||0,
+      envName: env?env.name:null, envPaye, envPrevu, envReste,
+      totalPaye, totalReste
+    };
+  });
+
   const monthHeadersHtml = monthCols.map(m =>
-    `<div class="gantt-month" style="width:${MONTH_W}px">${MSHORT[m.month]} ${m.year}</div>`
+    `<div class="gantt-month" style="width:${MONTH_W}px">${MSHORT[m.month].toUpperCase()} ${m.year}</div>`
   ).join('');
 
-  // Bandes de mois alternées (fond)
   const monthBandsHtml = monthCols.map((m,i) =>
-    `<div class="gantt-month-bg" style="left:${i*MONTH_W}px;width:${MONTH_W}px;background:${i%2===0?'transparent':'rgba(0,0,0,.025)'}"></div>`
+    `<div class="gantt-month-bg" style="left:${i*MONTH_W}px;width:${MONTH_W}px;background:${i%2===0?'transparent':'rgba(0,0,0,.028)'}"></div>`
   ).join('');
 
-  // Ligne aujourd'hui
   const todayHtml = `<div class="gantt-today" style="left:${todayX}px"><div class="gantt-today-label" style="top:2px">Auj.</div></div>`;
 
-  // Lignes dépenses
   const labelsHtml = visible.map((e,i) => {
     const color = CAT_COLORS[e.cat]||'#8C8078';
     const env = _enveloppes.find(x=>x.name===e.enveloppe);
@@ -2311,12 +2329,13 @@ async function renderCalendrier(){
 
   const rowsHtml = visible.map((e,i) => {
     const color = CAT_COLORS[e.cat]||'#8C8078';
-    const pillColor = e._retard ? 'var(--danger)' : e._paye ? '#8AAF8A' : color;
+    const pillColor = e._retard ? '#C03040' : e._paye ? '#8AAF8A' : color;
     const x = dateToX(e._d);
     const label = `${e._d.getDate()} ${MSHORT[e._d.getMonth()]} · ${fmt(e.prevu)}`;
     const doneClass = e._paye ? ' done' : '';
+    const draggable = !e._paye ? 'gantt-draggable' : '';
     return `<div class="gantt-row${i%2===0?'':' gantt-row-alt'}" style="width:${totalW}px">
-      <div class="gantt-pill${doneClass}" style="left:${x}px;background:${pillColor}" title="${e.name} · ${label}">${label}</div>
+      <div class="gantt-pill${doneClass} ${draggable}" data-id="${e.id}" data-prevu="${e.prevu}" style="left:${x}px;background:${pillColor}">${label}</div>
     </div>`;
   }).join('');
 
@@ -2326,7 +2345,7 @@ async function renderCalendrier(){
         <div class="gantt-label-head">Dépense</div>
         ${labelsHtml}
       </div>
-      <div class="gantt-scroll">
+      <div class="gantt-scroll" id="gantt-scroll-el">
         <div class="gantt-months" style="width:${totalW}px">${monthHeadersHtml}</div>
         <div class="gantt-rows" style="width:${totalW}px">
           ${monthBandsHtml}
@@ -2336,6 +2355,111 @@ async function renderCalendrier(){
       </div>
     </div>
   </div>`;
+
+  // Attacher les events sur les pills
+  body.querySelectorAll('.gantt-pill').forEach(pill => {
+    pill.addEventListener('mouseenter', ganttTipShow);
+    pill.addEventListener('mousemove',  ganttTipMove);
+    pill.addEventListener('mouseleave', ganttTipHide);
+    if(pill.classList.contains('gantt-draggable')){
+      pill.addEventListener('mousedown', ganttDragStart);
+    }
+  });
+}
+
+/* ── Tooltip Gantt ── */
+function ganttTipShow(ev){
+  if(_ganttDrag) return;
+  const tip = document.getElementById('gantt-tip');
+  const d = window._ganttTips[this.dataset.id];
+  if(!d) return;
+  const reste = Math.max(0, d.prevu - d.paye);
+  tip.innerHTML = `
+    <div style="font-weight:700;font-size:.78rem;margin-bottom:2px">${d.name}</div>
+    <div style="color:rgba(255,255,255,.5);font-size:.63rem;margin-bottom:8px">${d.cat}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:.7rem">
+      <span style="color:rgba(255,255,255,.6)">Prévu</span><span style="font-weight:700">${fmt(d.prevu)}</span>
+      <span style="color:rgba(255,255,255,.6)">Payé</span><span style="font-weight:700">${fmt(d.paye)}</span>
+      <span style="color:rgba(255,255,255,.6)">Reste</span><span style="font-weight:700;color:#F5A3B0">${fmt(reste)}</span>
+    </div>
+    ${d.envName?`<div style="border-top:1px solid rgba(255,255,255,.12);margin-top:8px;padding-top:8px;font-size:.68rem">
+      <div style="font-weight:700;margin-bottom:4px;color:rgba(255,255,255,.8)">📁 ${d.envName}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;color:rgba(255,255,255,.6)">
+        <span>Payé env.</span><span style="font-weight:700;color:#fff">${fmt(d.envPaye)}</span>
+        <span>Reste env.</span><span style="font-weight:700;color:#F5A3B0">${fmt(d.envReste)}</span>
+      </div>
+    </div>`:''}
+    <div style="border-top:1px solid rgba(255,255,255,.12);margin-top:8px;padding-top:8px;font-size:.67rem;display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;color:rgba(255,255,255,.6)">
+      <span>🌍 Payé global</span><span style="font-weight:700;color:#fff">${fmt(d.totalPaye)}</span>
+      <span>🌍 Reste global</span><span style="font-weight:700;color:#F5A3B0">${fmt(d.totalReste)}</span>
+    </div>`;
+  tip.style.display = 'block';
+  ganttTipMove.call(this, ev);
+}
+function ganttTipMove(ev){
+  const tip = document.getElementById('gantt-tip');
+  const mg = 14;
+  let x = ev.clientX + mg, y = ev.clientY + mg;
+  if(x + tip.offsetWidth  > window.innerWidth  - 8) x = ev.clientX - tip.offsetWidth  - mg;
+  if(y + tip.offsetHeight > window.innerHeight - 8) y = ev.clientY - tip.offsetHeight - mg;
+  tip.style.left = x + 'px';
+  tip.style.top  = y + 'px';
+}
+function ganttTipHide(){ document.getElementById('gantt-tip').style.display='none'; }
+
+/* ── Drag Gantt ── */
+let _ganttDrag = null;
+
+function ganttXToDate(x){
+  const m = window._ganttMeta;
+  const ms = m.startDate.getTime() + (Math.max(0,Math.min(x,m.totalW)) / m.totalW) * m.totalMs;
+  const d = new Date(ms); d.setHours(0,0,0,0); return d;
+}
+
+function ganttDragStart(ev){
+  ev.preventDefault();
+  ganttTipHide();
+  const pill = this;
+  _ganttDrag = {
+    id: pill.dataset.id,
+    prevu: Number(pill.dataset.prevu),
+    pill,
+    startClientX: ev.clientX,
+    startLeft: parseInt(pill.style.left)||0
+  };
+  pill.style.cursor = 'grabbing';
+  pill.style.opacity = '0.8';
+  pill.style.zIndex  = '10';
+  document.addEventListener('mousemove', ganttDragMove);
+  document.addEventListener('mouseup',   ganttDragEnd);
+}
+
+function ganttDragMove(ev){
+  if(!_ganttDrag) return;
+  const dx = ev.clientX - _ganttDrag.startClientX;
+  const newLeft = Math.max(0, Math.min(_ganttDrag.startLeft + dx, window._ganttMeta.totalW));
+  const newDate = ganttXToDate(newLeft);
+  const label = `${newDate.getDate()} ${MSHORT[newDate.getMonth()]} · ${fmt(_ganttDrag.prevu)}`;
+  _ganttDrag.pill.style.left = newLeft + 'px';
+  _ganttDrag.pill.textContent = label;
+}
+
+function ganttDragEnd(ev){
+  if(!_ganttDrag) return;
+  document.removeEventListener('mousemove', ganttDragMove);
+  document.removeEventListener('mouseup',   ganttDragEnd);
+  const dx = ev.clientX - _ganttDrag.startClientX;
+  const newLeft = Math.max(0, Math.min(_ganttDrag.startLeft + dx, window._ganttMeta.totalW));
+  const newDate = ganttXToDate(newLeft);
+  const iso = `${newDate.getFullYear()}-${String(newDate.getMonth()+1).padStart(2,'0')}-${String(newDate.getDate()).padStart(2,'0')}`;
+  const id = _ganttDrag.id;
+  _ganttDrag.pill.style.cursor = '';
+  _ganttDrag.pill.style.opacity = '';
+  _ganttDrag.pill.style.zIndex  = '';
+  _ganttDrag = null;
+  sbExpFetch(`expenses?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({date:iso}),prefer:'return=minimal'})
+    .then(()=>{ renderCalendrier(); showToast('Date mise à jour ✅'); })
+    .catch(e=>showToast('Erreur: '+e.message, true));
 }
 
 function fmt(n){ return n.toLocaleString('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}); }
