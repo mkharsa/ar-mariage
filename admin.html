@@ -140,20 +140,35 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .search-bar input::placeholder{color:var(--muted2);}
 .filter-chips{display:flex;gap:0.4rem;flex-wrap:wrap;}
 
-/* ── Calendrier ── */
-.cal-header-grid{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:0.62rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:0.4rem;padding:0 1px;}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
-.cal-day{min-height:70px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:0.35rem 0.4rem;position:relative;}
-.cal-day.today{border-color:var(--rose);background:var(--rose-bg);}
-.cal-day.other-month{opacity:.3;pointer-events:none;}
-.cal-day-num{font-size:0.68rem;font-weight:700;color:var(--text2);margin-bottom:4px;}
-.cal-day.today .cal-day-num{color:var(--rose);}
-.cal-dots{display:flex;flex-wrap:wrap;gap:3px;}
-.cal-dot{width:9px;height:9px;border-radius:50%;cursor:pointer;flex-shrink:0;transition:transform .15s;}
-.cal-dot:hover{transform:scale(1.5);}
-/* Floating tooltip */
-#cal-tip{display:none;position:fixed;z-index:9999;background:#1E1A17;color:#fff;border-radius:10px;padding:.7rem .9rem;font-size:.7rem;line-height:1.65;min-width:190px;max-width:260px;box-shadow:0 8px 32px rgba(0,0,0,.35);pointer-events:none;}
-@media(max-width:600px){.cal-day{min-height:48px;}.cal-dot{width:7px;height:7px;}}
+/* ── Frise chronologique ── */
+.tl-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.7rem;margin-bottom:1.4rem;}
+.tl-kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.8rem 1rem;}
+.tl-kpi-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.25rem;}
+.tl-kpi-val{font-size:1.1rem;font-weight:800;color:var(--text);}
+.tl-kpi-val.rose{color:var(--rose);}
+.tl-kpi-val.sage{color:var(--sage);}
+.tl-month{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:1.4rem 0 .5rem 2.6rem;}
+.tl-today-marker{display:flex;align-items:center;gap:.7rem;margin:1rem 0;color:var(--rose);font-size:.7rem;font-weight:700;}
+.tl-today-marker::before,.tl-today-marker::after{content:'';flex:1;height:2px;background:linear-gradient(90deg,var(--rose),transparent);}
+.tl-today-marker::after{background:linear-gradient(270deg,var(--rose),transparent);}
+.tl-row{display:flex;align-items:center;gap:.8rem;padding:.65rem .8rem .65rem 0;border-radius:10px;transition:background .15s;cursor:default;position:relative;}
+.tl-row:hover{background:var(--bg3);}
+.tl-line{display:flex;flex-direction:column;align-items:center;width:2rem;flex-shrink:0;}
+.tl-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;border:2px solid var(--card);box-shadow:0 0 0 1.5px currentColor;}
+.tl-vline{width:2px;background:var(--border);flex:1;min-height:8px;}
+.tl-date{font-size:.68rem;font-weight:700;color:var(--text2);min-width:52px;flex-shrink:0;text-align:right;}
+.tl-body{flex:1;min-width:0;}
+.tl-name{font-size:.82rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tl-meta{font-size:.63rem;color:var(--muted);margin-top:1px;}
+.tl-amount{font-size:.85rem;font-weight:700;color:var(--text);white-space:nowrap;flex-shrink:0;}
+.tl-badge{font-size:.58rem;font-weight:700;padding:.2rem .55rem;border-radius:20px;flex-shrink:0;white-space:nowrap;}
+.tl-badge.paye{background:var(--sage-bg);color:var(--sage);}
+.tl-badge.apayer{background:var(--rose-bg);color:var(--rose);}
+.tl-badge.retard{background:#FDE8E8;color:var(--danger);}
+.tl-empty{text-align:center;color:var(--muted);font-size:.85rem;padding:3rem 0;}
+.tl-filters{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem;}
+.tl-filter-btn{font-size:.65rem;border:1px solid var(--border);border-radius:20px;padding:.28rem .75rem;background:var(--bg3);color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s;}
+.tl-filter-btn.on{background:var(--rose);border-color:var(--rose);color:#fff;}
 .chip{font-size:0.65rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:0.35rem 0.8rem;border-radius:50px;cursor:pointer;border:1.5px solid var(--border);background:var(--bg2);color:var(--muted);transition:all 0.2s;}
 .chip:hover{border-color:var(--rose);color:var(--rose);}
 .chip.on{background:var(--rose);border-color:var(--rose);color:#fff;}
@@ -599,7 +614,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v1.7</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v1.8</span></div>
 </aside>
 
 <div class="main">
@@ -898,24 +913,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
   </div>
 
-  <!-- CALENDRIER -->
+  <!-- FRISE CHRONOLOGIQUE -->
   <div id="page-calendrier" class="page">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;flex-wrap:wrap;gap:.6rem;">
-      <div style="display:flex;align-items:center;gap:.6rem;">
-        <button onclick="calPrev()" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.35rem .8rem;cursor:pointer;font-size:1.1rem;line-height:1;color:var(--text2);">‹</button>
-        <h2 id="cal-title" style="margin:0;font-size:1.05rem;font-weight:700;min-width:160px;text-align:center;"></h2>
-        <button onclick="calNext()" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.35rem .8rem;cursor:pointer;font-size:1.1rem;line-height:1;color:var(--text2);">›</button>
-      </div>
-      <button onclick="calToday()" style="font-size:.7rem;border:1px solid var(--border);border-radius:20px;padding:.3rem .9rem;background:var(--bg3);color:var(--text2);cursor:pointer;font-family:inherit;">Aujourd'hui</button>
+    <div id="tl-kpis" class="tl-kpis"></div>
+    <div class="tl-filters">
+      <button class="tl-filter-btn on" id="tlf-all"     onclick="tlSetFilter('all')">Tous</button>
+      <button class="tl-filter-btn"    id="tlf-avenir"  onclick="tlSetFilter('avenir')">⏳ À venir</button>
+      <button class="tl-filter-btn"    id="tlf-paye"    onclick="tlSetFilter('paye')">✅ Payés</button>
+      <button class="tl-filter-btn"    id="tlf-retard"  onclick="tlSetFilter('retard')">🔴 En retard</button>
     </div>
-    <div class="cal-header-grid">
-      <div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
-    </div>
-    <div id="cal-grid" class="cal-grid"></div>
-    <div id="cal-legend" style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:.5rem;font-size:.66rem;"></div>
+    <div id="tl-body"></div>
   </div>
-  <!-- floating tooltip calendrier -->
-  <div id="cal-tip"></div>
 
   <!-- MESSAGES INVITÉS -->
   <div id="page-messages" class="page">
@@ -2177,16 +2185,12 @@ async function updateExpense(id){
   showToast('Dépense mise à jour ✅');
 }
 
-/* ═══ CALENDRIER ═══ */
-let _calYear, _calMonth;
-function calInit(){ const n=new Date(); _calYear=n.getFullYear(); _calMonth=n.getMonth(); }
-function calPrev(){ if(_calYear===undefined)calInit(); _calMonth--; if(_calMonth<0){_calMonth=11;_calYear--;} renderCalendrier(); }
-function calNext(){ if(_calYear===undefined)calInit(); _calMonth++; if(_calMonth>11){_calMonth=0;_calYear++;} renderCalendrier(); }
-function calToday(){ calInit(); renderCalendrier(); }
+/* ═══ FRISE CHRONOLOGIQUE ═══ */
+let _tlFilter = 'all';
 
 function calNormalizeDate(s){
   if(!s) return null;
-  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // déjà ISO
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
   if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){ const [d,m,y]=s.split('/'); return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`; }
   return null;
 }
@@ -2197,127 +2201,124 @@ function calParseDate(s){
   return new Date(y,m-1,d);
 }
 
+function tlSetFilter(f){
+  _tlFilter=f;
+  document.querySelectorAll('.tl-filter-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tlf-'+f).classList.add('on');
+  renderCalendrier();
+}
+
 async function renderCalendrier(){
-  if(_calYear===undefined) calInit();
   const expenses = await getExpenses();
   window._lastExpenses = expenses;
 
-  // Totaux globaux
-  const totalPaye  = expenses.reduce((s,e)=>s+(e.effectue||0),0);
-  const totalPrevu = expenses.reduce((s,e)=>s+e.prevu,0);
-  const totalReste = Math.max(0, totalPrevu - totalPaye);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayMs = today.getTime();
 
-  // Grouper par clé jour
-  const byDay = {};
-  expenses.forEach(e => {
-    const d = calParseDate(e.date);
-    if(!d) return;
-    const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    if(!byDay[key]) byDay[key] = [];
-    byDay[key].push(e);
+  // Dépenses avec une date
+  const dated = expenses
+    .map(e => ({...e, _d: calParseDate(e.date)}))
+    .filter(e => e._d)
+    .sort((a,b) => a._d - b._d);
+
+  // Statut de chaque dépense
+  const withStatus = dated.map(e => {
+    const paye = (e.effectue||0) >= e.prevu && e.prevu > 0;
+    const retard = !paye && e._d < today;
+    return {...e, _paye: paye, _retard: retard};
+  });
+
+  // Filtrage
+  let visible = withStatus;
+  if(_tlFilter==='avenir')  visible = withStatus.filter(e=>!e._paye && !e._retard && e._d >= today);
+  if(_tlFilter==='paye')    visible = withStatus.filter(e=>e._paye);
+  if(_tlFilter==='retard')  visible = withStatus.filter(e=>e._retard);
+
+  // KPIs
+  const aVenir   = withStatus.filter(e=>!e._paye && e._d >= today);
+  const enRetard = withStatus.filter(e=>e._retard);
+  const totalAvenir = aVenir.reduce((s,e)=>s+e.prevu,0);
+  const nextPay = aVenir.length ? aVenir[0] : null;
+  const MSHORT=['jan','fév','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
+
+  document.getElementById('tl-kpis').innerHTML=`
+    <div class="tl-kpi"><div class="tl-kpi-label">Total à venir</div><div class="tl-kpi-val rose">${fmt(totalAvenir)}</div></div>
+    <div class="tl-kpi"><div class="tl-kpi-label">Prochaine échéance</div><div class="tl-kpi-val" style="font-size:.85rem">${nextPay ? nextPay.name+'<br><span style="font-size:.7rem;color:var(--muted)">'+nextPay._d.getDate()+' '+MSHORT[nextPay._d.getMonth()]+' · '+fmt(nextPay.prevu)+'</span>' : '<span style="color:var(--muted);font-size:.8rem">—</span>'}</div></div>
+    <div class="tl-kpi"><div class="tl-kpi-label">En retard</div><div class="tl-kpi-val ${enRetard.length?'rose':'sage'}">${enRetard.length}</div></div>
+    <div class="tl-kpi"><div class="tl-kpi-label">Dépenses datées</div><div class="tl-kpi-val">${dated.length}</div></div>`;
+
+  const body = document.getElementById('tl-body');
+  if(!visible.length){
+    body.innerHTML='<div class="tl-empty">Aucune dépense à afficher.<br><span style="font-size:.75rem">Ajoutez une date prévue sur vos dépenses dans la page Budget.</span></div>';
+    return;
+  }
+
+  // Grouper par mois
+  const byMonth = {};
+  visible.forEach(e => {
+    const key = `${e._d.getFullYear()}-${String(e._d.getMonth()).padStart(2,'0')}`;
+    if(!byMonth[key]) byMonth[key]=[];
+    byMonth[key].push(e);
   });
 
   const MONTHS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-  document.getElementById('cal-title').textContent=`${MONTHS[_calMonth]} ${_calYear}`;
+  const DAYS=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
 
-  const first=new Date(_calYear,_calMonth,1);
-  const last =new Date(_calYear,_calMonth+1,0);
-  let dow=first.getDay(); dow=dow===0?6:dow-1; // lundi=0
+  let todayInserted = false;
+  let html = '';
 
-  const today=new Date();
-  const grid=document.getElementById('cal-grid');
-  grid.innerHTML='';
+  Object.keys(byMonth).sort().forEach(mKey => {
+    const [yr, mo] = mKey.split('-').map(Number);
+    html += `<div class="tl-month">${MONTHS[mo]} ${yr}</div>`;
 
-  // Padding début
-  const prevLast=new Date(_calYear,_calMonth,0);
-  for(let i=dow-1;i>=0;i--){
-    const cell=document.createElement('div');
-    cell.className='cal-day other-month';
-    cell.innerHTML=`<div class="cal-day-num">${prevLast.getDate()-i}</div>`;
-    grid.appendChild(cell);
-  }
+    byMonth[mKey].forEach((e, idx) => {
+      // Insérer le marqueur "Aujourd'hui" au bon endroit
+      if(!todayInserted && e._d >= today && (_tlFilter==='all'||_tlFilter==='avenir')){
+        const prev = idx===0 ? null : byMonth[mKey][idx-1];
+        if(!prev || prev._d < today){
+          html += `<div class="tl-today-marker">Aujourd'hui</div>`;
+          todayInserted = true;
+        }
+      }
 
-  // Jours du mois
-  for(let d=1;d<=last.getDate();d++){
-    const isToday=today.getFullYear()===_calYear&&today.getMonth()===_calMonth&&today.getDate()===d;
-    const key=`${_calYear}-${String(_calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const dayExp=byDay[key]||[];
+      const color = CAT_COLORS[e.cat]||'#8C8078';
+      const env = _enveloppes.find(x=>x.name===e.enveloppe);
+      const envExps = env ? expenses.filter(x=>x.enveloppe===env.name) : [];
+      const envPaye  = envExps.reduce((s,x)=>s+(x.effectue||0),0);
+      const envPrevu = envExps.reduce((s,x)=>s+x.prevu,0);
+      const envReste = Math.max(0, envPrevu - envPaye);
 
-    const cell=document.createElement('div');
-    cell.className='cal-day'+(isToday?' today':'');
+      const badge = e._paye
+        ? `<span class="tl-badge paye">✅ Payé</span>`
+        : e._retard
+          ? `<span class="tl-badge retard">🔴 En retard</span>`
+          : `<span class="tl-badge apayer">⏳ À payer</span>`;
 
-    const dotsDiv=document.createElement('div');
-    dotsDiv.className='cal-dots';
+      const opacity = e._paye ? 'opacity:.55;' : '';
+      const dateFmt = `${DAYS[e._d.getDay()]} ${e._d.getDate()} ${MSHORT[e._d.getMonth()]}`;
 
-    dayExp.forEach(e=>{
-      const color=CAT_COLORS[e.cat]||'#8C8078';
-      const env=_enveloppes.find(x=>x.name===e.enveloppe);
-      const envExps=env?expenses.filter(x=>x.enveloppe===env.name):[];
-      const envPaye =envExps.reduce((s,x)=>s+(x.effectue||0),0);
-      const envPrevu=envExps.reduce((s,x)=>s+x.prevu,0);
-      const envReste=Math.max(0,envPrevu-envPaye);
-
-      const dot=document.createElement('div');
-      dot.className='cal-dot';
-      dot.style.background=color;
-
-      // Tooltip data
-      dot.dataset.tip=JSON.stringify({
-        name:e.name, cat:e.cat,
-        prevu:e.prevu, paye:e.effectue||0,
-        envName:env?env.name:null,
-        envPaye, envReste,
-        totalPaye, totalReste
-      });
-
-      dot.addEventListener('mouseenter', calShowTip);
-      dot.addEventListener('mousemove',  calMoveTip);
-      dot.addEventListener('mouseleave', calHideTip);
-      dotsDiv.appendChild(dot);
+      html += `<div class="tl-row" style="${opacity}">
+        <div class="tl-line">
+          <div class="tl-dot" style="color:${color};background:${color}"></div>
+        </div>
+        <div class="tl-date">${dateFmt}</div>
+        <div class="tl-body">
+          <div class="tl-name">${e.name}</div>
+          <div class="tl-meta">${e.cat}${env?' · 📁 '+env.name:''}${env?' · reste enveloppe '+fmt(envReste):''}</div>
+        </div>
+        <div class="tl-amount">${fmt(e.prevu)}</div>
+        ${badge}
+      </div>`;
     });
+  });
 
-    cell.innerHTML=`<div class="cal-day-num">${d}</div>`;
-    cell.appendChild(dotsDiv);
-    grid.appendChild(cell);
+  // Marqueur aujourd'hui si tout est dans le futur et pas encore inséré
+  if(!todayInserted && (_tlFilter==='all'||_tlFilter==='avenir') && visible.every(e=>e._d>=today)){
+    html = `<div class="tl-today-marker">Aujourd'hui</div>` + html;
   }
 
-  // Padding fin
-  const total=dow+last.getDate();
-  const rem=(7-(total%7))%7;
-  for(let d=1;d<=rem;d++){
-    const cell=document.createElement('div');
-    cell.className='cal-day other-month';
-    cell.innerHTML=`<div class="cal-day-num">${d}</div>`;
-    grid.appendChild(cell);
-  }
-
-  // Légende catégories présentes ce mois
-  const catsUsed=new Set(Object.values(byDay).flat().filter(e=>calParseDate(e.date)&&new Date(calParseDate(e.date)).getMonth()===_calMonth&&new Date(calParseDate(e.date)).getFullYear()===_calYear).map(e=>e.cat));
-  const legend=document.getElementById('cal-legend');
-  legend.innerHTML=[...catsUsed].map(c=>`<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:50%;background:${CAT_COLORS[c]||'#8C8078'};display:inline-block"></span><span style="color:var(--muted);font-size:.65rem">${c}</span></span>`).join('');
+  body.innerHTML = html;
 }
-
-function calShowTip(ev){
-  const tip=document.getElementById('cal-tip');
-  const d=JSON.parse(this.dataset.tip);
-  tip.innerHTML=`
-    <div style="font-weight:700;font-size:.75rem;margin-bottom:3px">${d.name}</div>
-    <div style="color:rgba(255,255,255,.6);font-size:.65rem;margin-bottom:6px">${d.cat}</div>
-    <div>Prévu : <b>${fmt(d.prevu)}</b> &nbsp;·&nbsp; Payé : <b>${fmt(d.paye)}</b></div>
-    ${d.envName?`<div style="border-top:1px solid rgba(255,255,255,.12);margin-top:6px;padding-top:6px;font-size:.67rem;color:rgba(255,255,255,.75)">📁 ${d.envName}<br>Payé : <b>${fmt(d.envPaye)}</b> &nbsp;·&nbsp; Reste : <b>${fmt(d.envReste)}</b></div>`:''}
-    <div style="border-top:1px solid rgba(255,255,255,.12);margin-top:6px;padding-top:6px;font-size:.67rem;color:rgba(255,255,255,.65)">🌍 Global &nbsp;·&nbsp; Payé : <b>${fmt(d.totalPaye)}</b> &nbsp;·&nbsp; Reste : <b>${fmt(d.totalReste)}</b></div>`;
-  tip.style.display='block';
-  calMoveTip.call(this,ev);
-}
-function calMoveTip(ev){
-  const tip=document.getElementById('cal-tip');
-  const margin=12;
-  let x=ev.clientX+margin, y=ev.clientY+margin;
-  if(x+tip.offsetWidth>window.innerWidth-8) x=ev.clientX-tip.offsetWidth-margin;
-  if(y+tip.offsetHeight>window.innerHeight-8) y=ev.clientY-tip.offsetHeight-margin;
-  tip.style.left=x+'px'; tip.style.top=y+'px';
-}
-function calHideTip(){ document.getElementById('cal-tip').style.display='none'; }
 
 function fmt(n){ return n.toLocaleString('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}); }
 
