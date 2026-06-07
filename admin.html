@@ -625,7 +625,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v2.5</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v2.6</span></div>
 </aside>
 
 <div class="main">
@@ -930,11 +930,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <!-- FRISE CHRONOLOGIQUE -->
   <div id="page-calendrier" class="page">
     <div id="tl-kpis" class="tl-kpis"></div>
-    <div class="tl-filters">
-      <button class="tl-filter-btn on" id="tlf-all"    onclick="tlSetFilter('all')">Tous</button>
-      <button class="tl-filter-btn"   id="tlf-avenir" onclick="tlSetFilter('avenir')">⏳ À venir</button>
-      <button class="tl-filter-btn"   id="tlf-paye"   onclick="tlSetFilter('paye')">✅ Payés</button>
-      <button class="tl-filter-btn"   id="tlf-retard" onclick="tlSetFilter('retard')">🔴 En retard</button>
+    <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:.9rem;">
+      <div class="tl-filters" style="margin-bottom:0">
+        <button class="tl-filter-btn on" id="tlf-all"    onclick="tlSetFilter('all')">Tous</button>
+        <button class="tl-filter-btn"   id="tlf-avenir" onclick="tlSetFilter('avenir')">⏳ À venir</button>
+        <button class="tl-filter-btn"   id="tlf-paye"   onclick="tlSetFilter('paye')">✅ Payés</button>
+      </div>
+      <select id="tlf-env" onchange="renderCalendrier()" style="font-size:.65rem;border:1px solid var(--border);border-radius:20px;padding:.28rem .75rem;background:var(--bg3);color:var(--muted);cursor:pointer;outline:none;font-family:inherit;">
+        <option value="">📁 Toutes les enveloppes</option>
+      </select>
     </div>
     <div id="tl-body"></div>
   </div>
@@ -2243,10 +2247,20 @@ async function renderCalendrier(){
     return {...e, _paye: paye, _retard: false};
   });
 
+  // Alimenter le select enveloppes
+  const envSelect = document.getElementById('tlf-env');
+  if(envSelect){
+    const currentEnvVal = envSelect.value;
+    envSelect.innerHTML = '<option value="">📁 Toutes les enveloppes</option>' +
+      _enveloppes.map(env=>`<option value="${env.name}"${env.name===currentEnvVal?' selected':''}>${env.name}</option>`).join('');
+  }
+  const filterEnv = envSelect?.value || '';
+
   let visible = withStatus;
   if(_tlFilter==='avenir') visible = withStatus.filter(e=>!e._paye && e._d >= today);
   if(_tlFilter==='paye')   visible = withStatus.filter(e=>e._paye);
   if(_tlFilter==='retard') visible = withStatus.filter(e=>e._retard);
+  if(filterEnv) visible = visible.filter(e=>e.enveloppe===filterEnv);
 
   // KPIs
   const aVenir   = withStatus.filter(e=>!e._paye && e._d >= today);
