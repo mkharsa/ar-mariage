@@ -626,7 +626,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.06</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.07</span></div>
 </aside>
 
 <div class="main">
@@ -2266,37 +2266,67 @@ async function renderCalendrier(){
   if(filterEnv) visible = visible.filter(e=>e.enveloppe===filterEnv);
 
   // KPIs — adaptatifs selon le filtre enveloppe
+  const kpiNext = (list) => {
+    // Retourne la prochaine échéance (impayée, future, triée par date)
+    const sorted = list.filter(e=>!e._paye && e._d >= today).sort((a,b)=>a._d-b._d);
+    return sorted[0]||null;
+  };
+  const kpiNextHtml = (n) => n
+    ? `${n.name}<br><span style="font-size:.68rem;color:var(--muted)">${n._d.getDate()} ${MSHORT[n._d.getMonth()]} · ${fmt(Math.max(0,n.prevu-(n.effectue||0)))}</span>`
+    : `<span style="color:var(--muted);font-size:.8rem">—</span>`;
+
   if(filterEnv) {
-    // Mode enveloppe : indicateurs complets de l'enveloppe sélectionnée
-    const env = _enveloppes.find(x=>x.name===filterEnv);
+    // ── Mode enveloppe ──
+    const env        = _enveloppes.find(x=>x.name===filterEnv);
     const envAllExps = expenses.filter(e=>e.enveloppe===filterEnv);
-    const envDated   = envAllExps.filter(e=>calParseDate(e.date));
-    const envWithD   = envDated.map(e=>({...e, _d:calParseDate(e.date), _paye:(e.effectue||0)>0&&(e.effectue||0)>=(e.prevu||0)}));
-    const envAVenir  = envWithD.filter(e=>!e._paye && e._d >= today);
+    const envWithD   = envAllExps
+      .map(e=>({...e, _d:calParseDate(e.date), _paye:(e.effectue||0)>0&&(e.effectue||0)>=(e.prevu||0)}))
+      .filter(e=>e._d);
     const envRetard  = envWithD.filter(e=>e._d < today && !e._paye);
     const envPrevu   = envAllExps.reduce((s,e)=>s+e.prevu,0);
     const envPaye    = envAllExps.reduce((s,e)=>s+(e.effectue||0),0);
     const envBudget  = (env && env.budget > 0) ? env.budget : envPrevu;
-    const envReste   = envBudget - envPaye;
-    const envAvenir  = envAVenir.reduce((s,e)=>s+e.prevu,0);
-    const nextEnv    = envAVenir[0]||null;
+    const envResteApayer = envAllExps.reduce((s,e)=>s+Math.max(0,e.prevu-(e.effectue||0)),0);
+    const envResteBudget = envBudget - envPaye;
+    const nextEnv    = kpiNext(envWithD);
     document.getElementById('tl-kpis').innerHTML=`
-      <div class="tl-kpi"><div class="tl-kpi-label">Budget enveloppe</div><div class="tl-kpi-val">${fmt(envBudget)}</div></div>
-      <div class="tl-kpi"><div class="tl-kpi-label">Déjà payé</div><div class="tl-kpi-val sage">${fmt(envPaye)}</div></div>
-      <div class="tl-kpi"><div class="tl-kpi-label">Restant enveloppe</div><div class="tl-kpi-val ${envReste<0?'rose':''}">${fmt(envReste)}</div></div>
-      <div class="tl-kpi"><div class="tl-kpi-label">À venir</div><div class="tl-kpi-val rose">${fmt(envAvenir)}</div></div>
-      <div class="tl-kpi"><div class="tl-kpi-label">Prochaine échéance</div><div class="tl-kpi-val" style="font-size:.82rem;line-height:1.3">${nextEnv?nextEnv.name+'<br><span style="font-size:.68rem;color:var(--muted)">'+nextEnv._d.getDate()+' '+MSHORT[nextEnv._d.getMonth()]+' · '+fmt(nextEnv.prevu)+'</span>':'<span style="color:var(--muted);font-size:.8rem">—</span>'}</div></div>
-      <div class="tl-kpi"><div class="tl-kpi-label">En retard</div><div class="tl-kpi-val ${envRetard.length?'rose':'sage'}">${envRetard.length}</div></div>
-      <div class="tl-kpi"><div class="tl-kpi-label">Dépenses</div><div class="tl-kpi-val">${envAllExps.length} <span style="font-size:.65rem;color:var(--muted);font-weight:600">(${envDated.length} datées)</span></div></div>`;
+      <div class="tl-kpi">
+        <div class="tl-kpi-label">Budget enveloppe</div>
+        <div class="tl-kpi-val">${fmt(envBudget)}</div>
+        <div style="font-size:.62rem;color:var(--muted);margin-top:2px">${envPrevu!==envBudget?'Prévu: '+fmt(envPrevu):''}</div>
+      </div>
+      <div class="tl-kpi">
+        <div class="tl-kpi-label">Payé</div>
+        <div class="tl-kpi-val sage">${fmt(envPaye)}</div>
+        <div style="font-size:.62rem;color:var(--muted);margin-top:2px">${Math.round(envBudget>0?envPaye/envBudget*100:0)}% du budget</div>
+      </div>
+      <div class="tl-kpi">
+        <div class="tl-kpi-label">Reste à payer</div>
+        <div class="tl-kpi-val ${envResteApayer>0?'rose':''}">${fmt(envResteApayer)}</div>
+        <div style="font-size:.62rem;color:var(--muted);margin-top:2px">Budget restant: <span style="color:${envResteBudget<0?'var(--rose)':'inherit'}">${fmt(envResteBudget)}</span></div>
+      </div>
+      <div class="tl-kpi">
+        <div class="tl-kpi-label">Prochaine échéance</div>
+        <div class="tl-kpi-val" style="font-size:.82rem;line-height:1.3">${kpiNextHtml(nextEnv)}</div>
+      </div>
+      <div class="tl-kpi">
+        <div class="tl-kpi-label">En retard</div>
+        <div class="tl-kpi-val ${envRetard.length?'rose':'sage'}">${envRetard.length}</div>
+      </div>
+      <div class="tl-kpi">
+        <div class="tl-kpi-label">Dépenses</div>
+        <div class="tl-kpi-val">${envAllExps.length}</div>
+        <div style="font-size:.62rem;color:var(--muted);margin-top:2px">${envWithD.length} datées</div>
+      </div>`;
   } else {
-    // Mode global
-    const aVenir   = withStatus.filter(e=>!e._paye && e._d >= today);
+    // ── Mode global ──
+    const aVenir   = withStatus.filter(e=>!e._paye && e._d >= today).sort((a,b)=>a._d-b._d);
     const enRetard = withStatus.filter(e=>e._retard);
-    const totalAvenir = aVenir.reduce((s,e)=>s+e.prevu,0);
-    const nextPay = aVenir[0]||null;
+    const totalAvenir = aVenir.reduce((s,e)=>s+Math.max(0,e.prevu-(e.effectue||0)),0);
+    const nextPay  = aVenir[0]||null;
     document.getElementById('tl-kpis').innerHTML=`
-      <div class="tl-kpi"><div class="tl-kpi-label">Total à venir</div><div class="tl-kpi-val rose">${fmt(totalAvenir)}</div></div>
-      <div class="tl-kpi"><div class="tl-kpi-label">Prochaine échéance</div><div class="tl-kpi-val" style="font-size:.82rem;line-height:1.3">${nextPay?nextPay.name+'<br><span style="font-size:.68rem;color:var(--muted)">'+nextPay._d.getDate()+' '+MSHORT[nextPay._d.getMonth()]+' · '+fmt(nextPay.prevu)+'</span>':'<span style="color:var(--muted);font-size:.8rem">—</span>'}</div></div>
+      <div class="tl-kpi"><div class="tl-kpi-label">Reste à payer (daté)</div><div class="tl-kpi-val rose">${fmt(totalAvenir)}</div></div>
+      <div class="tl-kpi"><div class="tl-kpi-label">Prochaine échéance</div><div class="tl-kpi-val" style="font-size:.82rem;line-height:1.3">${kpiNextHtml(nextPay)}</div></div>
       <div class="tl-kpi"><div class="tl-kpi-label">En retard</div><div class="tl-kpi-val ${enRetard.length?'rose':'sage'}">${enRetard.length}</div></div>
       <div class="tl-kpi"><div class="tl-kpi-label">Dépenses datées</div><div class="tl-kpi-val">${dated.length}</div></div>`;
   }
