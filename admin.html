@@ -626,7 +626,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.08</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.09</span></div>
 </aside>
 
 <div class="main">
@@ -2232,6 +2232,8 @@ function tlSetFilter(f){
 }
 
 async function renderCalendrier(){
+  // Charger les enveloppes si pas encore fait (accès direct sans passer par Budget)
+  if(!_enveloppes.length) await loadBudgetConfig();
   const expenses = await getExpenses();
   window._lastExpenses = expenses;
 
