@@ -626,7 +626,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.09</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.10</span></div>
 </aside>
 
 <div class="main">
@@ -2861,6 +2861,7 @@ async function renderBudget(){
   if(envSelF){
     const curF = envSelF.value;
     envSelF.innerHTML = '<option value="">📁 Enveloppe</option>' +
+      '<option value="__noenv__" ' + (curF==='__noenv__'?'selected':'') + '>📭 Sans enveloppe</option>' +
       _enveloppes.map(e=>`<option value="${e.name}" ${curF===e.name?'selected':''}>${e.name}</option>`).join('');
   }
 
@@ -2914,7 +2915,8 @@ function renderExpenseList(expenses){
   let filtered = [...expenses].reverse();
   if(filterCat)      filtered = filtered.filter(e=>e.cat===filterCat);
   if(filterOrigine)  filtered = filtered.filter(e=>e.origine===filterOrigine);
-  if(filterEnv)      filtered = filtered.filter(e=>e.enveloppe===filterEnv);
+  if(filterEnv==='__noenv__') filtered = filtered.filter(e=>!e.enveloppe||e.enveloppe==='');
+  else if(filterEnv)          filtered = filtered.filter(e=>e.enveloppe===filterEnv);
   if(filterPaiement) filtered = filtered.filter(e=>e.paiement===filterPaiement);
   if(filterStatut==='paye')        filtered = filtered.filter(e=>e.effectue>0);
   if(filterStatut==='nonpaye')     filtered = filtered.filter(e=>e.effectue===0||!e.effectue);
