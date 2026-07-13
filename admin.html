@@ -627,7 +627,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.12</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.13</span></div>
 </aside>
 
 <div class="main">
@@ -2324,35 +2324,30 @@ function arRenderCompare(recus, expenses){
   const grid = document.getElementById('ar-compare-grid');
   const selected = _enveloppes.filter(e=>_arEnvSelected.has(e.name));
   if(!selected.length){ grid.innerHTML='<div style="color:var(--muted);font-size:.75rem">Sélectionnez au moins une enveloppe.</div>'; return; }
-  // L'argent reçu est global — on calcule la part de chaque enveloppe sélectionnée dans le total dépensé
-  const totalRecu = recus.reduce((s,r)=>s+(r.montant||0),0);
-  const totalDepenseSelected = selected.reduce((s,env)=>
-    s+expenses.filter(e=>e.enveloppe===env.name).reduce((ss,e)=>ss+(e.effectue||0),0),0);
 
   grid.innerHTML = selected.map(env=>{
-    const envDepense = expenses.filter(e=>e.enveloppe===env.name).reduce((s,e)=>s+(e.effectue||0),0);
-    const envPrevu   = expenses.filter(e=>e.enveloppe===env.name).reduce((s,e)=>s+e.prevu,0);
+    const envExps    = expenses.filter(e=>e.enveloppe===env.name);
+    const envDepense = envExps.reduce((s,e)=>s+(e.effectue||0),0);
+    const envPrevu   = envExps.reduce((s,e)=>s+e.prevu,0);
     const envBudget  = (env.budget>0) ? env.budget : envPrevu;
-    // Part du total reçu attribuable à cette enveloppe (proportionnelle aux dépenses)
-    const partRecu   = totalDepenseSelected>0 ? Math.round(totalRecu * envDepense / totalDepenseSelected) : 0;
-    const solde      = partRecu - envDepense;
-    const pctBudget  = envBudget>0 ? Math.min(100,Math.round(envDepense/envBudget*100)) : 0;
+    const resteApayer= envExps.reduce((s,e)=>s+Math.max(0,e.prevu-(e.effectue||0)),0);
+    const resteBudget= envBudget - envDepense;
+    const pct        = envBudget>0 ? Math.min(100,Math.round(envDepense/envBudget*100)) : 0;
     const color      = env.color||'#D45C73';
     return `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.9rem 1rem;border-top:3px solid ${color}">
       <div style="font-weight:700;font-size:.8rem;color:var(--text);margin-bottom:.6rem">📁 ${env.name}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;font-size:.7rem;">
-        <span style="color:var(--muted)">Dépensé</span><span style="font-weight:700;color:var(--rose)">−${fmt(envDepense)}</span>
         <span style="color:var(--muted)">Budget</span><span style="font-weight:700">${fmt(envBudget)}</span>
-        <span style="color:var(--muted)">Part reçu*</span><span style="font-weight:700;color:#6AAF8A">+${fmt(partRecu)}</span>
-        <span style="color:var(--muted)">Solde</span><span style="font-weight:700;color:${solde<0?'var(--rose)':'#6AAF8A'}">${solde>=0?'+':''}${fmt(solde)}</span>
+        <span style="color:var(--muted)">Payé</span><span style="font-weight:700;color:#6AAF8A">${fmt(envDepense)}</span>
+        <span style="color:var(--muted)">Reste à payer</span><span style="font-weight:700;color:var(--rose)">${fmt(resteApayer)}</span>
+        <span style="color:var(--muted)">Solde budget</span><span style="font-weight:700;color:${resteBudget<0?'var(--rose)':'inherit'}">${fmt(resteBudget)}</span>
       </div>
       <div style="margin-top:.6rem;height:5px;background:var(--bg3);border-radius:4px;overflow:hidden">
-        <div style="height:100%;width:${pctBudget}%;background:${color};border-radius:4px;transition:width .3s"></div>
+        <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .3s"></div>
       </div>
-      <div style="font-size:.58rem;color:var(--muted);margin-top:2px;text-align:right">${pctBudget}% du budget payé</div>
+      <div style="font-size:.58rem;color:var(--muted);margin-top:2px;text-align:right">${pct}% du budget utilisé</div>
     </div>`;
-  }).join('') +
-  `<div style="grid-column:1/-1;font-size:.6rem;color:var(--muted);padding-top:.4rem">* Part reçu = total reçu global réparti proportionnellement aux dépenses de chaque enveloppe</div>`;
+  }).join('');
 }
 
 function arToggleEnv(name, btn){
