@@ -623,10 +623,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('programme',this);closeSidebar()"><span class="ni-icon">◆</span><span>Programme</span></div>
     <div class="ni" onclick="goTo('budget',this);closeSidebar()"><span class="ni-icon">◈</span><span>Budget</span></div>
     <div class="ni" onclick="goTo('calendrier',this);closeSidebar()"><span class="ni-icon">📅</span><span>Calendrier</span></div>
+    <div class="ni" onclick="goTo('argent',this);closeSidebar()"><span class="ni-icon">💰</span><span>Argent reçu</span></div>
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.10</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.11</span></div>
 </aside>
 
 <div class="main">
@@ -946,6 +947,49 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
 
   <!-- MESSAGES INVITÉS -->
+  <!-- ══════════════ PAGE ARGENT REÇU ══════════════ -->
+  <div id="page-argent" class="page">
+
+    <!-- KPIs globaux -->
+    <div id="ar-kpis-global" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1.4rem;"></div>
+
+    <!-- Comparateur multi-enveloppes -->
+    <div class="budget-form-card" style="margin-bottom:1.4rem;">
+      <div style="font-weight:700;font-size:.85rem;margin-bottom:.8rem;color:var(--text)">📊 Comparaison par enveloppe</div>
+      <div style="font-size:.68rem;color:var(--muted);margin-bottom:.6rem;">Sélectionne les enveloppes à comparer :</div>
+      <div id="ar-env-chips" style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem;"></div>
+      <div id="ar-compare-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.7rem;"></div>
+    </div>
+
+    <!-- Formulaire ajout -->
+    <div class="budget-form-card" style="margin-bottom:1.4rem;">
+      <div style="font-weight:700;font-size:.85rem;margin-bottom:.8rem;" id="ar-form-title">➕ Ajouter un reçu</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem;">
+        <div class="fgroup"><label>Montant (€) *</label><input type="number" id="ar-montant" placeholder="0" min="0" step="0.01"></div>
+        <div class="fgroup"><label>Source (qui a donné)</label><input type="text" id="ar-source" placeholder="Ex: Famille Martin"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem;">
+        <div class="fgroup"><label>Date</label><input type="date" id="ar-date"></div>
+        <div class="fgroup"><label>Enveloppe</label>
+          <select id="ar-enveloppe" style="width:100%;padding:.5rem .7rem;border:1px solid var(--border);border-radius:8px;background:#fff;font-family:inherit;font-size:.8rem;">
+            <option value="">— Aucune —</option>
+          </select>
+        </div>
+      </div>
+      <div class="fgroup" style="margin-bottom:.8rem;"><label>Note</label><input type="text" id="ar-note" placeholder="Commentaire optionnel"></div>
+      <div style="display:flex;gap:.6rem;">
+        <button class="btn-rose" onclick="saveArgentRecu()" style="flex:1;" id="ar-btn-save">Ajouter</button>
+        <button onclick="cancelArgentRecu()" id="ar-btn-cancel" style="display:none;flex:0 0 auto;padding:.55rem 1rem;border:1px solid var(--border);border-radius:8px;background:none;cursor:pointer;font-family:inherit;font-size:.78rem;">Annuler</button>
+      </div>
+    </div>
+
+    <!-- Liste -->
+    <div class="budget-form-card">
+      <div style="font-weight:700;font-size:.85rem;margin-bottom:.8rem;">📋 Historique</div>
+      <div id="ar-list"></div>
+    </div>
+  </div>
+
   <div id="page-messages" class="page">
 
     <!-- Stats -->
@@ -1213,6 +1257,9 @@ create policy "public delete events" on events for delete using (true);</pre>
     <button class="bn-item" id="bn-calendrier" onclick="goTo('calendrier',this);closeSidebar()">
       <span class="bn-icon">📅</span>Calendrier
     </button>
+    <button class="bn-item" id="bn-argent" onclick="goTo('argent',this);closeSidebar()">
+      <span class="bn-icon">💰</span>Argent
+    </button>
     <button class="bn-item" id="bn-messages" onclick="goTo('messages',this);closeSidebar()">
       <span class="bn-icon">💌</span>Messages
     </button>
@@ -1330,13 +1377,14 @@ function goTo(id,el){
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
   const bnTarget=document.getElementById('bn-'+id);
   if(bnTarget)bnTarget.classList.add('active');
-  const titles={dashboard:'Tableau de bord',guests:'Invités',programme:'Programme',budget:'Budget',calendrier:'Calendrier',messages:'Messages invités',lien:'Hébergement & Lien'};
+  const titles={dashboard:'Tableau de bord',guests:'Invités',programme:'Programme',budget:'Budget',calendrier:'Calendrier',argent:'Argent reçu',messages:'Messages invités',lien:'Hébergement & Lien'};
   document.getElementById('topbar-title').textContent=titles[id]||id;
   if(id==='dashboard')renderDash();
   if(id==='guests')renderGuests();
   if(id==='programme')renderTimeline();
   if(id==='budget') renderBudget().catch(e=>{ console.error('renderBudget error:',e); showToast('Erreur budget: '+e.message, true); });
   if(id==='calendrier') renderCalendrier().catch(e=>console.error(e));
+  if(id==='argent') renderArgentRecu().catch(e=>console.error(e));
   if(id==='messages') renderMessages();
 }
 
@@ -2210,6 +2258,176 @@ let _tlFilter = 'all';
 const MONTH_W = 130; // px par mois
 const MSHORT = ['jan','fév','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+/* ═══════════════════════════════════════
+   ARGENT REÇU
+═══════════════════════════════════════ */
+let _arEditId = null;
+let _arEnvSelected = new Set(); // enveloppes sélectionnées pour le comparateur
+
+async function arFetch(path, opts={}){
+  return sbExpFetch(path, opts); // réutilise le même fetch Supabase
+}
+
+async function renderArgentRecu(){
+  if(!_enveloppes.length) await loadBudgetConfig();
+  const [recus, expenses] = await Promise.all([
+    arFetch('argent_recu?select=*&order=date.desc'),
+    getExpenses()
+  ]);
+
+  // ── Peupler le select enveloppe du formulaire ──
+  const arEnvSel = document.getElementById('ar-enveloppe');
+  if(arEnvSel){
+    const cur = arEnvSel.value;
+    arEnvSel.innerHTML = '<option value="">— Aucune —</option>' +
+      _enveloppes.map(e=>`<option value="${e.name}"${e.name===cur?' selected':''}>${e.name}</option>`).join('');
+  }
+
+  // ── KPIs globaux ──
+  const totalRecu   = recus.reduce((s,r)=>s+(r.montant||0),0);
+  const totalDepense= expenses.reduce((s,e)=>s+(e.effectue||0),0);
+  const solde       = totalRecu - totalDepense;
+  document.getElementById('ar-kpis-global').innerHTML=`
+    <div class="tl-kpi"><div class="tl-kpi-label">Total reçu</div><div class="tl-kpi-val sage">${fmt(totalRecu)}</div></div>
+    <div class="tl-kpi"><div class="tl-kpi-label">Total dépensé</div><div class="tl-kpi-val rose">${fmt(totalDepense)}</div></div>
+    <div class="tl-kpi"><div class="tl-kpi-label">Solde</div><div class="tl-kpi-val ${solde<0?'rose':''}">${fmt(solde)}</div></div>
+    <div class="tl-kpi"><div class="tl-kpi-label">Nb reçus</div><div class="tl-kpi-val">${recus.length}</div></div>`;
+
+  // ── Chips multi-sélection enveloppes ──
+  // Initialiser la sélection si vide
+  if(_arEnvSelected.size===0) _enveloppes.forEach(e=>_arEnvSelected.add(e.name));
+  const chipsEl = document.getElementById('ar-env-chips');
+  chipsEl.innerHTML = _enveloppes.map(env=>`
+    <button onclick="arToggleEnv('${env.name.replace(/'/g,"\\'")}', this)"
+      style="padding:.28rem .7rem;border-radius:20px;border:1.5px solid ${env.color||'#D45C73'};
+      background:${_arEnvSelected.has(env.name)?(env.color||'#D45C73'):'transparent'};
+      color:${_arEnvSelected.has(env.name)?'#fff':(env.color||'#D45C73')};
+      font-size:.65rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s">
+      ${env.name}
+    </button>`).join('');
+
+  // ── Grille de comparaison ──
+  arRenderCompare(recus, expenses);
+
+  // ── Liste historique ──
+  const listEl = document.getElementById('ar-list');
+  if(!recus.length){
+    listEl.innerHTML='<div style="color:var(--muted);font-size:.8rem;text-align:center;padding:1.5rem">Aucun reçu enregistré.</div>';
+    return;
+  }
+  listEl.innerHTML = recus.map(r=>`
+    <div style="display:flex;align-items:center;gap:.8rem;padding:.75rem 0;border-bottom:1px solid var(--border);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;font-size:.85rem;color:var(--text)">${r.source||'Sans source'}</div>
+        <div style="font-size:.68rem;color:var(--muted);margin-top:1px">
+          ${r.date?new Date(r.date+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'Sans date'}
+          ${r.enveloppe?'· 📁 '+r.enveloppe:''}
+          ${r.note?'· '+r.note:''}
+        </div>
+      </div>
+      <div style="font-weight:800;font-size:1rem;color:var(--sage);white-space:nowrap">+${fmt(r.montant)}</div>
+      <button onclick="arEdit('${r.id}')" style="background:none;border:1px solid var(--border);border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:.75rem;">✏️</button>
+      <button onclick="arDelete('${r.id}')" style="background:none;border:1px solid #F5A3B0;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:.75rem;color:var(--rose);">✕</button>
+    </div>`).join('');
+  // Stocker pour edit
+  window._arRecus = recus;
+}
+
+function arRenderCompare(recus, expenses){
+  const grid = document.getElementById('ar-compare-grid');
+  const selected = _enveloppes.filter(e=>_arEnvSelected.has(e.name));
+  if(!selected.length){ grid.innerHTML='<div style="color:var(--muted);font-size:.75rem">Sélectionnez au moins une enveloppe.</div>'; return; }
+  grid.innerHTML = selected.map(env=>{
+    const envRecu   = recus.filter(r=>r.enveloppe===env.name).reduce((s,r)=>s+(r.montant||0),0);
+    const envDepense= expenses.filter(e=>e.enveloppe===env.name).reduce((s,e)=>s+(e.effectue||0),0);
+    const envPrevu  = expenses.filter(e=>e.enveloppe===env.name).reduce((s,e)=>s+e.prevu,0);
+    const solde     = envRecu - envDepense;
+    const pct       = envPrevu>0 ? Math.min(100,Math.round(envDepense/envPrevu*100)) : 0;
+    const color     = env.color||'#D45C73';
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.9rem 1rem;border-top:3px solid ${color}">
+      <div style="font-weight:700;font-size:.8rem;color:var(--text);margin-bottom:.6rem">📁 ${env.name}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;font-size:.7rem;">
+        <span style="color:var(--muted)">Reçu</span><span style="font-weight:700;color:#6AAF8A">+${fmt(envRecu)}</span>
+        <span style="color:var(--muted)">Dépensé</span><span style="font-weight:700;color:var(--rose)">−${fmt(envDepense)}</span>
+        <span style="color:var(--muted)">Prévu</span><span style="font-weight:700">${fmt(envPrevu)}</span>
+        <span style="color:var(--muted)">Solde</span><span style="font-weight:700;color:${solde<0?'var(--rose)':'#6AAF8A'}">${solde>=0?'+':''}${fmt(solde)}</span>
+      </div>
+      <div style="margin-top:.6rem;height:5px;background:var(--bg3);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .3s"></div>
+      </div>
+      <div style="font-size:.58rem;color:var(--muted);margin-top:2px;text-align:right">${pct}% du prévu payé</div>
+    </div>`;
+  }).join('');
+}
+
+function arToggleEnv(name, btn){
+  if(_arEnvSelected.has(name)) _arEnvSelected.delete(name);
+  else _arEnvSelected.add(name);
+  // Refresh chips + compare
+  const env = _enveloppes.find(e=>e.name===name);
+  const color = env?.color||'#D45C73';
+  const on = _arEnvSelected.has(name);
+  btn.style.background = on ? color : 'transparent';
+  btn.style.color = on ? '#fff' : color;
+  // Re-render compare uniquement
+  if(window._arRecus) arRenderCompare(window._arRecus, window._lastExpenses||[]);
+}
+
+async function saveArgentRecu(){
+  const montant = parseFloat(document.getElementById('ar-montant').value)||0;
+  if(!montant){ showToast('Entrez un montant', true); return; }
+  const source    = document.getElementById('ar-source').value.trim();
+  const note      = document.getElementById('ar-note').value.trim();
+  const date      = document.getElementById('ar-date').value || null;
+  const enveloppe = document.getElementById('ar-enveloppe').value || null;
+  try{
+    if(_arEditId){
+      await arFetch(`argent_recu?id=eq.${_arEditId}`,{method:'PATCH',body:JSON.stringify({montant,source,note,date,enveloppe}),prefer:'return=minimal'});
+      showToast('Reçu mis à jour ✅');
+    } else {
+      await arFetch('argent_recu',{method:'POST',body:JSON.stringify({montant,source,note,date,enveloppe})});
+      showToast('Reçu ajouté ✅');
+    }
+    cancelArgentRecu();
+    await renderArgentRecu();
+  }catch(e){ showToast('Erreur: '+e.message, true); }
+}
+
+function arEdit(id){
+  const r = (window._arRecus||[]).find(x=>x.id===id);
+  if(!r) return;
+  _arEditId = id;
+  document.getElementById('ar-montant').value = r.montant||'';
+  document.getElementById('ar-source').value  = r.source||'';
+  document.getElementById('ar-note').value    = r.note||'';
+  document.getElementById('ar-date').value    = r.date||'';
+  document.getElementById('ar-enveloppe').value = r.enveloppe||'';
+  document.getElementById('ar-form-title').textContent = '✏️ Modifier le reçu';
+  document.getElementById('ar-btn-save').textContent   = 'Mettre à jour';
+  document.getElementById('ar-btn-cancel').style.display = 'inline-block';
+  document.querySelector('#page-argent .budget-form-card:nth-child(2)')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function cancelArgentRecu(){
+  _arEditId = null;
+  ['ar-montant','ar-source','ar-note','ar-date'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ar-enveloppe').value='';
+  document.getElementById('ar-form-title').textContent = '➕ Ajouter un reçu';
+  document.getElementById('ar-btn-save').textContent   = 'Ajouter';
+  document.getElementById('ar-btn-cancel').style.display = 'none';
+}
+
+async function arDelete(id){
+  if(!confirm('Supprimer ce reçu ?')) return;
+  try{
+    await arFetch(`argent_recu?id=eq.${id}`,{method:'DELETE'});
+    showToast('Reçu supprimé');
+    await renderArgentRecu();
+  }catch(e){ showToast('Erreur: '+e.message, true); }
+}
+
+/* ══════════════════════════════════════ */
 
 function calNormalizeDate(s){
   if(!s) return null;
