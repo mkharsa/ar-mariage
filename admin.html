@@ -627,7 +627,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.11</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.12</span></div>
 </aside>
 
 <div class="main">
@@ -970,13 +970,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem;">
         <div class="fgroup"><label>Date</label><input type="date" id="ar-date"></div>
-        <div class="fgroup"><label>Enveloppe</label>
-          <select id="ar-enveloppe" style="width:100%;padding:.5rem .7rem;border:1px solid var(--border);border-radius:8px;background:#fff;font-family:inherit;font-size:.8rem;">
-            <option value="">— Aucune —</option>
-          </select>
-        </div>
+        <div class="fgroup"><label>Note</label><input type="text" id="ar-note" placeholder="Commentaire optionnel"></div>
       </div>
-      <div class="fgroup" style="margin-bottom:.8rem;"><label>Note</label><input type="text" id="ar-note" placeholder="Commentaire optionnel"></div>
       <div style="display:flex;gap:.6rem;">
         <button class="btn-rose" onclick="saveArgentRecu()" style="flex:1;" id="ar-btn-save">Ajouter</button>
         <button onclick="cancelArgentRecu()" id="ar-btn-cancel" style="display:none;flex:0 0 auto;padding:.55rem 1rem;border:1px solid var(--border);border-radius:8px;background:none;cursor:pointer;font-family:inherit;font-size:.78rem;">Annuler</button>
@@ -2276,14 +2271,6 @@ async function renderArgentRecu(){
     getExpenses()
   ]);
 
-  // ── Peupler le select enveloppe du formulaire ──
-  const arEnvSel = document.getElementById('ar-enveloppe');
-  if(arEnvSel){
-    const cur = arEnvSel.value;
-    arEnvSel.innerHTML = '<option value="">— Aucune —</option>' +
-      _enveloppes.map(e=>`<option value="${e.name}"${e.name===cur?' selected':''}>${e.name}</option>`).join('');
-  }
-
   // ── KPIs globaux ──
   const totalRecu   = recus.reduce((s,r)=>s+(r.montant||0),0);
   const totalDepense= expenses.reduce((s,e)=>s+(e.effectue||0),0);
@@ -2322,7 +2309,6 @@ async function renderArgentRecu(){
         <div style="font-weight:700;font-size:.85rem;color:var(--text)">${r.source||'Sans source'}</div>
         <div style="font-size:.68rem;color:var(--muted);margin-top:1px">
           ${r.date?new Date(r.date+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'Sans date'}
-          ${r.enveloppe?'· 📁 '+r.enveloppe:''}
           ${r.note?'· '+r.note:''}
         </div>
       </div>
@@ -2338,27 +2324,35 @@ function arRenderCompare(recus, expenses){
   const grid = document.getElementById('ar-compare-grid');
   const selected = _enveloppes.filter(e=>_arEnvSelected.has(e.name));
   if(!selected.length){ grid.innerHTML='<div style="color:var(--muted);font-size:.75rem">Sélectionnez au moins une enveloppe.</div>'; return; }
+  // L'argent reçu est global — on calcule la part de chaque enveloppe sélectionnée dans le total dépensé
+  const totalRecu = recus.reduce((s,r)=>s+(r.montant||0),0);
+  const totalDepenseSelected = selected.reduce((s,env)=>
+    s+expenses.filter(e=>e.enveloppe===env.name).reduce((ss,e)=>ss+(e.effectue||0),0),0);
+
   grid.innerHTML = selected.map(env=>{
-    const envRecu   = recus.filter(r=>r.enveloppe===env.name).reduce((s,r)=>s+(r.montant||0),0);
-    const envDepense= expenses.filter(e=>e.enveloppe===env.name).reduce((s,e)=>s+(e.effectue||0),0);
-    const envPrevu  = expenses.filter(e=>e.enveloppe===env.name).reduce((s,e)=>s+e.prevu,0);
-    const solde     = envRecu - envDepense;
-    const pct       = envPrevu>0 ? Math.min(100,Math.round(envDepense/envPrevu*100)) : 0;
-    const color     = env.color||'#D45C73';
+    const envDepense = expenses.filter(e=>e.enveloppe===env.name).reduce((s,e)=>s+(e.effectue||0),0);
+    const envPrevu   = expenses.filter(e=>e.enveloppe===env.name).reduce((s,e)=>s+e.prevu,0);
+    const envBudget  = (env.budget>0) ? env.budget : envPrevu;
+    // Part du total reçu attribuable à cette enveloppe (proportionnelle aux dépenses)
+    const partRecu   = totalDepenseSelected>0 ? Math.round(totalRecu * envDepense / totalDepenseSelected) : 0;
+    const solde      = partRecu - envDepense;
+    const pctBudget  = envBudget>0 ? Math.min(100,Math.round(envDepense/envBudget*100)) : 0;
+    const color      = env.color||'#D45C73';
     return `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.9rem 1rem;border-top:3px solid ${color}">
       <div style="font-weight:700;font-size:.8rem;color:var(--text);margin-bottom:.6rem">📁 ${env.name}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;font-size:.7rem;">
-        <span style="color:var(--muted)">Reçu</span><span style="font-weight:700;color:#6AAF8A">+${fmt(envRecu)}</span>
         <span style="color:var(--muted)">Dépensé</span><span style="font-weight:700;color:var(--rose)">−${fmt(envDepense)}</span>
-        <span style="color:var(--muted)">Prévu</span><span style="font-weight:700">${fmt(envPrevu)}</span>
+        <span style="color:var(--muted)">Budget</span><span style="font-weight:700">${fmt(envBudget)}</span>
+        <span style="color:var(--muted)">Part reçu*</span><span style="font-weight:700;color:#6AAF8A">+${fmt(partRecu)}</span>
         <span style="color:var(--muted)">Solde</span><span style="font-weight:700;color:${solde<0?'var(--rose)':'#6AAF8A'}">${solde>=0?'+':''}${fmt(solde)}</span>
       </div>
       <div style="margin-top:.6rem;height:5px;background:var(--bg3);border-radius:4px;overflow:hidden">
-        <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .3s"></div>
+        <div style="height:100%;width:${pctBudget}%;background:${color};border-radius:4px;transition:width .3s"></div>
       </div>
-      <div style="font-size:.58rem;color:var(--muted);margin-top:2px;text-align:right">${pct}% du prévu payé</div>
+      <div style="font-size:.58rem;color:var(--muted);margin-top:2px;text-align:right">${pctBudget}% du budget payé</div>
     </div>`;
-  }).join('');
+  }).join('') +
+  `<div style="grid-column:1/-1;font-size:.6rem;color:var(--muted);padding-top:.4rem">* Part reçu = total reçu global réparti proportionnellement aux dépenses de chaque enveloppe</div>`;
 }
 
 function arToggleEnv(name, btn){
@@ -2377,16 +2371,15 @@ function arToggleEnv(name, btn){
 async function saveArgentRecu(){
   const montant = parseFloat(document.getElementById('ar-montant').value)||0;
   if(!montant){ showToast('Entrez un montant', true); return; }
-  const source    = document.getElementById('ar-source').value.trim();
-  const note      = document.getElementById('ar-note').value.trim();
-  const date      = document.getElementById('ar-date').value || null;
-  const enveloppe = document.getElementById('ar-enveloppe').value || null;
+  const source = document.getElementById('ar-source').value.trim();
+  const note   = document.getElementById('ar-note').value.trim();
+  const date   = document.getElementById('ar-date').value || null;
   try{
     if(_arEditId){
-      await arFetch(`argent_recu?id=eq.${_arEditId}`,{method:'PATCH',body:JSON.stringify({montant,source,note,date,enveloppe}),prefer:'return=minimal'});
+      await arFetch(`argent_recu?id=eq.${_arEditId}`,{method:'PATCH',body:JSON.stringify({montant,source,note,date}),prefer:'return=minimal'});
       showToast('Reçu mis à jour ✅');
     } else {
-      await arFetch('argent_recu',{method:'POST',body:JSON.stringify({montant,source,note,date,enveloppe})});
+      await arFetch('argent_recu',{method:'POST',body:JSON.stringify({montant,source,note,date})});
       showToast('Reçu ajouté ✅');
     }
     cancelArgentRecu();
@@ -2402,7 +2395,6 @@ function arEdit(id){
   document.getElementById('ar-source').value  = r.source||'';
   document.getElementById('ar-note').value    = r.note||'';
   document.getElementById('ar-date').value    = r.date||'';
-  document.getElementById('ar-enveloppe').value = r.enveloppe||'';
   document.getElementById('ar-form-title').textContent = '✏️ Modifier le reçu';
   document.getElementById('ar-btn-save').textContent   = 'Mettre à jour';
   document.getElementById('ar-btn-cancel').style.display = 'inline-block';
@@ -2412,7 +2404,6 @@ function arEdit(id){
 function cancelArgentRecu(){
   _arEditId = null;
   ['ar-montant','ar-source','ar-note','ar-date'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('ar-enveloppe').value='';
   document.getElementById('ar-form-title').textContent = '➕ Ajouter un reçu';
   document.getElementById('ar-btn-save').textContent   = 'Ajouter';
   document.getElementById('ar-btn-cancel').style.display = 'none';
