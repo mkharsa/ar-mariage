@@ -627,7 +627,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.18</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.19</span></div>
 </aside>
 
 <div class="main">
@@ -719,7 +719,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <span style="color:var(--muted2)">⌕</span>
           <input type="text" id="dsearch" placeholder="Rechercher…" oninput="renderDashGuests()">
         </div>
-        <button class="btn btn-rose" onclick="openModal()" style="flex-shrink:0">+ Ajouter</button>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-shrink:0;">
+          <button class="btn" id="dbtn-bulk-toggle" onclick="toggleBulkMode()" style="font-size:.72rem;padding:.4rem .8rem;border:1px solid var(--border);border-radius:20px;background:var(--bg3);cursor:pointer;font-family:inherit;">☑ Sélectionner</button>
+          <button class="btn btn-danger" id="dbtn-bulk-delete" onclick="bulkDeleteGuests()" style="display:none;font-size:.72rem;padding:.4rem .8rem;border-radius:20px;cursor:pointer;font-family:inherit;">🗑 Supprimer (<span id="dbulk-count">0</span>)</button>
+          <button class="btn btn-rose" onclick="openModal()">+ Ajouter</button>
+        </div>
+      </div>
+      <div id="dbulk-select-bar" style="display:none;margin-bottom:.6rem;gap:.5rem;align-items:center;">
+        <label style="font-size:.75rem;cursor:pointer;display:flex;align-items:center;gap:.3rem;color:var(--text2);">
+          <input type="checkbox" id="dchk-select-all" onchange="toggleSelectAll(this.checked)"> Tout sélectionner
+        </label>
       </div>
       <div class="guest-grid" id="dash-guest-grid"></div>
     </div>
@@ -1606,29 +1615,35 @@ function avCol(name){let h=0;for(let i=0;i<name.length;i++)h=name.charCodeAt(i)+
 function inits(p,n){return((p?p[0]:'')+(n?n[0]:'')).toUpperCase()||'?';}
 let _bulkMode = false;
 const _bulkSelected = new Set();
+function _setBulkCount(n){
+  ['bulk-count','dbulk-count'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=n;});
+}
 function toggleBulkMode(){
   _bulkMode = !_bulkMode;
   _bulkSelected.clear();
-  document.getElementById('btn-bulk-toggle').textContent = _bulkMode ? '✕ Annuler' : '☑ Sélectionner';
-  document.getElementById('btn-bulk-delete').style.display = _bulkMode ? 'inline-block' : 'none';
-  const bar = document.getElementById('bulk-select-bar');
-  bar.style.display = _bulkMode ? 'flex' : 'none';
-  document.getElementById('chk-select-all').checked = false;
+  const label = _bulkMode ? '✕ Annuler' : '☑ Sélectionner';
+  ['btn-bulk-toggle','dbtn-bulk-toggle'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=label;});
+  const delDisplay = _bulkMode ? 'inline-block' : 'none';
+  ['btn-bulk-delete','dbtn-bulk-delete'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=delDisplay;});
+  ['bulk-select-bar','dbulk-select-bar'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=_bulkMode?'flex':'none';});
+  ['chk-select-all','dchk-select-all'].forEach(id=>{const el=document.getElementById(id);if(el)el.checked=false;});
+  _setBulkCount(0);
   renderGuests();
+  renderDashGuests();
 }
 function toggleBulkCard(id, checked){
-  if(checked) _bulkSelected.add(id); else _bulkSelected.delete(id);
-  document.getElementById('bulk-count').textContent = _bulkSelected.size;
+  if(checked) _bulkSelected.add(String(id)); else _bulkSelected.delete(String(id));
+  _setBulkCount(_bulkSelected.size);
   const allVisible = [...document.querySelectorAll('.bulk-chk')];
-  document.getElementById('chk-select-all').checked = allVisible.length > 0 && allVisible.every(c=>c.checked);
+  const allChecked = allVisible.length > 0 && allVisible.every(c=>c.checked);
+  ['chk-select-all','dchk-select-all'].forEach(id=>{const el=document.getElementById(id);if(el)el.checked=allChecked;});
 }
 function toggleSelectAll(checked){
   document.querySelectorAll('.bulk-chk').forEach(c=>{
     c.checked = checked;
-    const id = c.dataset.id;
-    if(checked) _bulkSelected.add(id); else _bulkSelected.delete(id);
+    if(checked) _bulkSelected.add(String(c.dataset.id)); else _bulkSelected.delete(String(c.dataset.id));
   });
-  document.getElementById('bulk-count').textContent = _bulkSelected.size;
+  _setBulkCount(_bulkSelected.size);
 }
 async function bulkDeleteGuests(){
   if(!_bulkSelected.size){ showToast('Aucun invité sélectionné', true); return; }
@@ -1636,8 +1651,8 @@ async function bulkDeleteGuests(){
   const ids = [..._bulkSelected];
   _gCache = _gCache.filter(x=>!ids.includes(String(x.id)));
   _bulkSelected.clear();
-  document.getElementById('bulk-count').textContent = 0;
-  renderGuests(); renderDash(); updateSbCount();
+  _setBulkCount(0);
+  renderGuests(); renderDashGuests(); renderDash(); updateSbCount();
   try{
     for(const id of ids) await saveG_delete(id);
     showToast(`${ids.length} invité(s) supprimé(s) ✅`);
