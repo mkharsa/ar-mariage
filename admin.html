@@ -627,7 +627,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.15</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.18</span></div>
 </aside>
 
 <div class="main">
@@ -739,7 +739,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="chip" id="chip-pending" onclick="setChip('pending',this)">⏳ En attente</div>
         <div class="chip" id="chip-missing" onclick="setChip('missing',this)">⚠️ Infos manquantes</div>
       </div>
-      <button class="btn btn-rose" onclick="openModal()">+ Ajouter</button>
+      <div style="display:flex;gap:.5rem;align-items:center;">
+        <button class="btn" id="btn-bulk-toggle" onclick="toggleBulkMode()" style="font-size:.72rem;padding:.4rem .8rem;border:1px solid var(--border);border-radius:20px;background:var(--bg3);cursor:pointer;font-family:inherit;">☑ Sélectionner</button>
+        <button class="btn btn-danger" id="btn-bulk-delete" onclick="bulkDeleteGuests()" style="display:none;font-size:.72rem;padding:.4rem .8rem;border-radius:20px;cursor:pointer;font-family:inherit;">🗑 Supprimer (<span id="bulk-count">0</span>)</button>
+        <button class="btn btn-rose" onclick="openModal()">+ Ajouter</button>
+      </div>
+    </div>
+    <div id="bulk-select-bar" style="display:none;margin-bottom:.6rem;display:none;gap:.5rem;align-items:center;">
+      <label style="font-size:.75rem;cursor:pointer;display:flex;align-items:center;gap:.3rem;color:var(--text2);">
+        <input type="checkbox" id="chk-select-all" onchange="toggleSelectAll(this.checked)"> Tout sélectionner
+      </label>
     </div>
     <div class="guest-grid" id="guest-grid"></div>
   </div>
@@ -1595,10 +1604,53 @@ function renderGuests(){
 const COLS=['#D45C73','#4A7A5A','#C08A20','#4A7AA8','#8A5A8A','#5A7A8A'];
 function avCol(name){let h=0;for(let i=0;i<name.length;i++)h=name.charCodeAt(i)+((h<<5)-h);return COLS[Math.abs(h)%COLS.length];}
 function inits(p,n){return((p?p[0]:'')+(n?n[0]:'')).toUpperCase()||'?';}
+let _bulkMode = false;
+const _bulkSelected = new Set();
+function toggleBulkMode(){
+  _bulkMode = !_bulkMode;
+  _bulkSelected.clear();
+  document.getElementById('btn-bulk-toggle').textContent = _bulkMode ? '✕ Annuler' : '☑ Sélectionner';
+  document.getElementById('btn-bulk-delete').style.display = _bulkMode ? 'inline-block' : 'none';
+  const bar = document.getElementById('bulk-select-bar');
+  bar.style.display = _bulkMode ? 'flex' : 'none';
+  document.getElementById('chk-select-all').checked = false;
+  renderGuests();
+}
+function toggleBulkCard(id, checked){
+  if(checked) _bulkSelected.add(id); else _bulkSelected.delete(id);
+  document.getElementById('bulk-count').textContent = _bulkSelected.size;
+  const allVisible = [...document.querySelectorAll('.bulk-chk')];
+  document.getElementById('chk-select-all').checked = allVisible.length > 0 && allVisible.every(c=>c.checked);
+}
+function toggleSelectAll(checked){
+  document.querySelectorAll('.bulk-chk').forEach(c=>{
+    c.checked = checked;
+    const id = c.dataset.id;
+    if(checked) _bulkSelected.add(id); else _bulkSelected.delete(id);
+  });
+  document.getElementById('bulk-count').textContent = _bulkSelected.size;
+}
+async function bulkDeleteGuests(){
+  if(!_bulkSelected.size){ showToast('Aucun invité sélectionné', true); return; }
+  if(!confirm(`Supprimer ${_bulkSelected.size} invité(s) ?`)) return;
+  const ids = [..._bulkSelected];
+  _gCache = _gCache.filter(x=>!ids.includes(String(x.id)));
+  _bulkSelected.clear();
+  document.getElementById('bulk-count').textContent = 0;
+  renderGuests(); renderDash(); updateSbCount();
+  try{
+    for(const id of ids) await saveG_delete(id);
+    showToast(`${ids.length} invité(s) supprimé(s) ✅`);
+  } catch(e){ showToast('Erreur: '+e.message, true); await loadAll(); }
+  toggleBulkMode();
+}
+
 function gcCard(g){
   const col=avCol(g.prenom+g.nom);const ini=inits(g.prenom,g.nom);
   const pL=g.presence==='present'?'✅ Présent':g.presence==='absent'?'❌ Absent':'⏳ En attente';
-  return `<div class="guest-card ${g.presence}">
+  const bulkChk = _bulkMode ? `<input type="checkbox" class="bulk-chk" data-id="${g.id}" ${_bulkSelected.has(String(g.id))?'checked':''} onchange="toggleBulkCard('${g.id}',this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--rose2);flex-shrink:0;">` : '';
+  return `<div class="guest-card ${g.presence}" style="${_bulkMode?'cursor:pointer;':''}" ${_bulkMode?`onclick="event.target.tagName!=='INPUT'&&document.querySelector('.bulk-chk[data-id=\\'${g.id}\\']').click()"`:''}>
+    ${bulkChk}
     <div class="gc-avatar" style="background:${col}20;color:${col}">${ini}</div>
     <div class="gc-body">
       <div class="gc-name">${g.prenom} ${g.nom}</div>
@@ -1624,7 +1676,7 @@ function gcCard(g){
     </div>
     <div class="gc-actions">
       <span class="gc-status badge-${g.presence}" onclick="cycleG('${g.id}')" title="Changer statut">${pL}</span>
-      <button class="btn btn-danger" onclick="delG('${g.id}')">✕</button>
+      ${_bulkMode?'':`<button class="btn btn-danger" onclick="delG('${g.id}')">✕</button>`}
     </div>
   </div>`;
 }
