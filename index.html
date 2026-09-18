@@ -142,7 +142,7 @@ footer .ornament{font-size:1rem;color:var(--rose2);display:block;margin-bottom:0
 <div class="section-sep"></div>
 
 <!-- PROGRAMME — ALWAYS VISIBLE -->
-<section class="prog-section">
+<section class="prog-section" id="prog-section">
   <div class="prog-inner">
     <div class="prog-top">
       <div class="eyebrow" id="prog-eyebrow">The day</div>
@@ -404,6 +404,11 @@ async function renderProg(){
   applyT();    // 1. Appliquer la langue d'abord
   addPerson(); // 2. Créer le bloc avec les bons labels
   renderProg();
+  // 3. Scroll vers l'ancre si présente (#prog-section depuis save-the-date)
+  if(window.location.hash){
+    const target = document.querySelector(window.location.hash);
+    if(target) setTimeout(()=>target.scrollIntoView({behavior:'smooth',block:'start'}),100);
+  }
 })();
 </script>
 </body>
