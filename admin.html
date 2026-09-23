@@ -973,9 +973,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
     <!-- Comparateur multi-enveloppes -->
     <div class="budget-form-card" style="margin-bottom:1.4rem;">
-      <div style="font-weight:700;font-size:.85rem;margin-bottom:.8rem;color:var(--text)">📊 Comparaison par enveloppe</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.8rem;">
+        <div style="font-weight:700;font-size:.85rem;color:var(--text)">📊 Comparaison par enveloppe</div>
+        <button onclick="arDeselectAll()" style="font-size:.65rem;padding:.28rem .7rem;border:1px solid var(--border);border-radius:20px;background:var(--bg3);cursor:pointer;font-family:inherit;color:var(--text2);">✕ Tout désélectionner</button>
+      </div>
       <div style="font-size:.68rem;color:var(--muted);margin-bottom:.6rem;">Sélectionne les enveloppes à comparer :</div>
       <div id="ar-env-chips" style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem;"></div>
+      <!-- Indicateur reçu vs dépensé -->
+      <div id="ar-indicator" style="display:none;margin-bottom:1rem;background:var(--bg3);border-radius:10px;padding:.8rem 1rem;"></div>
       <div id="ar-compare-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.7rem;"></div>
     </div>
 
@@ -2408,10 +2413,23 @@ async function renderArgentRecu(){
   if(filterMoyen) arApplyFilter();
 }
 
+function arDeselectAll(){
+  _arEnvSelected.clear();
+  document.getElementById('ar-indicator').style.display='none';
+  if(window._arRecus) arRenderCompare(window._arRecus, window._lastExpenses||[]);
+  // Refresh chips
+  renderArgentRecu();
+}
+
 function arRenderCompare(recus, expenses){
   const grid = document.getElementById('ar-compare-grid');
+  const indEl = document.getElementById('ar-indicator');
   const selected = _enveloppes.filter(e=>_arEnvSelected.has(e.name));
-  if(!selected.length){ grid.innerHTML='<div style="color:var(--muted);font-size:.75rem">Sélectionnez au moins une enveloppe.</div>'; return; }
+  if(!selected.length){
+    grid.innerHTML='<div style="color:var(--muted);font-size:.75rem">Sélectionnez au moins une enveloppe.</div>';
+    if(indEl) indEl.style.display='none';
+    return;
+  }
 
   let totBudget=0, totDepense=0, totReste=0, totSolde=0;
   grid.innerHTML = selected.map(env=>{
