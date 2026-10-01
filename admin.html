@@ -627,7 +627,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ni" onclick="goTo('messages',this);closeSidebar()"><span class="ni-icon">💌</span><span>Messages</span><span class="ni-badge" id="sb-msg-count" style="display:none">0</span></div>
     <div class="ni" onclick="goTo('lien',this);closeSidebar()"><span class="ni-icon">⊙</span><span>Hébergement & Lien</span></div>
   </nav>
-  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.19</span></div>
+  <div class="sb-foot">Administration privée <span style="opacity:.5;margin-left:.5rem">v3.23</span></div>
 </aside>
 
 <div class="main">
@@ -2348,6 +2348,7 @@ const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','A
 ═══════════════════════════════════════ */
 let _arEditId = null;
 let _arEnvSelected = new Set(); // enveloppes sélectionnées pour le comparateur
+let _arAllDeselected = false;  // true quand l'utilisateur a tout désélectionné manuellement
 
 async function arFetch(path, opts={}){
   return sbExpFetch(path, opts); // réutilise le même fetch Supabase
@@ -2371,8 +2372,8 @@ async function renderArgentRecu(){
     <div class="tl-kpi"><div class="tl-kpi-label">Nb reçus</div><div class="tl-kpi-val">${recus.length}</div></div>`;
 
   // ── Chips multi-sélection enveloppes ──
-  // Initialiser la sélection si vide
-  if(_arEnvSelected.size===0) _enveloppes.forEach(e=>_arEnvSelected.add(e.name));
+  // Initialiser la sélection si vide (sauf si l'utilisateur a tout désélectionné exprès)
+  if(_arEnvSelected.size===0 && !_arAllDeselected) _enveloppes.forEach(e=>_arEnvSelected.add(e.name));
   const chipsEl = document.getElementById('ar-env-chips');
   chipsEl.innerHTML = _enveloppes.map(env=>`
     <button onclick="arToggleEnv('${env.name.replace(/'/g,"\\'")}', this)"
@@ -2414,11 +2415,15 @@ async function renderArgentRecu(){
 }
 
 function arDeselectAll(){
+  _arAllDeselected = true;
   _arEnvSelected.clear();
-  document.getElementById('ar-indicator').style.display='none';
+  // Refresh chips sans re-fetcher
+  const chipsEl = document.getElementById('ar-env-chips');
+  if(chipsEl) chipsEl.querySelectorAll('button').forEach(btn=>{
+    const env = _enveloppes.find(e=>btn.textContent.trim()===e.name);
+    if(env){ btn.style.background='transparent'; btn.style.color=env.color||'#D45C73'; }
+  });
   if(window._arRecus) arRenderCompare(window._arRecus, window._lastExpenses||[]);
-  // Refresh chips
-  renderArgentRecu();
 }
 
 function arRenderCompare(recus, expenses){
@@ -2429,6 +2434,32 @@ function arRenderCompare(recus, expenses){
     grid.innerHTML='<div style="color:var(--muted);font-size:.75rem">Sélectionnez au moins une enveloppe.</div>';
     if(indEl) indEl.style.display='none';
     return;
+  }
+
+  // ── Indicateur reçu vs dépensé ──
+  const filterMoyen = document.getElementById('ar-filter-moyen')?.value || '';
+  const recusFiltres = filterMoyen ? recus.filter(r=>r.moyen===filterMoyen) : recus;
+  const totalRecuFiltre = recusFiltres.reduce((s,r)=>s+(r.montant||0),0);
+  const totalDepFiltre  = selected.reduce((s,env)=>{
+    return s + expenses.filter(e=>e.enveloppe===env.name).reduce((ss,e)=>ss+(e.effectue||0),0);
+  },0);
+  const soldeInd = totalRecuFiltre - totalDepFiltre;
+  const pctInd   = totalRecuFiltre>0 ? Math.min(100,Math.round(totalDepFiltre/totalRecuFiltre*100)) : 0;
+  if(indEl){
+    const label = filterMoyen ? `💳 Reçu (${filterMoyen})` : '💰 Total reçu';
+    const envLabel = selected.length===_enveloppes.length ? 'toutes les enveloppes' : selected.map(e=>e.name).join(', ');
+    indEl.style.display='block';
+    indEl.innerHTML=`
+      <div style="font-size:.72rem;font-weight:700;color:var(--text);margin-bottom:.6rem">⚖️ ${label} vs dépensé (${envLabel})</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem .8rem;font-size:.7rem;margin-bottom:.6rem">
+        <div><div style="color:var(--muted);margin-bottom:1px">${label}</div><div style="font-weight:800;color:var(--sage)">${fmt(totalRecuFiltre)}</div></div>
+        <div><div style="color:var(--muted);margin-bottom:1px">Dépensé</div><div style="font-weight:800;color:var(--rose)">${fmt(totalDepFiltre)}</div></div>
+        <div><div style="color:var(--muted);margin-bottom:1px">Solde</div><div style="font-weight:800;color:${soldeInd<0?'var(--rose)':'var(--sage)'}">${fmt(soldeInd)}</div></div>
+      </div>
+      <div style="height:6px;background:var(--bg2);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${pctInd}%;background:${pctInd>100?'var(--rose)':'var(--rose2)'};border-radius:4px;transition:width .4s"></div>
+      </div>
+      <div style="font-size:.58rem;color:var(--muted);margin-top:2px;text-align:right">${pctInd}% du reçu dépensé</div>`;
   }
 
   let totBudget=0, totDepense=0, totReste=0, totSolde=0;
@@ -2479,6 +2510,8 @@ function arApplyFilter(){
   const filterMoyen = document.getElementById('ar-filter-moyen').value;
   const recus = window._arRecus || [];
   const filtered = filterMoyen ? recus.filter(r=>r.moyen===filterMoyen) : recus;
+  // Rafraîchir l'indicateur avec le nouveau filtre moyen
+  if(window._arRecus) arRenderCompare(window._arRecus, window._lastExpenses||[]);
   const totalEl = document.getElementById('ar-filter-total');
   if(filterMoyen){
     const total = filtered.reduce((s,r)=>s+(r.montant||0),0);
@@ -2509,8 +2542,8 @@ function arApplyFilter(){
 }
 
 function arToggleEnv(name, btn){
-  if(_arEnvSelected.has(name)) _arEnvSelected.delete(name);
-  else _arEnvSelected.add(name);
+  if(_arEnvSelected.has(name)){ _arEnvSelected.delete(name); if(_arEnvSelected.size===0) _arAllDeselected=true; }
+  else { _arAllDeselected=false; _arEnvSelected.add(name); }
   // Refresh chips + compare
   const env = _enveloppes.find(e=>e.name===name);
   const color = env?.color||'#D45C73';
